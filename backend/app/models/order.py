@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 
 from sqlalchemy import Boolean, DateTime
 from sqlalchemy import Enum as SAEnum
-from sqlalchemy import ForeignKey, Numeric, func
+from sqlalchemy import ForeignKey, Numeric, Text, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ..database import Base
@@ -39,6 +39,7 @@ class Order(Base):
         SAEnum(OrderStatus), nullable=False, default=OrderStatus.pending
     )
     payment_status: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    extra_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime, server_default=func.now(), nullable=False
     )

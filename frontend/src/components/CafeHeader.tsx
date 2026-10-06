@@ -1,3 +1,5 @@
+import { clearToken } from '../api'
+
 interface Props {
   onViewMenu?: () => void
   menuActive?: boolean
@@ -6,6 +8,12 @@ interface Props {
 
 /** Shared header: optional back button, brand name, "View full menu" action. */
 export default function CafeHeader({ onViewMenu, menuActive, onBack }: Props) {
+  // Frontend-only logout: drop the JWT and reload back to the login screen.
+  const handleLogout = () => {
+    clearToken()
+    window.location.reload()
+  }
+
   return (
     <header className="cafe-header">
       <div className="brand">
@@ -27,7 +35,12 @@ export default function CafeHeader({ onViewMenu, menuActive, onBack }: Props) {
             </svg>
           </button>
         )}
-        <span className="brand-name">Coffee Trading Co</span>
+        <div className="brand-stack">
+          <span className="brand-name">Coffee Trading Co</span>
+          <button type="button" className="hdr-logout" onClick={handleLogout}>
+            Log out
+          </button>
+        </div>
       </div>
       <button
         type="button"

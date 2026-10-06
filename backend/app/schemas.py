@@ -110,6 +110,41 @@ class CategoryFull(BaseModel):
     subcategories: list[SubcategoryFull] = []
 
 
+class FullMenuResponse(BaseModel):
+    """The full nested menu plus the number of line items in the user's cart."""
+
+    categories: list[CategoryFull]
+    cart_count: int = 0
+
+
+# ---- Cart ----
+
+
+class AddToCartRequest(BaseModel):
+    item_id: int
+    # Selected toppings (any subset of the item's allowed toppings; may be empty).
+    topping_ids: list[int] = []
+    # Single selected variant, if the item offers variants.
+    variant_id: int | None = None
+    quantity: int = Field(default=1, ge=1)
+
+
+class OrderItemRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    order_id: int
+    item_id: int
+    topping_ids: list[int] = []
+    variant_ids: list[int] = []
+    quantity: int
+    price: Decimal
+
+
+class CartCountResponse(BaseModel):
+    cart_count: int = 0
+
+
 # ---- Tags ----
 
 

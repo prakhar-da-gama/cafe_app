@@ -1,6 +1,7 @@
 import json
 import secrets
 from datetime import datetime, timedelta
+from decimal import Decimal
 
 from sqlalchemy import JSON, cast, func, literal, select
 from sqlalchemy.orm import Session
@@ -191,3 +192,60 @@ def get_or_create_cart(db: Session, user_id: int) -> models.Order:
     db.commit()
     db.refresh(cart)
     return cart
+
+
+def get_cart_item_count(db: Session, user_id: int) -> int:
+    """Number of line items in the user's open cart (0 if there's no cart)."""
+    order_id = db.execute(
+        select(models.Order.id).where(
+            models.Order.user_id == user_id,
+            models.Order.status == models.OrderStatus.cart,
+        )
+    ).scalar_one_or_none()
+    if order_id is None:
+        return 0
+    return db.execute(
+        select(func.count())
+        .select_from(models.OrderItem)
+        .where(models.OrderItem.order_id == order_id)
+    ).scalar_one()
+
+
+def add_item_to_cart(
+    db: Session,
+    *,
+    user_id: int,
+    item: models.Item,
+    topping_ids: list[int],
+    variant_id: int | None,
+    quantity: int,
+) -> models.OrderItem:
+    """Add a validated line item to the user's cart, snapshotting its unit price.
+
+    The caller is responsible for validating that ``topping_ids`` and
+    ``variant_id`` belong to the item. Price = item base + each topping's price
+    + the selected variant's (signed) delta.
+    """
+    total = Decimal(item.price)
+    for topping in _load_toppings(db, topping_ids):
+        total += topping.price
+
+    variant_ids: list[int] = []
+    if variant_id is not None:
+        variant = db.get(models.Variant, variant_id)
+        total += variant.price_delta
+        variant_ids = [variant_id]
+
+    cart = get_or_create_cart(db, user_id)
+    order_item = models.OrderItem(
+        order_id=cart.id,
+        item_id=item.id,
+        topping_ids=list(topping_ids),
+        variant_ids=variant_ids,
+        quantity=quantity,
+        price=total,
+    )
+    db.add(order_item)
+    db.commit()
+    db.refresh(order_item)
+    return order_item

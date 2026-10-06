@@ -95,6 +95,21 @@ export interface MenuCategory {
   subcategories: Subcategory[]
 }
 
+export interface FullMenuResponse {
+  categories: MenuCategory[]
+  cart_count: number
+}
+
+export interface OrderItem {
+  id: number
+  order_id: number
+  item_id: number
+  topping_ids: number[]
+  variant_ids: number[]
+  quantity: number
+  price: number | string
+}
+
 // ---- Fetch plumbing ----
 
 async function handle<T>(res: Response): Promise<T> {
@@ -169,11 +184,32 @@ export function getMenuByTags(
   }).then((r) => handle<PaginatedItems>(r))
 }
 
-// The full nested menu: categories -> subcategories -> items (+toppings/variants).
-export function getFullMenu(): Promise<MenuCategory[]> {
+// The full nested menu: categories -> subcategories -> items (+toppings/variants),
+// plus the current cart line-item count.
+export function getFullMenu(): Promise<FullMenuResponse> {
   return fetch('/api/menu/get-full-menu', { headers: authHeaders() }).then((r) =>
-    handle<MenuCategory[]>(r),
+    handle<FullMenuResponse>(r),
   )
+}
+
+// ---- Cart ----
+
+export function addItemToCart(
+  itemId: number,
+  toppingIds: number[] = [],
+  variantId: number | null = null,
+  quantity = 1,
+): Promise<OrderItem> {
+  return fetch('/api/cart/add-item', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body: JSON.stringify({
+      item_id: itemId,
+      topping_ids: toppingIds,
+      variant_id: variantId,
+      quantity,
+    }),
+  }).then((r) => handle<OrderItem>(r))
 }
 
 // ---- Helpers ----

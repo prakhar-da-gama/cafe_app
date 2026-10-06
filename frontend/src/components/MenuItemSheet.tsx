@@ -1,5 +1,5 @@
-import { useEffect } from 'react'
-import { money, signedMoney, type MenuItem } from '../api'
+import { useEffect, useMemo, useState } from 'react'
+import { addItemToCart, money, signedMoney, type MenuItem } from '../api'
 import DishPhoto from './DishPhoto'
 
 interface Props {
@@ -7,11 +7,61 @@ interface Props {
   /** Palette index (1-8) so the sheet echoes the card it opened from. */
   candy: number
   onClose: () => void
+  /** Called after a line item is successfully added to the cart. */
+  onAdded?: () => void
 }
 
 /** A bottom sheet with the full detail of one dish: large photo, description,
  *  sizes (variants) and add-ons (toppings). */
-export default function MenuItemSheet({ item, candy, onClose }: Props) {
+export default function MenuItemSheet({ item, candy, onClose, onAdded }: Props) {
+  // Which size (variant) is picked, and which add-ons are toggled on. The
+  // displayed price reflects the base price plus whatever is selected.
+  const [variantId, setVariantId] = useState<number | null>(null)
+  const [toppingIds, setToppingIds] = useState<Set<number>>(new Set())
+  const [error, setError] = useState<string | null>(null)
+  const [adding, setAdding] = useState(false)
+
+  // A random candy colour for the add-to-cart button, fresh each time a dish opens.
+  const btnColor = useMemo(() => {
+    const variants = ['btn-sky', 'btn-grape', 'btn-mint', 'btn-sun']
+    return variants[Math.floor(Math.random() * variants.length)]
+  }, [item.id])
+
+  const addToCart = async () => {
+    // A variant must be chosen when the item offers sizes; toppings are optional.
+    if (item.variants.length > 0 && variantId === null) {
+      setError('Please pick a size first.')
+      return
+    }
+    setError(null)
+    setAdding(true)
+    try {
+      await addItemToCart(item.id, [...toppingIds], variantId)
+      onAdded?.()
+      onClose()
+    } catch (e) {
+      setError((e as Error).message)
+      setAdding(false)
+    }
+  }
+
+  const toggleTopping = (id: number) =>
+    setToppingIds((prev) => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
+
+  const total = useMemo(() => {
+    let sum = Number(item.price)
+    const variant = item.variants.find((v) => v.id === variantId)
+    if (variant) sum += Number(variant.price_delta)
+    for (const t of item.toppings) {
+      if (toppingIds.has(t.id)) sum += Number(t.price)
+    }
+    return sum
+  }, [item, variantId, toppingIds])
+
   // Close on Escape and lock the page scroll while the sheet is open.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose()
@@ -66,7 +116,7 @@ export default function MenuItemSheet({ item, candy, onClose }: Props) {
           </div>
 
           <div className="sheet-price-row">
-            <span className="sheet-price">{money(item.price)}</span>
+            <span className="sheet-price">{money(total)}</span>
             {!item.is_available && (
               <span className="sold-pill">Sold out</span>
             )}
@@ -81,10 +131,20 @@ export default function MenuItemSheet({ item, candy, onClose }: Props) {
               <span className="opt-label">Sizes</span>
               <div className="opt-chips">
                 {item.variants.map((v) => (
-                  <span key={v.id} className="opt-chip">
+                  <button
+                    key={v.id}
+                    type="button"
+                    className={
+                      'opt-chip' + (v.id === variantId ? ' is-selected' : '')
+                    }
+                    aria-pressed={v.id === variantId}
+                    onClick={() =>
+                      setVariantId((cur) => (cur === v.id ? null : v.id))
+                    }
+                  >
                     {v.name}
                     <em>{signedMoney(v.price_delta)}</em>
-                  </span>
+                  </button>
                 ))}
               </div>
             </div>
@@ -95,14 +155,36 @@ export default function MenuItemSheet({ item, candy, onClose }: Props) {
               <span className="opt-label">Add-ons</span>
               <div className="opt-chips">
                 {item.toppings.map((t) => (
-                  <span key={t.id} className="opt-chip opt-topping">
+                  <button
+                    key={t.id}
+                    type="button"
+                    className={
+                      'opt-chip opt-topping' +
+                      (toppingIds.has(t.id) ? ' is-selected' : '')
+                    }
+                    aria-pressed={toppingIds.has(t.id)}
+                    onClick={() => toggleTopping(t.id)}
+                  >
                     {t.name}
                     <em>{signedMoney(t.price)}</em>
-                  </span>
+                  </button>
                 ))}
               </div>
             </div>
           )}
+
+          {error && <p className="form-error sheet-error">{error}</p>}
+
+          <button
+            type="button"
+            className={`candy-btn ${btnColor} sheet-add`}
+            onClick={addToCart}
+            disabled={adding || !item.is_available}
+          >
+            {item.is_available
+              ? `Add to cart · ${money(total)}`
+              : 'Sold out'}
+          </button>
         </div>
       </div>
     </div>

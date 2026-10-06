@@ -1,0 +1,82 @@
+:root {
+  /* ---- Candy palette ---- */
+  --cream: #fff4ec; /* peach white */
+  --cream-2: #fff9f4;
+  --surface: #ffffff;
+  --ink: #3a2b4a;
+  --ink-soft: #7c6a8e;
+  --line: #f3e3d8;
+
+  /* Candy accents, assigned per selected tag in order */
+  --candy-1: #ff6fb5; /* bubblegum */
+  --candy-2: #ff9f45; /* tangerine */
+  --candy-3: #ffd23f; /* lemon */
+  --candy-4: #42d6a4; /* mint */
+  --candy-5: #4dccf0; /* sky */
+  --candy-6: #b06bf5; /* grape */
+  --candy-7: #ff6b6b; /* coral */
+  --candy-8: #9ae65c; /* lime */
+
+  --danger: #e24a6e;
+
+  --radius: 22px;
+  --radius-sm: 14px;
+
+  font-family: 'Nunito', 'Segoe UI', system-ui, sans-serif;
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  min-height: 100dvh;
+  /* Calm warm backdrop so the peach "phone" reads as a mobile device */
+  background:
+    radial-gradient(70% 50% at 50% 0%, #f3ece4, transparent 70%),
+    linear-gradient(160deg, #ebe3db, #e6e1ea);
+  background-attachment: fixed;
+}
+
+#root {
+  min-height: 100dvh;
+  display: flex;
+  justify-content: center;
+}
+
+h1,
+h2,
+h3 {
+  font-family: 'Fredoka', 'Nunito', sans-serif;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+button {
+  font-family: inherit;
+}
+
+::selection {
+  background: var(--candy-1);
+  color: #fff;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}

@@ -57,7 +57,7 @@ export default function DashboardCustomer({
       <div className="dash-hero">
         {greetingName && <p className="dash-greet">Hi {greetingName}</p>}
         <h1 className="dash-title">
-          <TypingText text="What should my order look like?" speed={45} />
+          <TypingText text="What are you in the mood for?" speed={45} />
         </h1>
       </div>
 
@@ -77,19 +77,6 @@ export default function DashboardCustomer({
               onClick={() => toggle(t.id)}
               aria-pressed={on}
             >
-              {on && (
-                <span className="tag-check" aria-hidden="true">
-                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none">
-                    <path
-                      d="M5 13l4 4L19 7"
-                      stroke="currentColor"
-                      strokeWidth="3"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                </span>
-              )}
               {t.tag}
             </button>
           )

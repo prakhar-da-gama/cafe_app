@@ -167,3 +167,27 @@ def create_otp_user(db: Session, email: str) -> models.User:
     db.commit()
     db.refresh(user)
     return user
+
+
+# ---- Orders ----
+
+
+def get_or_create_cart(db: Session, user_id: int) -> models.Order:
+    """Return the user's open cart, creating one if none exists.
+
+    A cart is a draft order (status `cart`). Every user has at most one open
+    at a time; this is called on login so the user always has one to add to.
+    """
+    stmt = select(models.Order).where(
+        models.Order.user_id == user_id,
+        models.Order.status == models.OrderStatus.cart,
+    )
+    cart = db.execute(stmt).scalars().first()
+    if cart is not None:
+        return cart
+
+    cart = models.Order(user_id=user_id, status=models.OrderStatus.cart)
+    db.add(cart)
+    db.commit()
+    db.refresh(cart)
+    return cart

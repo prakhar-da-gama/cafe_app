@@ -526,10 +526,14 @@
   align-items: center;
   gap: 6px;
   box-shadow: 0 4px 10px rgba(58, 43, 74, 0.06);
-  animation: drift calc(3.4s + (var(--i)) * 0.25s) ease-in-out infinite;
-  animation-delay: calc(var(--i) * -0.37s);
+  /* Each lane drifts in its own direction (assigned by nth-child below) */
+  animation: drift-a calc(3.6s + (var(--i)) * 0.3s) ease-in-out infinite;
+  animation-delay: calc(var(--i) * -0.41s);
   transition: color 0.2s, background 0.2s, border-color 0.2s, box-shadow 0.2s;
 }
+.tag-bubble:nth-child(4n + 2) { animation-name: drift-b; }
+.tag-bubble:nth-child(4n + 3) { animation-name: drift-c; }
+.tag-bubble:nth-child(4n + 4) { animation-name: drift-d; }
 .tag-bubble:hover {
   border-color: color-mix(in srgb, var(--candy) 55%, #fff);
 }
@@ -537,26 +541,31 @@
   outline: 3px solid var(--candy-5);
   outline-offset: 2px;
 }
-@keyframes drift {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-3px); }
+@keyframes drift-a {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  33% { transform: translate(4px, -7px) rotate(2deg); }
+  66% { transform: translate(-3px, 4px) rotate(-1.5deg); }
+}
+@keyframes drift-b {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  33% { transform: translate(-6px, -4px) rotate(-2deg); }
+  66% { transform: translate(4px, 6px) rotate(1.5deg); }
+}
+@keyframes drift-c {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  50% { transform: translate(6px, 5px) rotate(2.5deg); }
+}
+@keyframes drift-d {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  50% { transform: translate(-6px, -6px) rotate(-2.5deg); }
 }
 .tag-bubble.tag-on {
-  /* Selected: solid, rich candy colour with white text */
+  /* Selected: solid, rich candy colour with white text and a dark outline */
   color: #fff;
-  border-color: transparent;
+  border-color: rgba(0, 0, 0, 0.85);
   background: var(--candy);
   box-shadow: 0 8px 18px color-mix(in srgb, var(--candy) 45%, transparent);
   animation: pop 0.35s ease;
-}
-.tag-check {
-  display: inline-grid;
-  place-items: center;
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.3);
-  color: #fff;
 }
 
 /* ---- Go-ahead dock (in-flow, pinned to the bottom of the screen) ---- */

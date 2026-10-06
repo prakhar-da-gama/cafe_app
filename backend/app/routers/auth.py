@@ -41,6 +41,8 @@ def verify_otp(payload: schemas.VerifyOtpRequest, db: Session = Depends(get_db))
     if payload.otp == DEV_DUMMY_OTP:
         crud.delete_otps(db, crud.get_otps_for_email(db, email))
         user = crud.get_user_by_email(db, email) or crud.create_otp_user(db, email)
+        # Ensure the user has an open cart; abort the whole verify if this fails.
+        crud.get_or_create_cart(db, user.id)
         token = create_access_token(user)
         return schemas.VerifyOtpResponse(
             message="otp verified",
@@ -79,6 +81,9 @@ def verify_otp(payload: schemas.VerifyOtpRequest, db: Session = Depends(get_db))
     user = crud.get_user_by_email(db, email)
     if user is None:
         user = crud.create_otp_user(db, email)
+
+    # Ensure the user has an open cart; abort the whole verify if this fails.
+    crud.get_or_create_cart(db, user.id)
 
     token = create_access_token(user)
     return schemas.VerifyOtpResponse(

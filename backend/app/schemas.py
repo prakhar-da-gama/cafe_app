@@ -74,7 +74,6 @@ class ItemFull(BaseModel):
 
     id: int
     name: str
-    description: str | None = None
     price: Decimal
     photos: list[str] = []
     tag_ids: list[int] = []
@@ -84,6 +83,13 @@ class ItemFull(BaseModel):
     is_active: bool
     toppings: list[ToppingRead] = []
     variants: list[VariantRead] = []
+
+
+class ItemDetail(ItemFull):
+    """Full detail for a single item, including the (potentially large)
+    description that is deliberately omitted from the menu listing."""
+
+    description: str | None = None
 
 
 class SubcategoryFull(BaseModel):
@@ -202,9 +208,43 @@ class UserRead(BaseModel):
     name: str | None = None
     email_id: str
     user_type: str
+    photo_path: str | None = None
 
 
 class UserUpdate(BaseModel):
-    # Only name and password may be patched.
+    # Only name, password and photo may be patched.
     name: str | None = Field(default=None, min_length=1, max_length=120)
     password: str | None = Field(default=None, min_length=6, max_length=128)
+    photo_path: str | None = Field(default=None, max_length=255)
+
+
+# ---- Game stats ----
+
+
+class MyGameStat(BaseModel):
+    """A single game life for the authenticated user."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    score: int
+    datetime_started: datetime
+
+
+class OverallGameStat(BaseModel):
+    """A leaderboard row: a score together with who scored it."""
+
+    id: int
+    user_id: int
+    name: str | None = None
+    photo_path: str | None = None
+    score: int
+    datetime_started: datetime
+
+
+class PaginatedOverallStats(BaseModel):
+    items: list[OverallGameStat]
+    total: int
+    page: int
+    page_size: int
+    has_more: bool

@@ -38,6 +38,22 @@ def get_full_menu(
     }
 
 
+@router.get("/get-item/{item_id}", response_model=schemas.ItemDetail)
+def get_item_detail(
+    item_id: int,
+    db: Session = Depends(get_db),
+    claims: dict[str, Any] = Depends(require_jwt),
+):
+    """Full detail for a single item, including its description plus nested
+    toppings and variants. Call this when a dish is opened; the description is
+    intentionally left out of the menu listing to keep that response small.
+    Requires a valid JWT bearer token."""
+    item = crud.get_item(db, item_id)
+    if item is None:
+        raise HTTPException(status_code=404, detail="Menu item not found")
+    return item
+
+
 @router.get("/by-tags", response_model=schemas.PaginatedItems)
 def menu_items_by_tags(
     tag_ids: list[int] = Query(default=[]),

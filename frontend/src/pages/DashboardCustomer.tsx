@@ -8,6 +8,7 @@ interface Props {
   greetingName: string | null
   onViewMenu: () => void
   onOpenChat: () => void
+  onPlay: () => void
   onGoAhead: (selected: Tag[]) => void
 }
 
@@ -19,6 +20,7 @@ export default function DashboardCustomer({
   greetingName,
   onViewMenu,
   onOpenChat,
+  onPlay,
   onGoAhead,
 }: Props) {
   const [tags, setTags] = useState<Tag[]>([])
@@ -50,7 +52,7 @@ export default function DashboardCustomer({
 
   return (
     <div className="screen dash">
-      <CafeHeader onViewMenu={onViewMenu} />
+      <CafeHeader onViewMenu={onViewMenu} onPlay={onPlay} />
 
       <ChatBar onOpen={onOpenChat} />
 

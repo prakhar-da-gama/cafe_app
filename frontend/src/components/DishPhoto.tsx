@@ -8,6 +8,8 @@ interface Props {
   className?: string
   /** Rendered letter size, in px. */
   size?: number
+  /** Specific photo to show; defaults to the item's first photo. */
+  src?: string
 }
 
 /** A dish image that gracefully falls back to a candy-gradient monogram when
@@ -17,9 +19,10 @@ export default function DishPhoto({
   candy,
   className,
   size = 34,
+  src: srcProp,
 }: Props) {
   const [broken, setBroken] = useState(false)
-  const src = item.photos[0]
+  const src = srcProp ?? item.photos[0]
   const cls = className ? `dish-photo ${className}` : 'dish-photo'
 
   if (src && !broken) {

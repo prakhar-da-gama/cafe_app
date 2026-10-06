@@ -29,6 +29,37 @@ export interface User {
   name: string | null
   email_id: string
   user_type: string
+  photo_path: string | null
+}
+
+// ---- Game ----
+
+export interface LiveCount {
+  count: number
+  playing: number
+}
+
+export interface MyGameStat {
+  id: number
+  score: number
+  datetime_started: string
+}
+
+export interface OverallGameStat {
+  id: number
+  user_id: number
+  name: string | null
+  photo_path: string | null
+  score: number
+  datetime_started: string
+}
+
+export interface PaginatedOverallStats {
+  items: OverallGameStat[]
+  total: number
+  page: number
+  page_size: number
+  has_more: boolean
 }
 
 export interface Tag {
@@ -160,6 +191,67 @@ export function updateMyName(name: string): Promise<User> {
   }).then((r) => handle<User>(r))
 }
 
+export function getMe(): Promise<User> {
+  return fetch('/api/users/me', { headers: authHeaders() }).then((r) =>
+    handle<User>(r),
+  )
+}
+
+// Upload an image file and return its public path (e.g. /api/uploads/<name>).
+export function uploadImage(file: File): Promise<{ filename: string; path: string }> {
+  const form = new FormData()
+  form.append('file', file)
+  return fetch('/api/upload', {
+    method: 'POST',
+    headers: { ...authHeaders() },
+    body: form,
+  }).then((r) => handle<{ filename: string; path: string }>(r))
+}
+
+// Save the user's chosen photo path onto their profile.
+export function updateMyPhoto(photoPath: string): Promise<User> {
+  return fetch('/api/users/me', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body: JSON.stringify({ photo_path: photoPath }),
+  }).then((r) => handle<User>(r))
+}
+
+// ---- Game ----
+
+export function getLiveCount(): Promise<LiveCount> {
+  return fetch('/api/game/live-count', { headers: authHeaders() }).then((r) =>
+    handle<LiveCount>(r),
+  )
+}
+
+export function getMyStats(): Promise<MyGameStat[]> {
+  return fetch('/api/game/my-stats', { headers: authHeaders() }).then((r) =>
+    handle<MyGameStat[]>(r),
+  )
+}
+
+export function getOverallStats(
+  page = 1,
+  pageSize = 20,
+): Promise<PaginatedOverallStats> {
+  const params = new URLSearchParams({
+    page: String(page),
+    page_size: String(pageSize),
+  })
+  return fetch(`/api/game/overall-stats?${params.toString()}`, {
+    headers: authHeaders(),
+  }).then((r) => handle<PaginatedOverallStats>(r))
+}
+
+// Build the game WebSocket URL, carrying the JWT as a query param so the
+// backend can authenticate the socket on connect.
+export function gameSocketUrl(): string {
+  const proto = window.location.protocol === 'https:' ? 'wss' : 'ws'
+  const token = getToken() ?? ''
+  return `${proto}://${window.location.host}/api/game/ws?token=${encodeURIComponent(token)}`
+}
+
 // ---- Tags ----
 
 export function listTags(): Promise<Tag[]> {
@@ -185,10 +277,19 @@ export function getMenuByTags(
 }
 
 // The full nested menu: categories -> subcategories -> items (+toppings/variants),
-// plus the current cart line-item count.
+// plus the current cart line-item count. The per-item `description` is omitted
+// here to keep the payload small; fetch it with getItem() when a dish is opened.
 export function getFullMenu(): Promise<FullMenuResponse> {
   return fetch('/api/menu/get-full-menu', { headers: authHeaders() }).then((r) =>
     handle<FullMenuResponse>(r),
+  )
+}
+
+// Full detail for a single dish, including its description. Called when a dish
+// is opened, since the menu listing leaves the description out.
+export function getItem(itemId: number): Promise<MenuItem> {
+  return fetch(`/api/menu/get-item/${itemId}`, { headers: authHeaders() }).then(
+    (r) => handle<MenuItem>(r),
   )
 }
 

@@ -28,6 +28,9 @@ class User(Base):
     # Store a hash here, never the plaintext password.
     # Null for OTP-only accounts that haven't set a password yet.
     password: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    # Public path of the user's uploaded photo (e.g. /api/uploads/<name>).
+    # Used as the face on their snake in the game; null until they upload one.
+    photo_path: Mapped[str | None] = mapped_column(String(255), nullable=True)
     user_type: Mapped[UserType] = mapped_column(
         SAEnum(UserType), nullable=False, default=UserType.customer
     )

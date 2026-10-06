@@ -1,0 +1,1397 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#FFF1F7" />
+    <meta
+      name="description"
+      content="Coffee Trading Co — a candy-bright cafe in Sarnath, Varanasi. Single-origin coffee, playful plates, and a riverside story since 1987."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <title>Coffee Trading Co · Sarnath, Varanasi</title>
+    <style>
+      :root {
+        /* ---- Candy palette (shared with the app) ---- */
+        --cream: #fff4ec;
+        --cream-2: #fff9f4;
+        --surface: #ffffff;
+        --ink: #3a2b4a;
+        --ink-soft: #7c6a8e;
+        --line: #f3e3d8;
+
+        --candy-1: #ff6fb5; /* bubblegum */
+        --candy-2: #ff9f45; /* tangerine */
+        --candy-3: #ffd23f; /* lemon */
+        --candy-4: #42d6a4; /* mint */
+        --candy-5: #4dccf0; /* sky */
+        --candy-6: #b06bf5; /* grape */
+        --candy-7: #ff6b6b; /* coral */
+        --candy-8: #9ae65c; /* lime */
+
+        --danger: #e24a6e;
+        --radius: 22px;
+        --radius-sm: 14px;
+
+        font-family: 'Nunito', 'Segoe UI', system-ui, sans-serif;
+        color: var(--ink);
+        -webkit-font-smoothing: antialiased;
+        text-rendering: optimizeLegibility;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        scroll-behavior: smooth;
+      }
+
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        min-height: 100dvh;
+        background:
+          radial-gradient(95% 55% at 50% 0%, var(--cream-2), transparent 70%),
+          var(--cream);
+        overflow-x: hidden;
+      }
+
+      h1,
+      h2,
+      h3 {
+        font-family: 'Fredoka', 'Nunito', sans-serif;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+        margin: 0;
+      }
+
+      a {
+        color: inherit;
+      }
+
+      img {
+        display: block;
+        max-width: 100%;
+      }
+
+      ::selection {
+        background: var(--candy-1);
+        color: #fff;
+      }
+
+      .wrap {
+        width: 100%;
+        max-width: 1120px;
+        margin: 0 auto;
+        padding: 0 22px;
+      }
+
+      /* ============================================================
+         Header
+         ============================================================ */
+      .site-header {
+        position: sticky;
+        top: 0;
+        z-index: 40;
+        background: linear-gradient(var(--cream), rgba(255, 241, 247, 0.72));
+        backdrop-filter: blur(10px);
+        border-bottom: 1px solid rgba(243, 227, 216, 0.8);
+      }
+      .site-header .wrap {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 14px;
+        padding-top: 14px;
+        padding-bottom: 14px;
+      }
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 11px;
+        text-decoration: none;
+      }
+      .brand-bean {
+        width: 44px;
+        height: 44px;
+        flex-shrink: 0;
+        border-radius: 15px;
+        display: grid;
+        place-items: center;
+        font-size: 1.35rem;
+        background: linear-gradient(145deg, var(--candy-1), var(--candy-6));
+        box-shadow: 0 8px 16px rgba(176, 107, 245, 0.38);
+        animation: bob 3.6s ease-in-out infinite;
+      }
+      @keyframes bob {
+        0%, 100% { transform: translateY(0) rotate(-3deg); }
+        50% { transform: translateY(-6px) rotate(3deg); }
+      }
+      .brand-name {
+        font-family: 'Fredoka', sans-serif;
+        font-weight: 600;
+        font-size: 1.22rem;
+        line-height: 1.05;
+        color: var(--ink);
+      }
+      .brand-name em {
+        font-style: normal;
+        color: var(--candy-1);
+      }
+      .brand-sub {
+        display: block;
+        font-family: 'Nunito', sans-serif;
+        font-weight: 800;
+        font-size: 0.64rem;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--ink-soft);
+      }
+      .nav-links {
+        display: flex;
+        align-items: center;
+        gap: 26px;
+      }
+      .nav-links a {
+        font-weight: 800;
+        font-size: 0.92rem;
+        color: var(--ink-soft);
+        text-decoration: none;
+        transition: color 0.15s;
+      }
+      .nav-links a:hover {
+        color: var(--candy-6);
+      }
+
+      /* ---- Candy button (3D pressable), from the app ---- */
+      .candy-btn {
+        --btn-a: #52e0b0;
+        --btn-b: #14b98a;
+        --btn-edge: #0e9b72;
+        --btn-glow: 20, 185, 138;
+        position: relative;
+        font-family: 'Nunito', sans-serif;
+        font-size: 0.95rem;
+        font-weight: 800;
+        color: #fff;
+        border: none;
+        border-radius: var(--radius-sm);
+        padding: 13px 22px;
+        cursor: pointer;
+        text-decoration: none;
+        background: linear-gradient(135deg, var(--btn-a), var(--btn-b));
+        box-shadow: 0 6px 0 var(--btn-edge), 0 12px 22px rgba(var(--btn-glow), 0.38);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        transition: transform 0.1s ease, box-shadow 0.1s ease, filter 0.15s;
+      }
+      .candy-btn:hover {
+        filter: brightness(1.05);
+      }
+      .candy-btn:active {
+        transform: translateY(5px);
+        box-shadow: 0 1px 0 var(--btn-edge), 0 4px 10px rgba(var(--btn-glow), 0.34);
+      }
+      .btn-grape { --btn-a: #c084fc; --btn-b: #7d4fe0; --btn-edge: #6338b0; --btn-glow: 125, 79, 224; }
+      .btn-sky { --btn-a: #53d0f5; --btn-b: #4a86ff; --btn-edge: #2f6fc9; --btn-glow: 74, 134, 255; }
+      .btn-pink { --btn-a: #ff9ecd; --btn-b: #ff6fb5; --btn-edge: #d94f93; --btn-glow: 255, 111, 181; }
+      .btn-sun {
+        --btn-a: #ffd84d; --btn-b: #ff9f2e; --btn-edge: #e07c15; --btn-glow: 255, 159, 46;
+        color: var(--ink);
+      }
+      .btn-sm { padding: 10px 18px; font-size: 0.88rem; }
+
+      .header-cta {
+        display: flex;
+        align-items: center;
+        gap: 18px;
+      }
+
+      /* ============================================================
+         Hero
+         ============================================================ */
+      .hero {
+        position: relative;
+        padding: 70px 0 60px;
+        overflow: hidden;
+      }
+      .hero-grid {
+        display: grid;
+        grid-template-columns: 1.05fr 0.95fr;
+        gap: 48px;
+        align-items: center;
+      }
+      .eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: 800;
+        font-size: 0.78rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--candy-6);
+        background: color-mix(in srgb, var(--candy-6) 12%, #fff);
+        border: 1.5px solid color-mix(in srgb, var(--candy-6) 26%, #fff);
+        padding: 7px 14px;
+        border-radius: 999px;
+        margin-bottom: 20px;
+      }
+      .hero h1 {
+        font-size: clamp(2.6rem, 5.4vw, 4rem);
+        line-height: 1.02;
+        color: var(--ink);
+      }
+      .hero h1 em {
+        font-style: normal;
+        background: linear-gradient(120deg, var(--candy-1), var(--candy-6));
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+      }
+      .hero p.lead {
+        font-size: 1.12rem;
+        line-height: 1.6;
+        color: var(--ink-soft);
+        max-width: 46ch;
+        margin: 20px 0 30px;
+      }
+      .hero-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 14px;
+        align-items: center;
+      }
+      .hero-stats {
+        display: flex;
+        gap: 34px;
+        margin-top: 42px;
+      }
+      .hero-stats .num {
+        font-family: 'Fredoka', sans-serif;
+        font-weight: 600;
+        font-size: 1.9rem;
+        line-height: 1;
+        color: var(--candy-1);
+      }
+      .hero-stats .lbl {
+        font-size: 0.82rem;
+        font-weight: 700;
+        color: var(--ink-soft);
+        margin-top: 4px;
+      }
+
+      /* Stacked, tilted hero photos */
+      .hero-art {
+        position: relative;
+        min-height: 440px;
+      }
+      .hero-photo {
+        position: absolute;
+        border-radius: 26px;
+        overflow: hidden;
+        box-shadow: 0 26px 60px rgba(58, 43, 74, 0.26);
+        border: 5px solid #fff;
+      }
+      .hero-photo img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+      .hero-photo.p1 {
+        width: 66%;
+        aspect-ratio: 4 / 5;
+        top: 0;
+        right: 2%;
+        z-index: 2;
+        transform: rotate(3deg);
+        animation: float-a 6s ease-in-out infinite;
+      }
+      .hero-photo.p2 {
+        width: 52%;
+        aspect-ratio: 1 / 1;
+        bottom: 0;
+        left: 0;
+        z-index: 3;
+        transform: rotate(-4deg);
+        animation: float-b 7s ease-in-out infinite;
+      }
+      .hero-blob {
+        position: absolute;
+        width: 320px;
+        height: 320px;
+        border-radius: 50%;
+        filter: blur(10px);
+        opacity: 0.5;
+        z-index: 1;
+        top: -30px;
+        right: -40px;
+        background: radial-gradient(circle at 30% 30%, var(--candy-3), var(--candy-1));
+        animation: float-a 9s ease-in-out infinite;
+      }
+      .hero-badge {
+        position: absolute;
+        z-index: 4;
+        bottom: 14%;
+        right: -6px;
+        background: #fff;
+        border-radius: 18px;
+        padding: 12px 16px;
+        box-shadow: 0 16px 34px rgba(58, 43, 74, 0.2);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        animation: float-b 5.5s ease-in-out infinite;
+      }
+      .hero-badge .emoji {
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+        display: grid;
+        place-items: center;
+        font-size: 1.2rem;
+        background: linear-gradient(145deg, var(--candy-4), var(--candy-5));
+      }
+      .hero-badge .t { font-family: 'Fredoka', sans-serif; font-size: 0.95rem; }
+      .hero-badge .s { font-size: 0.74rem; color: var(--ink-soft); font-weight: 700; }
+
+      @keyframes float-a {
+        0%, 100% { transform: translateY(0) rotate(3deg); }
+        50% { transform: translateY(-16px) rotate(3deg); }
+      }
+      @keyframes float-b {
+        0%, 100% { transform: translateY(0) rotate(-4deg); }
+        50% { transform: translateY(-12px) rotate(-4deg); }
+      }
+
+      /* ============================================================
+         Section scaffolding
+         ============================================================ */
+      section {
+        padding: 72px 0;
+      }
+      .section-head {
+        text-align: center;
+        max-width: 60ch;
+        margin: 0 auto 48px;
+      }
+      .kicker {
+        font-weight: 800;
+        font-size: 0.8rem;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--candy-1);
+        margin-bottom: 12px;
+      }
+      .section-head h2 {
+        font-size: clamp(1.9rem, 3.6vw, 2.7rem);
+        line-height: 1.1;
+        color: var(--ink);
+      }
+      .section-head p {
+        font-size: 1.05rem;
+        line-height: 1.6;
+        color: var(--ink-soft);
+        margin: 14px 0 0;
+      }
+
+      /* ============================================================
+         History / story strip
+         ============================================================ */
+      .history {
+        background:
+          radial-gradient(60% 60% at 15% 0%, color-mix(in srgb, var(--candy-3) 16%, transparent), transparent 70%),
+          var(--cream-2);
+      }
+      .history-grid {
+        display: grid;
+        grid-template-columns: 0.9fr 1.1fr;
+        gap: 50px;
+        align-items: center;
+      }
+      .history-photo {
+        border-radius: 26px;
+        overflow: hidden;
+        border: 5px solid #fff;
+        box-shadow: 0 24px 54px rgba(58, 43, 74, 0.22);
+        transform: rotate(-2deg);
+      }
+      .history-photo img { width: 100%; aspect-ratio: 4 / 5; object-fit: cover; }
+      .history-copy h2 {
+        font-size: clamp(1.9rem, 3.6vw, 2.7rem);
+        color: var(--ink);
+        margin-bottom: 18px;
+      }
+      .history-copy p {
+        font-size: 1.04rem;
+        line-height: 1.68;
+        color: var(--ink-soft);
+        margin: 0 0 16px;
+      }
+
+      /* Timeline */
+      .timeline {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 16px;
+        margin-top: 46px;
+      }
+      .tl-card {
+        background: var(--surface);
+        border: 1.5px solid #fff;
+        border-radius: 18px;
+        padding: 20px 18px;
+        box-shadow: 0 12px 28px rgba(58, 43, 74, 0.08);
+        position: relative;
+        overflow: hidden;
+      }
+      .tl-card::before {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0;
+        height: 5px;
+        background: var(--c, var(--candy-1));
+      }
+      .tl-year {
+        font-family: 'Fredoka', sans-serif;
+        font-weight: 600;
+        font-size: 1.5rem;
+        color: var(--c, var(--candy-1));
+      }
+      .tl-card h4 { font-family: 'Fredoka', sans-serif; font-size: 1.02rem; margin: 6px 0 6px; color: var(--ink); }
+      .tl-card p { font-size: 0.88rem; line-height: 1.5; color: var(--ink-soft); margin: 0; }
+
+      /* ============================================================
+         Food gallery
+         ============================================================ */
+      .gallery-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        grid-auto-rows: 200px;
+        gap: 16px;
+      }
+      .g-item {
+        position: relative;
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: 0 14px 30px rgba(58, 43, 74, 0.12);
+        cursor: pointer;
+      }
+      .g-item img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+      }
+      .g-item:hover img { transform: scale(1.08); }
+      .g-item .cap {
+        position: absolute;
+        left: 0; right: 0; bottom: 0;
+        padding: 26px 16px 14px;
+        color: #fff;
+        font-family: 'Fredoka', sans-serif;
+        font-size: 1.02rem;
+        background: linear-gradient(to top, rgba(26, 16, 34, 0.82), transparent);
+        opacity: 0;
+        transform: translateY(8px);
+        transition: opacity 0.25s, transform 0.25s;
+      }
+      .g-item:hover .cap { opacity: 1; transform: translateY(0); }
+      .g-tall { grid-row: span 2; }
+      .g-wide { grid-column: span 2; }
+
+      /* ============================================================
+         Menu preview
+         ============================================================ */
+      .menu {
+        background:
+          radial-gradient(55% 55% at 85% 10%, color-mix(in srgb, var(--candy-5) 14%, transparent), transparent 70%),
+          var(--cream-2);
+      }
+      .menu-cards {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 20px;
+      }
+      .m-card {
+        background: var(--surface);
+        border: 1.5px solid #fff;
+        border-radius: 22px;
+        overflow: hidden;
+        box-shadow: 0 16px 34px rgba(58, 43, 74, 0.1);
+        display: flex;
+        flex-direction: column;
+        transition: transform 0.16s ease, box-shadow 0.16s ease;
+      }
+      .m-card:hover {
+        transform: translateY(-6px);
+        box-shadow: 0 26px 48px rgba(58, 43, 74, 0.16);
+      }
+      .m-photo { position: relative; aspect-ratio: 16 / 11; overflow: hidden; }
+      .m-photo img { width: 100%; height: 100%; object-fit: cover; }
+      .m-tag {
+        position: absolute;
+        top: 12px; left: 12px;
+        font-size: 0.68rem;
+        font-weight: 800;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #fff;
+        background: var(--c, var(--candy-1));
+        padding: 5px 11px;
+        border-radius: 999px;
+      }
+      .m-body { padding: 16px 18px 20px; display: flex; flex-direction: column; gap: 7px; flex: 1; }
+      .m-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+      .m-name { font-family: 'Fredoka', sans-serif; font-size: 1.14rem; color: var(--ink); line-height: 1.15; }
+      .m-price {
+        font-family: 'Fredoka', sans-serif;
+        font-weight: 600;
+        font-size: 1.14rem;
+        color: var(--candy-6);
+        white-space: nowrap;
+      }
+      .m-desc { font-size: 0.9rem; line-height: 1.5; color: var(--ink-soft); margin: 0; }
+      .veg-dot {
+        width: 15px; height: 15px; border-radius: 4px;
+        display: inline-block; border: 2px solid; position: relative; flex-shrink: 0; margin-top: 3px;
+      }
+      .veg-dot::after { content: ''; position: absolute; inset: 2.5px; border-radius: 50%; }
+      .veg-dot.veg { border-color: #2bb673; }
+      .veg-dot.veg::after { background: #2bb673; }
+      .veg-dot.nonveg { border-color: #e24a6e; }
+      .veg-dot.nonveg::after { background: #e24a6e; }
+      .m-name-row { display: flex; gap: 8px; align-items: flex-start; }
+      .menu-foot { text-align: center; margin-top: 42px; }
+
+      /* ============================================================
+         Chef story
+         ============================================================ */
+      .chef-grid {
+        display: grid;
+        grid-template-columns: 0.85fr 1.15fr;
+        gap: 50px;
+        align-items: center;
+      }
+      .chef-photo {
+        position: relative;
+        border-radius: 28px;
+        overflow: hidden;
+        border: 5px solid #fff;
+        box-shadow: 0 24px 54px rgba(58, 43, 74, 0.22);
+      }
+      .chef-photo img { width: 100%; aspect-ratio: 4 / 5; object-fit: cover; }
+      .chef-chip {
+        position: absolute;
+        bottom: 16px; left: 16px; right: 16px;
+        background: rgba(255, 255, 255, 0.94);
+        backdrop-filter: blur(4px);
+        border-radius: 16px;
+        padding: 12px 16px;
+        box-shadow: 0 10px 24px rgba(58, 43, 74, 0.16);
+      }
+      .chef-chip .n { font-family: 'Fredoka', sans-serif; font-size: 1.08rem; color: var(--ink); }
+      .chef-chip .r { font-size: 0.8rem; font-weight: 700; color: var(--candy-6); }
+      .chef-copy h2 { font-size: clamp(1.9rem, 3.6vw, 2.7rem); margin-bottom: 18px; }
+      .chef-copy p { font-size: 1.04rem; line-height: 1.68; color: var(--ink-soft); margin: 0 0 16px; }
+      .quote {
+        font-family: 'Fredoka', sans-serif;
+        font-size: 1.3rem;
+        line-height: 1.45;
+        color: var(--ink);
+        border-left: 4px solid var(--candy-1);
+        padding-left: 18px;
+        margin: 24px 0;
+      }
+      .chef-sign { font-family: 'Fredoka', sans-serif; color: var(--ink-soft); font-size: 0.95rem; }
+
+      /* ============================================================
+         Reservation
+         ============================================================ */
+      .reserve {
+        background:
+          radial-gradient(60% 70% at 50% 0%, color-mix(in srgb, var(--candy-1) 14%, transparent), transparent 70%),
+          var(--cream-2);
+      }
+      .reserve-grid {
+        display: grid;
+        grid-template-columns: 0.95fr 1.05fr;
+        gap: 48px;
+        align-items: stretch;
+      }
+      .reserve-aside {
+        background: linear-gradient(160deg, #241630, #3a2b4a);
+        color: #fff;
+        border-radius: 26px;
+        padding: 38px 34px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        position: relative;
+        overflow: hidden;
+      }
+      .reserve-aside::after {
+        content: '';
+        position: absolute;
+        width: 260px; height: 260px;
+        border-radius: 50%;
+        right: -90px; bottom: -90px;
+        background: radial-gradient(circle at 30% 30%, var(--candy-1), var(--candy-6));
+        opacity: 0.5;
+        filter: blur(6px);
+      }
+      .reserve-aside h3 { font-size: 1.7rem; margin-bottom: 14px; position: relative; }
+      .reserve-aside p { line-height: 1.6; color: #e9dff3; position: relative; margin: 0 0 24px; }
+      .reserve-aside ul { list-style: none; padding: 0; margin: 0; display: grid; gap: 14px; position: relative; }
+      .reserve-aside li { display: flex; gap: 12px; align-items: center; font-weight: 700; }
+      .reserve-aside li .ic {
+        width: 36px; height: 36px; border-radius: 11px; flex-shrink: 0;
+        display: grid; place-items: center; font-size: 1.05rem;
+        background: rgba(255, 255, 255, 0.12);
+      }
+
+      .reserve-card {
+        background: var(--surface);
+        border: 1.5px solid #fff;
+        border-radius: 26px;
+        padding: 34px;
+        box-shadow: 0 20px 44px rgba(58, 43, 74, 0.12);
+      }
+      .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+      .field { display: flex; flex-direction: column; gap: 7px; }
+      .field.full { grid-column: 1 / -1; }
+      .field-label {
+        font-size: 0.74rem; font-weight: 800; letter-spacing: 0.04em;
+        text-transform: uppercase; color: var(--ink-soft);
+      }
+      .text-input {
+        font: inherit;
+        font-size: 1rem;
+        color: var(--ink);
+        padding: 13px 15px;
+        border: 2px solid var(--line);
+        border-radius: var(--radius-sm);
+        background: #fffafc;
+        transition: border-color 0.15s, box-shadow 0.15s;
+        width: 100%;
+      }
+      select.text-input { appearance: none; cursor: pointer; }
+      .text-input::placeholder { color: #c9b6cf; }
+      .text-input:focus {
+        outline: none;
+        border-color: var(--candy-1);
+        box-shadow: 0 0 0 4px rgba(255, 111, 181, 0.18);
+      }
+      .reserve-submit { width: 100%; margin-top: 4px; padding: 15px; font-size: 1.05rem; }
+      .reserve-note { font-size: 0.82rem; color: var(--ink-soft); text-align: center; margin: 14px 0 0; }
+      .reserve-ok {
+        display: none;
+        margin-top: 16px;
+        padding: 14px 16px;
+        border-radius: 14px;
+        background: rgba(66, 214, 164, 0.15);
+        border: 1.5px solid rgba(66, 214, 164, 0.5);
+        color: #178a63;
+        font-weight: 700;
+        font-size: 0.92rem;
+        text-align: center;
+      }
+
+      /* ============================================================
+         Location / map
+         ============================================================ */
+      .loc-grid {
+        display: grid;
+        grid-template-columns: 0.85fr 1.15fr;
+        gap: 40px;
+        align-items: stretch;
+      }
+      .loc-info {
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+      }
+      .loc-card {
+        background: var(--surface);
+        border: 1.5px solid #fff;
+        border-radius: 20px;
+        padding: 20px 22px;
+        box-shadow: 0 12px 28px rgba(58, 43, 74, 0.08);
+        display: flex;
+        gap: 14px;
+        align-items: flex-start;
+      }
+      .loc-card .ic {
+        width: 44px; height: 44px; flex-shrink: 0;
+        border-radius: 13px; display: grid; place-items: center; font-size: 1.2rem;
+        color: #fff;
+        background: linear-gradient(145deg, var(--c1, var(--candy-1)), var(--c2, var(--candy-6)));
+      }
+      .loc-card h4 { font-family: 'Fredoka', sans-serif; font-size: 1.05rem; margin: 0 0 4px; color: var(--ink); }
+      .loc-card p { margin: 0; font-size: 0.92rem; line-height: 1.5; color: var(--ink-soft); }
+      .map-frame {
+        border-radius: 26px;
+        overflow: hidden;
+        border: 5px solid #fff;
+        box-shadow: 0 22px 48px rgba(58, 43, 74, 0.2);
+        min-height: 420px;
+      }
+      .map-frame iframe { width: 100%; height: 100%; min-height: 420px; border: 0; display: block; }
+
+      /* ============================================================
+         Footer
+         ============================================================ */
+      .site-footer {
+        background: #241630;
+        color: #d9cce6;
+        padding: 56px 0 30px;
+      }
+      .footer-grid {
+        display: grid;
+        grid-template-columns: 1.4fr 1fr 1fr;
+        gap: 40px;
+      }
+      .footer-grid h4 {
+        font-family: 'Fredoka', sans-serif;
+        color: #fff;
+        font-size: 1.05rem;
+        margin: 0 0 16px;
+      }
+      .footer-grid p, .footer-grid a { font-size: 0.92rem; line-height: 1.7; color: #bdaccf; text-decoration: none; }
+      .footer-grid a:hover { color: #fff; }
+      .footer-links { display: flex; flex-direction: column; gap: 8px; }
+      .footer-brand .brand-name { color: #fff; }
+      .footer-brand .brand-name em { color: var(--candy-1); }
+      .footer-brand p { margin: 16px 0 0; max-width: 34ch; }
+      .footer-bottom {
+        margin-top: 44px;
+        padding-top: 22px;
+        border-top: 1px solid rgba(255, 255, 255, 0.12);
+        display: flex;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 12px;
+        font-size: 0.84rem;
+        color: #9683ab;
+      }
+
+      /* ============================================================
+         Reveal-on-scroll
+         ============================================================ */
+      .reveal {
+        opacity: 0;
+        transform: translateY(26px);
+        transition: opacity 0.6s ease, transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+      }
+      .reveal.in { opacity: 1; transform: translateY(0); }
+
+      @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after {
+          animation-duration: 0.001ms !important;
+          animation-iteration-count: 1 !important;
+          transition-duration: 0.001ms !important;
+        }
+        .reveal { opacity: 1; transform: none; }
+      }
+
+      /* ============================================================
+         Responsive
+         ============================================================ */
+      @media (max-width: 920px) {
+        .hero-grid,
+        .history-grid,
+        .chef-grid,
+        .reserve-grid,
+        .loc-grid { grid-template-columns: 1fr; }
+        .hero-art { min-height: 380px; margin-top: 10px; order: -1; }
+        .timeline { grid-template-columns: repeat(2, 1fr); }
+        .gallery-grid { grid-template-columns: repeat(2, 1fr); }
+        .menu-cards { grid-template-columns: repeat(2, 1fr); }
+        .footer-grid { grid-template-columns: 1fr 1fr; }
+        .history-photo, .chef-photo { max-width: 420px; margin: 0 auto; }
+      }
+      @media (max-width: 640px) {
+        .nav-links { display: none; }
+        .hero { padding: 40px 0 44px; }
+        .hero-stats { gap: 22px; }
+        .menu-cards,
+        .gallery-grid,
+        .form-grid { grid-template-columns: 1fr; }
+        .g-wide, .g-tall { grid-column: auto; grid-row: auto; }
+        .footer-grid { grid-template-columns: 1fr; }
+        section { padding: 54px 0; }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- ===================== Header ===================== -->
+    <header class="site-header">
+      <div class="wrap">
+        <a class="brand" href="#top" aria-label="Coffee Trading Co home">
+          <span class="brand-bean" aria-hidden="true">☕</span>
+          <span>
+            <span class="brand-name">Coffee <em>Trading</em> Co</span>
+            <span class="brand-sub">Sarnath · Varanasi</span>
+          </span>
+        </a>
+        <nav class="nav-links" aria-label="Primary">
+          <a href="#story">Our Story</a>
+          <a href="#menu">Menu</a>
+          <a href="#chef">The Chef</a>
+          <a href="#visit">Visit</a>
+        </nav>
+        <div class="header-cta">
+          <a class="candy-btn btn-grape" href="#menu">Order Food 🍽️</a>
+        </div>
+      </div>
+    </header>
+
+    <main id="top">
+      <!-- ===================== Hero ===================== -->
+      <section class="hero">
+        <div class="wrap hero-grid">
+          <div class="hero-copy reveal">
+            <span class="eyebrow">● Brewing joy since 1987</span>
+            <h1>Where the <em>Ganges breeze</em><br />meets a candy-bright cup.</h1>
+            <p class="lead">
+              Tucked beside the Dhamek Stupa in Sarnath, Coffee Trading Co roasts
+              single-origin beans from the Araku Valley and plates playful,
+              colourful food that tastes as good as it looks.
+            </p>
+            <div class="hero-actions">
+              <a class="candy-btn btn-pink" href="#menu">Order Food 🍽️</a>
+              <a class="candy-btn btn-sun" href="#visit">Reserve a Table</a>
+            </div>
+            <div class="hero-stats">
+              <div>
+                <div class="num">38</div>
+                <div class="lbl">Years by the stupa</div>
+              </div>
+              <div>
+                <div class="num">14</div>
+                <div class="lbl">House-roasted origins</div>
+              </div>
+              <div>
+                <div class="num">4.9★</div>
+                <div class="lbl">Loved by 6k+ guests</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="hero-art reveal">
+            <span class="hero-blob" aria-hidden="true"></span>
+            <div class="hero-photo p1">
+              <img
+                src="https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=800&q=80"
+                alt="A latte with delicate rosetta art on a wooden table"
+                loading="lazy"
+              />
+            </div>
+            <div class="hero-photo p2">
+              <img
+                src="https://images.unsplash.com/photo-1529042410759-befb1204b468?auto=format&fit=crop&w=700&q=80"
+                alt="Colourful brunch spread with fresh fruit and pastries"
+                loading="lazy"
+              />
+            </div>
+            <div class="hero-badge" aria-hidden="true">
+              <span class="emoji">🌿</span>
+              <span>
+                <span class="t">Araku Valley</span><br />
+                <span class="s">single-origin beans</span>
+              </span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================== History / Story ===================== -->
+      <section class="history" id="story">
+        <div class="wrap">
+          <div class="history-grid">
+            <div class="history-photo reveal">
+              <img
+                src="https://images.unsplash.com/photo-1442512595331-e89e73853f31?auto=format&fit=crop&w=700&q=80"
+                alt="Vintage café interior with warm light and wooden counters"
+                loading="lazy"
+              />
+            </div>
+            <div class="history-copy reveal">
+              <p class="kicker">Our Story</p>
+              <h2>A trading post for beans, stories &amp; afternoons.</h2>
+              <p>
+                In 1987, Devraj Malviya came home to Sarnath after a decade of
+                buying and selling green coffee across the ports of Kochi and
+                Chennai. He rented a crumbling two-room house a short walk from
+                the Dhamek Stupa, hauled in a cast-iron roaster, and hung a
+                hand-painted sign: <strong>Coffee Trading Co.</strong>
+              </p>
+              <p>
+                Pilgrims, students from the nearby monasteries, and wandering
+                scholars began lingering over his cups for hours. What started
+                as a trader's counter slowly became Sarnath's living room —
+                three generations later, still roasting on the same corner,
+                still pouring for anyone who wanders in off the dusty lane.
+              </p>
+            </div>
+          </div>
+
+          <div class="timeline">
+            <div class="tl-card reveal" style="--c: var(--candy-1)">
+              <div class="tl-year">1987</div>
+              <h4>The first roast</h4>
+              <p>Devraj lights the cast-iron roaster in a two-room house near the stupa.</p>
+            </div>
+            <div class="tl-card reveal" style="--c: var(--candy-4)">
+              <div class="tl-year">1996</div>
+              <h4>The courtyard opens</h4>
+              <p>A neem-shaded courtyard is added, and the café's famous filter kaapi is born.</p>
+            </div>
+            <div class="tl-card reveal" style="--c: var(--candy-5)">
+              <div class="tl-year">2011</div>
+              <h4>Second generation</h4>
+              <p>Daughter Meera returns from culinary school and reimagines the kitchen.</p>
+            </div>
+            <div class="tl-card reveal" style="--c: var(--candy-6)">
+              <div class="tl-year">2024</div>
+              <h4>A candy-bright revival</h4>
+              <p>A playful new look &amp; menu — same corner, same beans, brighter than ever.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================== Food gallery ===================== -->
+      <section id="gallery">
+        <div class="wrap">
+          <div class="section-head reveal">
+            <p class="kicker">Straight From Our Kitchen</p>
+            <h2>Food made to be photographed — then devoured.</h2>
+            <p>Every plate leaves our pass glowing with colour. Here's a peek at what's steaming, dripping and sizzling today.</p>
+          </div>
+          <div class="gallery-grid reveal">
+            <div class="g-item g-tall g-wide">
+              <img
+                src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=900&q=80"
+                alt="A vibrant plated dish with fresh herbs"
+                loading="lazy"
+              />
+              <span class="cap">Garden Harvest Bowl</span>
+            </div>
+            <div class="g-item">
+              <img
+                src="https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?auto=format&fit=crop&w=500&q=80"
+                alt="Stack of fluffy pancakes with syrup"
+                loading="lazy"
+              />
+              <span class="cap">Jaggery Pancakes</span>
+            </div>
+            <div class="g-item">
+              <img
+                src="https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&fit=crop&w=500&q=80"
+                alt="Fresh margherita pizza"
+                loading="lazy"
+              />
+              <span class="cap">Neem-Wood Pizza</span>
+            </div>
+            <div class="g-item g-tall">
+              <img
+                src="https://images.unsplash.com/photo-1551024601-bec78aea704b?auto=format&fit=crop&w=500&q=80"
+                alt="Colourful dessert with berries"
+                loading="lazy"
+              />
+              <span class="cap">Rose &amp; Pistachio Cake</span>
+            </div>
+            <div class="g-item">
+              <img
+                src="https://images.unsplash.com/photo-1484723091739-30a097e8f929?auto=format&fit=crop&w=500&q=80"
+                alt="Avocado toast with egg"
+                loading="lazy"
+              />
+              <span class="cap">Masala Avocado Toast</span>
+            </div>
+            <div class="g-item g-wide">
+              <img
+                src="https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=900&q=80"
+                alt="Pizza being served on a rustic table"
+                loading="lazy"
+              />
+              <span class="cap">Shareable Stupa Platter</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================== Menu preview ===================== -->
+      <section class="menu" id="menu">
+        <div class="wrap">
+          <div class="section-head reveal">
+            <p class="kicker">Menu Preview</p>
+            <h2>A little taste of what's on the counter.</h2>
+            <p>Signature pours and plates from the Coffee Trading Co kitchen. Tap “Order Food” to open the full candy-coloured menu.</p>
+          </div>
+
+          <div class="menu-cards">
+            <article class="m-card reveal">
+              <div class="m-photo">
+                <img src="https://images.unsplash.com/photo-1572442388796-11668a67e53d?auto=format&fit=crop&w=600&q=80" alt="Filter coffee in a traditional tumbler" loading="lazy" />
+                <span class="m-tag" style="--c: var(--candy-2)">House Favourite</span>
+              </div>
+              <div class="m-body">
+                <div class="m-top">
+                  <div class="m-name-row">
+                    <span class="veg-dot veg" aria-label="Vegetarian"></span>
+                    <span class="m-name">Sarnath Filter Kaapi</span>
+                  </div>
+                  <span class="m-price">₹120</span>
+                </div>
+                <p class="m-desc">Araku beans, slow-dripped and frothed with jaggery milk in a steel tumbler.</p>
+              </div>
+            </article>
+
+            <article class="m-card reveal">
+              <div class="m-photo">
+                <img src="https://images.unsplash.com/photo-1484723091739-30a097e8f929?auto=format&fit=crop&w=600&q=80" alt="Masala avocado toast" loading="lazy" />
+                <span class="m-tag" style="--c: var(--candy-4)">Fresh</span>
+              </div>
+              <div class="m-body">
+                <div class="m-top">
+                  <div class="m-name-row">
+                    <span class="veg-dot veg" aria-label="Vegetarian"></span>
+                    <span class="m-name">Masala Avocado Toast</span>
+                  </div>
+                  <span class="m-price">₹280</span>
+                </div>
+                <p class="m-desc">Sourdough, smashed avocado, chaat masala, pomegranate &amp; a soft egg.</p>
+              </div>
+            </article>
+
+            <article class="m-card reveal">
+              <div class="m-photo">
+                <img src="https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&fit=crop&w=600&q=80" alt="Wood-fired pizza" loading="lazy" />
+                <span class="m-tag" style="--c: var(--candy-7)">Wood-Fired</span>
+              </div>
+              <div class="m-body">
+                <div class="m-top">
+                  <div class="m-name-row">
+                    <span class="veg-dot veg" aria-label="Vegetarian"></span>
+                    <span class="m-name">Neem-Wood Margherita</span>
+                  </div>
+                  <span class="m-price">₹340</span>
+                </div>
+                <p class="m-desc">Blistered crust, San Marzano sauce, buffalo mozzarella &amp; basil from our pots.</p>
+              </div>
+            </article>
+
+            <article class="m-card reveal">
+              <div class="m-photo">
+                <img src="https://images.unsplash.com/photo-1551024601-bec78aea704b?auto=format&fit=crop&w=600&q=80" alt="Rose pistachio cake slice" loading="lazy" />
+                <span class="m-tag" style="--c: var(--candy-1)">Sweet</span>
+              </div>
+              <div class="m-body">
+                <div class="m-top">
+                  <div class="m-name-row">
+                    <span class="veg-dot veg" aria-label="Vegetarian"></span>
+                    <span class="m-name">Rose &amp; Pistachio Cake</span>
+                  </div>
+                  <span class="m-price">₹190</span>
+                </div>
+                <p class="m-desc">Feather-light sponge soaked in rose syrup, crushed pista &amp; dried petals.</p>
+              </div>
+            </article>
+
+            <article class="m-card reveal">
+              <div class="m-photo">
+                <img src="https://images.unsplash.com/photo-1600891964599-f61ba0e24092?auto=format&fit=crop&w=600&q=80" alt="Hearty breakfast platter" loading="lazy" />
+                <span class="m-tag" style="--c: var(--candy-6)">All Day</span>
+              </div>
+              <div class="m-body">
+                <div class="m-top">
+                  <div class="m-name-row">
+                    <span class="veg-dot nonveg" aria-label="Non-vegetarian"></span>
+                    <span class="m-name">Ganges Big Breakfast</span>
+                  </div>
+                  <span class="m-price">₹420</span>
+                </div>
+                <p class="m-desc">Eggs your way, chicken sausage, hash, grilled tomato &amp; buttered toast.</p>
+              </div>
+            </article>
+
+            <article class="m-card reveal">
+              <div class="m-photo">
+                <img src="https://images.unsplash.com/photo-1461023058943-07fcbe16d735?auto=format&fit=crop&w=600&q=80" alt="Iced coffee with cream" loading="lazy" />
+                <span class="m-tag" style="--c: var(--candy-5)">Chilled</span>
+              </div>
+              <div class="m-body">
+                <div class="m-top">
+                  <div class="m-name-row">
+                    <span class="veg-dot veg" aria-label="Vegetarian"></span>
+                    <span class="m-name">Stupa Cold Brew Float</span>
+                  </div>
+                  <span class="m-price">₹240</span>
+                </div>
+                <p class="m-desc">18-hour cold brew topped with a scoop of tender-coconut ice cream.</p>
+              </div>
+            </article>
+          </div>
+
+          <div class="menu-foot reveal">
+            <a class="candy-btn btn-grape" href="#menu">Order Food — See Full Menu 🍽️</a>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================== Chef story ===================== -->
+      <section id="chef">
+        <div class="wrap">
+          <div class="chef-grid">
+            <div class="chef-photo reveal">
+              <img
+                src="https://images.unsplash.com/photo-1577219491135-ce391730fb2c?auto=format&fit=crop&w=700&q=80"
+                alt="Chef smiling in a warm kitchen"
+                loading="lazy"
+              />
+              <div class="chef-chip">
+                <div class="n">Meera Malviya</div>
+                <div class="r">Head Chef &amp; Second-Generation Roaster</div>
+              </div>
+            </div>
+            <div class="chef-copy reveal">
+              <p class="kicker">Meet the Chef</p>
+              <h2>Grandfather's beans, Meera's imagination.</h2>
+              <p>
+                Meera grew up asleep on flour sacks behind the roaster, waking to
+                the crackle of beans and the clatter of the courtyard. She trained
+                in Lyon and cooked across Goa and Lisbon before the lane near the
+                stupa pulled her home.
+              </p>
+              <blockquote class="quote">
+                “My grandfather traded coffee in sacks. I trade it in moments — a
+                cup, a plate, an afternoon you don't want to end.”
+              </blockquote>
+              <p>
+                Her kitchen marries the spices of the Ganges plains with the
+                technique she gathered abroad: rose in the sponge, chaat masala on
+                the toast, tender coconut over the cold brew. Everything bright,
+                everything playful, everything rooted in Sarnath.
+              </p>
+              <p class="chef-sign">— with love, from our corner to your table</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================== Reservation ===================== -->
+      <section class="reserve" id="reserve">
+        <div class="wrap">
+          <div class="section-head reveal">
+            <p class="kicker">Reservations</p>
+            <h2>Save your spot in the courtyard.</h2>
+            <p>Sunset seats under the neem tree go fast. Tell us when you're coming and we'll keep a table warm.</p>
+          </div>
+
+          <div class="reserve-grid">
+            <aside class="reserve-aside reveal">
+              <h3>Good to know</h3>
+              <p>We hold reservations for 15 minutes past your time. Walk-ins are always welcome at the counter.</p>
+              <ul>
+                <li><span class="ic">🕗</span> Open daily · 7:00 AM – 10:30 PM</li>
+                <li><span class="ic">👥</span> Groups up to 12 — call ahead</li>
+                <li><span class="ic">🌅</span> Best light: 5–7 PM in the courtyard</li>
+                <li><span class="ic">🎉</span> We host readings &amp; cuppings on weekends</li>
+              </ul>
+            </aside>
+
+            <div class="reserve-card reveal">
+              <form id="reserve-form" novalidate>
+                <div class="form-grid">
+                  <div class="field">
+                    <label class="field-label" for="r-name">Name</label>
+                    <input class="text-input" id="r-name" type="text" placeholder="Your name" required />
+                  </div>
+                  <div class="field">
+                    <label class="field-label" for="r-phone">Phone</label>
+                    <input class="text-input" id="r-phone" type="tel" placeholder="+91 ..." required />
+                  </div>
+                  <div class="field">
+                    <label class="field-label" for="r-date">Date</label>
+                    <input class="text-input" id="r-date" type="date" required />
+                  </div>
+                  <div class="field">
+                    <label class="field-label" for="r-time">Time</label>
+                    <input class="text-input" id="r-time" type="time" required />
+                  </div>
+                  <div class="field">
+                    <label class="field-label" for="r-guests">Guests</label>
+                    <select class="text-input" id="r-guests">
+                      <option>1 guest</option>
+                      <option selected>2 guests</option>
+                      <option>3 guests</option>
+                      <option>4 guests</option>
+                      <option>5 guests</option>
+                      <option>6+ guests</option>
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label class="field-label" for="r-seat">Seating</label>
+                    <select class="text-input" id="r-seat">
+                      <option selected>Courtyard (neem shade)</option>
+                      <option>Indoor (AC)</option>
+                      <option>Counter / bar</option>
+                      <option>Rooftop</option>
+                    </select>
+                  </div>
+                  <div class="field full">
+                    <label class="field-label" for="r-note">Anything special?</label>
+                    <input class="text-input" id="r-note" type="text" placeholder="Birthday, allergies, window seat..." />
+                  </div>
+                </div>
+                <button class="candy-btn btn-pink reserve-submit" type="submit">Request a Table 🌸</button>
+                <p class="reserve-note">No payment needed — we'll text you a confirmation.</p>
+                <div class="reserve-ok" id="reserve-ok">🎉 Thank you! Your table request is in — we'll confirm by text shortly.</div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================== Location / map ===================== -->
+      <section id="visit">
+        <div class="wrap">
+          <div class="section-head reveal">
+            <p class="kicker">Find Us</p>
+            <h2>A two-minute walk from the Dhamek Stupa.</h2>
+            <p>Follow the smell of roasting beans down the lane — we're the bright corner with the neem tree out front.</p>
+          </div>
+
+          <div class="loc-grid">
+            <div class="loc-info reveal">
+              <div class="loc-card" style="--c1: var(--candy-1); --c2: var(--candy-6)">
+                <span class="ic">📍</span>
+                <div>
+                  <h4>Address</h4>
+                  <p>Dharmapala Road, near Dhamek Stupa,<br />Sarnath, Varanasi, Uttar Pradesh 221007</p>
+                </div>
+              </div>
+              <div class="loc-card" style="--c1: var(--candy-4); --c2: var(--candy-5)">
+                <span class="ic">🕗</span>
+                <div>
+                  <h4>Hours</h4>
+                  <p>Open every day<br />7:00 AM – 10:30 PM</p>
+                </div>
+              </div>
+              <div class="loc-card" style="--c1: var(--candy-2); --c2: var(--candy-7)">
+                <span class="ic">📞</span>
+                <div>
+                  <h4>Reach us</h4>
+                  <p>+91 98765 43210<br />hello@coffeetradingco.in</p>
+                </div>
+              </div>
+              <a class="candy-btn btn-sky btn-sm" href="https://www.google.com/maps/search/?api=1&query=Dhamek+Stupa+Sarnath+Varanasi" target="_blank" rel="noopener">Get Directions →</a>
+            </div>
+
+            <div class="map-frame reveal">
+              <iframe
+                title="Map to Coffee Trading Co, Sarnath"
+                src="https://www.google.com/maps?q=Dhamek%20Stupa%20Sarnath%20Varanasi&output=embed"
+                loading="lazy"
+                referrerpolicy="no-referrer-when-downgrade"
+                allowfullscreen
+              ></iframe>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- ===================== Footer ===================== -->
+    <footer class="site-footer">
+      <div class="wrap">
+        <div class="footer-grid">
+          <div class="footer-brand">
+            <a class="brand" href="#top">
+              <span class="brand-bean" aria-hidden="true">☕</span>
+              <span class="brand-name">Coffee <em>Trading</em> Co</span>
+            </a>
+            <p>Roasting joy on the same Sarnath corner since 1987. Single-origin coffee, playful plates, and afternoons that linger.</p>
+          </div>
+          <div>
+            <h4>Explore</h4>
+            <div class="footer-links">
+              <a href="#story">Our Story</a>
+              <a href="#menu">Menu</a>
+              <a href="#chef">The Chef</a>
+              <a href="#visit">Visit Us</a>
+            </div>
+          </div>
+          <div>
+            <h4>Visit</h4>
+            <div class="footer-links">
+              <a href="#visit">Dharmapala Road, Sarnath</a>
+              <a href="#visit">Varanasi, UP 221007</a>
+              <a href="tel:+919876543210">+91 98765 43210</a>
+              <a href="mailto:hello@coffeetradingco.in">hello@coffeetradingco.in</a>
+            </div>
+          </div>
+        </div>
+        <div class="footer-bottom">
+          <span>© 1987–2026 Coffee Trading Co. All rights reserved.</span>
+          <span>Made with ☕ &amp; a little candy in Sarnath, Varanasi.</span>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+      // Reveal-on-scroll
+      (function () {
+        var els = document.querySelectorAll('.reveal');
+        if (!('IntersectionObserver' in window)) {
+          els.forEach(function (el) { el.classList.add('in'); });
+          return;
+        }
+        var io = new IntersectionObserver(
+          function (entries) {
+            entries.forEach(function (e) {
+              if (e.isIntersecting) {
+                e.target.classList.add('in');
+                io.unobserve(e.target);
+              }
+            });
+          },
+          { threshold: 0.12, rootMargin: '0px 0px -40px 0px' }
+        );
+        els.forEach(function (el) { io.observe(el); });
+      })();
+
+      // Reservation form (dummy — no backend)
+      (function () {
+        var form = document.getElementById('reserve-form');
+        var ok = document.getElementById('reserve-ok');
+        if (!form) return;
+        var dateInput = document.getElementById('r-date');
+        if (dateInput) dateInput.min = new Date().toISOString().split('T')[0];
+        form.addEventListener('submit', function (e) {
+          e.preventDefault();
+          if (!form.checkValidity()) {
+            form.reportValidity();
+            return;
+          }
+          ok.style.display = 'block';
+          form.querySelector('button[type="submit"]').textContent = 'Table Requested ✓';
+          ok.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        });
+      })();
+    </script>
+  </body>
+</html>

@@ -8,6 +8,9 @@ import DashboardCustomer from './pages/DashboardCustomer'
 import PersonalisedMenu from './pages/PersonalisedMenu'
 import FullMenu from './pages/FullMenu'
 import BaristaChat from './pages/BaristaChat'
+import SnakeGame from './pages/SnakeGame'
+import GameStats from './pages/GameStats'
+import GamePopup from './components/GamePopup'
 
 type Screen =
   | 'login'
@@ -17,6 +20,8 @@ type Screen =
   | 'menu'
   | 'fullmenu'
   | 'chat'
+  | 'game'
+  | 'gamestats'
 
 function App() {
   // A returning visitor with a saved token skips straight to the dashboard.
@@ -26,6 +31,8 @@ function App() {
   const [email, setEmail] = useState('')
   const [name, setName] = useState<string | null>(null)
   const [selection, setSelection] = useState<Tag[]>([])
+  // The Play button in the header opens the game lobby popup over any screen.
+  const [showGamePopup, setShowGamePopup] = useState(false)
 
   return (
     <div className="app">
@@ -62,6 +69,7 @@ function App() {
           greetingName={name}
           onViewMenu={() => setScreen('fullmenu')}
           onOpenChat={() => setScreen('chat')}
+          onPlay={() => setShowGamePopup(true)}
           onGoAhead={(chosen) => {
             setSelection(chosen)
             setScreen('menu')
@@ -86,6 +94,26 @@ function App() {
 
       {screen === 'fullmenu' && (
         <FullMenu onBack={() => setScreen('dashboard')} />
+      )}
+
+      {screen === 'game' && <SnakeGame onBack={() => setScreen('dashboard')} />}
+
+      {screen === 'gamestats' && (
+        <GameStats onBack={() => setScreen('dashboard')} />
+      )}
+
+      {showGamePopup && (
+        <GamePopup
+          onClose={() => setShowGamePopup(false)}
+          onViewStats={() => {
+            setShowGamePopup(false)
+            setScreen('gamestats')
+          }}
+          onPlay={() => {
+            setShowGamePopup(false)
+            setScreen('game')
+          }}
+        />
       )}
     </div>
   )

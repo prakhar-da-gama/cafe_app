@@ -78,16 +78,6 @@ export default function FullMenu({ onBack }: Props) {
     [menu, activeCat],
   )
 
-  // A random candy colour (1-8) per item for its add-to-cart button. Picked once
-  // when the menu loads so it stays put across re-renders, but is fresh each visit.
-  const addCandy = useMemo(() => {
-    const m: Record<number, number> = {}
-    for (const c of menu)
-      for (const s of c.subcategories)
-        for (const it of s.items) m[it.id] = Math.floor(Math.random() * 8) + 1
-    return m
-  }, [menu])
-
   return (
     <div className="screen full-menu">
       <CafeHeader menuActive onBack={onBack} />
@@ -181,18 +171,10 @@ export default function FullMenu({ onBack }: Props) {
                         <button
                           type="button"
                           className="dish-add"
-                          data-candy={addCandy[item.id]}
                           aria-label={`Add ${item.name} to cart`}
                           onClick={() => quickAdd(item, candy)}
                         >
-                          <svg viewBox="0 0 24 24" width="20" height="20" fill="none">
-                            <path
-                              d="M12 5v14M5 12h14"
-                              stroke="currentColor"
-                              strokeWidth="2.6"
-                              strokeLinecap="round"
-                            />
-                          </svg>
+                          Cart
                         </button>
                       )}
                       {!item.is_available && (

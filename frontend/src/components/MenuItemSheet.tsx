@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from 'react'
-import { addItemToCart, money, signedMoney, type MenuItem } from '../api'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { addItemToCart, getItem, money, signedMoney, type MenuItem } from '../api'
 import DishPhoto from './DishPhoto'
 
 interface Props {
@@ -20,6 +20,37 @@ export default function MenuItemSheet({ item, candy, onClose, onAdded }: Props) 
   const [toppingIds, setToppingIds] = useState<Set<number>>(new Set())
   const [error, setError] = useState<string | null>(null)
   const [adding, setAdding] = useState(false)
+  // The description is not part of the menu listing; fetch it for this dish.
+  const [description, setDescription] = useState<string | null>(
+    item.description ?? null,
+  )
+  // The description panel inside the scrollable image box, so the hint can
+  // scroll it into view on tap.
+  const descRef = useRef<HTMLDivElement>(null)
+
+  const scrollToDescription = () =>
+    descRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+
+  // Horizontally-swipeable gallery of the item's photos. At least one "slot"
+  // so items with no photo still render the candy placeholder.
+  const photos = item.photos.length > 0 ? item.photos : ['']
+  const galleryRef = useRef<HTMLDivElement>(null)
+  const [photoIndex, setPhotoIndex] = useState(0)
+
+  // Track which photo is centred as the user swipes, for the dot indicator.
+  const onGalleryScroll = () => {
+    const el = galleryRef.current
+    if (!el) return
+    setPhotoIndex(Math.round(el.scrollLeft / el.clientWidth))
+  }
+
+  // Arrow taps (desktop) slide the strip one photo over; touch swipe is native.
+  const slideTo = (i: number) => {
+    const el = galleryRef.current
+    if (!el) return
+    const next = Math.max(0, Math.min(photos.length - 1, i))
+    el.scrollTo({ left: next * el.clientWidth, behavior: 'smooth' })
+  }
 
   // A random candy colour for the add-to-cart button, fresh each time a dish opens.
   const btnColor = useMemo(() => {
@@ -62,6 +93,19 @@ export default function MenuItemSheet({ item, candy, onClose, onAdded }: Props) 
     return sum
   }, [item, variantId, toppingIds])
 
+  // Pull the full detail (notably the description) for this dish on open.
+  useEffect(() => {
+    let alive = true
+    getItem(item.id)
+      .then((detail) => alive && setDescription(detail.description ?? null))
+      .catch(() => {
+        /* a missing description shouldn't block ordering; ignore */
+      })
+    return () => {
+      alive = false
+    }
+  }, [item.id])
+
   // Close on Escape and lock the page scroll while the sheet is open.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose()
@@ -99,12 +143,104 @@ export default function MenuItemSheet({ item, candy, onClose, onAdded }: Props) 
           </svg>
         </button>
 
-        <DishPhoto
-          item={item}
-          candy={candy}
-          className="sheet-photo"
-          size={96}
-        />
+        {/* The image space scrolls two ways: swipe left/right to flip between
+            photos, scroll down to slide the photo away and reveal the text —
+            all inside this one fixed box. */}
+        <div className="sheet-media">
+          <div className="sheet-stage">
+            <div
+              className="sheet-gallery"
+              ref={galleryRef}
+              onScroll={onGalleryScroll}
+            >
+              {photos.map((src, i) => (
+                <DishPhoto
+                  key={i}
+                  item={item}
+                  candy={candy}
+                  src={src}
+                  className="sheet-photo"
+                  size={96}
+                />
+              ))}
+            </div>
+
+            {photos.length > 1 && (
+              <>
+                {photoIndex > 0 && (
+                  <button
+                    type="button"
+                    className="sheet-nav sheet-nav-prev"
+                    onClick={() => slideTo(photoIndex - 1)}
+                    aria-label="Previous photo"
+                  >
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none">
+                      <path
+                        d="M15 5l-7 7 7 7"
+                        stroke="currentColor"
+                        strokeWidth="2.4"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </button>
+                )}
+                {photoIndex < photos.length - 1 && (
+                  <button
+                    type="button"
+                    className="sheet-nav sheet-nav-next"
+                    onClick={() => slideTo(photoIndex + 1)}
+                    aria-label="Next photo"
+                  >
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none">
+                      <path
+                        d="M9 5l7 7-7 7"
+                        stroke="currentColor"
+                        strokeWidth="2.4"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </button>
+                )}
+                <div className="sheet-dots" aria-hidden="true">
+                  {photos.map((_, i) => (
+                    <span
+                      key={i}
+                      className={i === photoIndex ? 'dot on' : 'dot'}
+                    />
+                  ))}
+                </div>
+              </>
+            )}
+
+            {description && (
+              <button
+                type="button"
+                className="sheet-scroll-hint"
+                onClick={scrollToDescription}
+                aria-label="Show details"
+              >
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none">
+                  <path
+                    d="M7 10l5 5 5-5"
+                    stroke="currentColor"
+                    strokeWidth="2.2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+                Details
+              </button>
+            )}
+          </div>
+
+          {description && (
+            <div className="sheet-media-desc" ref={descRef}>
+              <p className="sheet-desc">{description}</p>
+            </div>
+          )}
+        </div>
 
         <div className="sheet-body">
           <div className="sheet-head">
@@ -121,10 +257,6 @@ export default function MenuItemSheet({ item, candy, onClose, onAdded }: Props) 
               <span className="sold-pill">Sold out</span>
             )}
           </div>
-
-          {item.description && (
-            <p className="sheet-desc">{item.description}</p>
-          )}
 
           {item.variants.length > 0 && (
             <div className="opt-block">

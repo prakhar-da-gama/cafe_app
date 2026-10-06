@@ -4,10 +4,11 @@ interface Props {
   onViewMenu?: () => void
   menuActive?: boolean
   onBack?: () => void
+  onPlay?: () => void
 }
 
-/** Shared header: optional back button, brand name, "View full menu" action. */
-export default function CafeHeader({ onViewMenu, menuActive, onBack }: Props) {
+/** Shared header: optional back button, brand name, Play + "View full menu". */
+export default function CafeHeader({ onViewMenu, menuActive, onBack, onPlay }: Props) {
   // Frontend-only logout: drop the JWT and reload back to the login screen.
   const handleLogout = () => {
     clearToken()
@@ -42,13 +43,21 @@ export default function CafeHeader({ onViewMenu, menuActive, onBack }: Props) {
           </button>
         </div>
       </div>
-      <button
-        type="button"
-        className={menuActive ? 'menu-btn menu-btn-active' : 'menu-btn'}
-        onClick={onViewMenu}
-      >
-        View full menu
-      </button>
+      <div className="hdr-actions">
+        {onPlay && (
+          <button type="button" className="play-btn" onClick={onPlay}>
+            <span className="play-dot" aria-hidden="true" />
+            Play
+          </button>
+        )}
+        <button
+          type="button"
+          className={menuActive ? 'menu-btn menu-btn-active' : 'menu-btn'}
+          onClick={onViewMenu}
+        >
+          View full menu
+        </button>
+      </div>
     </header>
   )
 }

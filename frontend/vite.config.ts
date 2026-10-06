@@ -7,7 +7,8 @@ export default defineConfig({
   server: {
     proxy: {
       // Forward API calls to the FastAPI backend during development.
-      '/api': 'http://localhost:8000',
+      // ws: true also forwards the game WebSocket at /api/game/ws.
+      '/api': { target: 'http://localhost:8000', ws: true },
     },
   },
 })

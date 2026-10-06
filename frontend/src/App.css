@@ -542,14 +542,10 @@
   50% { transform: translateY(-3px); }
 }
 .tag-bubble.tag-on {
-  /* Selected: the same candy colour, now rich and dark, with white text */
+  /* Selected: solid, rich candy colour with white text */
   color: #fff;
   border-color: transparent;
-  background: linear-gradient(
-    145deg,
-    var(--candy),
-    color-mix(in srgb, var(--candy) 52%, #000)
-  );
+  background: var(--candy);
   box-shadow: 0 8px 18px color-mix(in srgb, var(--candy) 45%, transparent);
   animation: pop 0.35s ease;
 }

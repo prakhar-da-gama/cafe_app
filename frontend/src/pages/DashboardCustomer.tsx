@@ -44,10 +44,6 @@ export default function DashboardCustomer({
     )
   }
 
-  function candyIndex(id: number): number {
-    return (selected.indexOf(id) % CANDY_COUNT) + 1
-  }
-
   const chosen = selected
     .map((id) => tags.find((t) => t.id === id))
     .filter((t): t is Tag => Boolean(t))
@@ -76,7 +72,7 @@ export default function DashboardCustomer({
               type="button"
               key={t.id}
               className={on ? 'tag-bubble tag-on' : 'tag-bubble'}
-              data-candy={on ? candyIndex(t.id) : undefined}
+              data-candy={(i % CANDY_COUNT) + 1}
               style={{ ['--i']: i } as React.CSSProperties}
               onClick={() => toggle(t.id)}
               aria-pressed={on}

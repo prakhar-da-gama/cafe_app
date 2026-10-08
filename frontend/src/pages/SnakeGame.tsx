@@ -8,7 +8,7 @@ interface Props {
 // Server-side board dimensions (see backend/app/routers/game.py).
 const GRID_W = 44
 const GRID_H = 44
-const CELL = 11 // logical px per cell; the canvas is scaled to fit via CSS.
+const CELL = 13 // logical px per cell; the canvas is scaled to fit via CSS.
 const BG = '#ffd9b3' // peach
 
 interface PlayerState {
@@ -47,25 +47,54 @@ export default function SnakeGame({ onBack }: Props) {
 
   // ---- WebSocket lifecycle ----
   useEffect(() => {
-    const ws = new WebSocket(gameSocketUrl())
-    wsRef.current = ws
+    let ws: WebSocket | null = null
+    // Open on a later macrotask so React StrictMode's dev-only
+    // mount/unmount/remount cancels this first attempt before it connects.
+    // Otherwise we'd open two sockets: a phantom second snake whose welcome
+    // could set `youId` to a pid that then disconnects, leaving the score at 0.
+    const timer = window.setTimeout(() => {
+      ws = new WebSocket(gameSocketUrl())
+      wsRef.current = ws
 
-    ws.onopen = () => setStatus('open')
-    ws.onclose = () => setStatus('closed')
-    ws.onmessage = (ev) => {
-      const msg = JSON.parse(ev.data)
-      if (msg.type === 'welcome') {
-        setYouId(msg.you)
-        setSnap({ grid: msg.grid, food: msg.food, players: msg.players })
-      } else if (msg.type === 'state') {
-        setSnap({ grid: msg.grid, food: msg.food, players: msg.players })
+      ws.onopen = () => setStatus('open')
+      ws.onclose = () => setStatus('closed')
+      ws.onmessage = (ev) => {
+        const msg = JSON.parse(ev.data)
+        if (msg.type === 'welcome') {
+          setYouId(msg.you)
+          setSnap({ grid: msg.grid, food: msg.food, players: msg.players })
+        } else if (msg.type === 'state') {
+          setSnap({ grid: msg.grid, food: msg.food, players: msg.players })
+        }
       }
-    }
+    }, 60)
 
     return () => {
-      ws.onclose = null
-      ws.close()
+      window.clearTimeout(timer)
+      if (ws) {
+        // Detach handlers so a socket closing during StrictMode remount can't
+        // mutate state after a fresh one has taken over.
+        ws.onopen = null
+        ws.onmessage = null
+        ws.onclose = null
+        ws.close()
+      }
     }
+  }, [])
+
+  // ---- Browser Back leaves the game (-> dashboard), not the whole app ----
+  const onBackRef = useRef(onBack)
+  onBackRef.current = onBack
+  useEffect(() => {
+    // Push one history entry so the next Back press pops back to the dashboard
+    // instead of navigating away from the SPA. Guard against a double push
+    // under StrictMode's remount.
+    if (!(window.history.state && window.history.state.snakeGame)) {
+      window.history.pushState({ snakeGame: true }, '')
+    }
+    const onPop = () => onBackRef.current()
+    window.addEventListener('popstate', onPop)
+    return () => window.removeEventListener('popstate', onPop)
   }, [])
 
   const send = useCallback((payload: object) => {
@@ -157,7 +186,9 @@ export default function SnakeGame({ onBack }: Props) {
       const [hx, hy] = p.body[0]
       const cx = hx * CELL + CELL / 2
       const cy = hy * CELL + CELL / 2
-      const r = CELL * 0.62
+      // The head is drawn larger than a body dot so the face/photo is clear,
+      // but collisions still use the single head cell (see the backend engine).
+      const r = CELL * 0.95
       // Head disc in the snake's colour.
       ctx.fillStyle = p.color
       ctx.beginPath()
@@ -224,7 +255,7 @@ export default function SnakeGame({ onBack }: Props) {
   return (
     <div className="screen snake-screen">
       <div className="snake-topbar">
-        <button type="button" className="hdr-back" onClick={onBack} aria-label="Leave game">
+        <button type="button" className="hdr-back" onClick={() => window.history.back()} aria-label="Leave game">
           <svg viewBox="0 0 24 24" width="20" height="20" fill="none">
             <path d="M15 6l-6 6 6 6" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
@@ -255,7 +286,7 @@ export default function SnakeGame({ onBack }: Props) {
         {status === 'closed' && (
           <div className="snake-veil">
             Disconnected.
-            <button className="candy-btn btn-sun" onClick={onBack}>
+            <button className="candy-btn btn-sun" onClick={() => window.history.back()}>
               Back
             </button>
           </div>
@@ -273,7 +304,7 @@ export default function SnakeGame({ onBack }: Props) {
                 >
                   Play again
                 </button>
-                <button className="ghost-btn" onClick={onBack}>
+                <button className="ghost-btn" onClick={() => window.history.back()}>
                   Exit
                 </button>
               </div>

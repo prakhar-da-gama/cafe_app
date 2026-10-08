@@ -35,13 +35,38 @@ def get_item(db: Session, item_id: int) -> models.Item | None:
     return db.get(models.Item, item_id)
 
 
-def get_full_menu(db: Session) -> list[models.Category]:
+def get_full_menu(
+    db: Session, tag_ids: list[int] | None = None
+) -> list[schemas.CategoryFull] | list[models.Category]:
     """All categories ordered for display, with subcategories -> items ->
-    toppings/variants eagerly loaded via the relationships' selectin loading."""
+    toppings/variants eagerly loaded via the relationships' selectin loading.
+
+    When ``tag_ids`` is given, the tree is filtered down to items whose tags
+    overlap the requested ones, pruning subcategories and categories that end
+    up empty. The shape of the response is identical either way — the only
+    difference is which items come back. Filtering happens on detached Pydantic
+    copies so the loaded ORM relationships are never mutated (which would risk
+    orphaning rows on the next autoflush)."""
     stmt = select(models.Category).order_by(
         models.Category.display_order, models.Category.name
     )
-    return list(db.execute(stmt).scalars().all())
+    categories = list(db.execute(stmt).scalars().all())
+    if not tag_ids:
+        return categories
+
+    wanted = set(tag_ids)
+    pruned: list[schemas.CategoryFull] = []
+    for category in categories:
+        cat = schemas.CategoryFull.model_validate(category)
+        subs = []
+        for sub in cat.subcategories:
+            sub.items = [i for i in sub.items if wanted & set(i.tag_ids)]
+            if sub.items:
+                subs.append(sub)
+        if subs:
+            cat.subcategories = subs
+            pruned.append(cat)
+    return pruned
 
 
 def list_items_by_tags(

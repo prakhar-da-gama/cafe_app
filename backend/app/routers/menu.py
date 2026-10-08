@@ -26,14 +26,19 @@ def create_menu_item(payload: schemas.ItemCreate, db: Session = Depends(get_db))
 
 @router.get("/get-full-menu", response_model=schemas.FullMenuResponse)
 def get_full_menu(
+    tag_ids: list[int] = Query(default=[]),
     db: Session = Depends(get_db),
     claims: dict[str, Any] = Depends(require_jwt),
 ):
     """Full nested menu: categories -> subcategories -> items -> toppings/variants,
     plus the number of line items currently in the user's cart.
-    Requires a valid JWT bearer token."""
+    Requires a valid JWT bearer token.
+
+    Pass tag_ids repeated in the query string (e.g. ?tag_ids=1&tag_ids=4) to get
+    the personalised menu: the same nested shape, filtered to items matching any
+    of those tags. With no tag_ids, returns the whole menu."""
     return {
-        "categories": crud.get_full_menu(db),
+        "categories": crud.get_full_menu(db, tag_ids=tag_ids),
         "cart_count": crud.get_cart_item_count(db, int(claims["sub"])),
     }
 

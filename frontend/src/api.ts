@@ -262,27 +262,19 @@ export function listTags(): Promise<Tag[]> {
 
 // ---- Menu ----
 
-export function getMenuByTags(
-  tagIds: number[],
-  page = 1,
-  pageSize = 6,
-): Promise<PaginatedItems> {
-  const params = new URLSearchParams()
-  for (const id of tagIds) params.append('tag_ids', String(id))
-  params.set('page', String(page))
-  params.set('page_size', String(pageSize))
-  return fetch(`/api/menu/by-tags?${params.toString()}`, {
-    headers: authHeaders(),
-  }).then((r) => handle<PaginatedItems>(r))
-}
-
 // The full nested menu: categories -> subcategories -> items (+toppings/variants),
 // plus the current cart line-item count. The per-item `description` is omitted
 // here to keep the payload small; fetch it with getItem() when a dish is opened.
-export function getFullMenu(): Promise<FullMenuResponse> {
-  return fetch('/api/menu/get-full-menu', { headers: authHeaders() }).then((r) =>
-    handle<FullMenuResponse>(r),
-  )
+//
+// Pass tag ids to get the personalised menu: the exact same nested response,
+// filtered to items matching any of those tags. Omit them for the whole menu.
+export function getFullMenu(tagIds: number[] = []): Promise<FullMenuResponse> {
+  const params = new URLSearchParams()
+  for (const id of tagIds) params.append('tag_ids', String(id))
+  const qs = params.toString()
+  return fetch(`/api/menu/get-full-menu${qs ? `?${qs}` : ''}`, {
+    headers: authHeaders(),
+  }).then((r) => handle<FullMenuResponse>(r))
 }
 
 // Full detail for a single dish, including its description. Called when a dish

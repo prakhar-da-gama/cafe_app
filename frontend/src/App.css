@@ -1483,7 +1483,9 @@
 }
 .snake-board-wrap {
   position: relative;
-  width: 100%;
+  /* Stretch into the app's 18px side padding so the board is a little larger. */
+  width: calc(100% + 36px);
+  margin: 0 -18px;
   aspect-ratio: 1 / 1;
   border-radius: 20px;
   overflow: hidden;

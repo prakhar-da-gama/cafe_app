@@ -188,48 +188,67 @@ def _respawn(player: Player) -> None:
 
 
 def _step() -> None:
-    """Advance every alive snake by one cell and resolve collisions/eating."""
+    """Advance every alive snake by one cell and resolve collisions/eating.
+
+    Walls aren't lethal: a snake that would leave the board reverses, so its
+    head bounces straight back the opposite way. Snake bodies pass through one
+    another -- the only lethal event is a head meeting another snake's head.
+    """
     alive = [p for p in room.players.values() if p.alive]
     if not alive:
         return
 
-    # Snapshot of every occupied body cell before anyone moves.
-    bodies: set[tuple[int, int]] = set()
+    # 1. Apply queued turns, and bounce any snake that would leave the board.
     for p in alive:
-        for c in p.body:
-            bodies.add((c[0], c[1]))
-
-    new_heads: dict[str, tuple[int, int]] = {}
-    for p in alive:
-        # Apply the queued turn unless it's a 180° reversal.
+        # Honour the queued turn unless it's a 180° reversal of the current one.
         if (p.pending[0] != -p.direction[0]) or (p.pending[1] != -p.direction[1]):
             p.direction = p.pending
         hx, hy = p.body[0]
+        nx, ny = hx + p.direction[0], hy + p.direction[1]
+        if not (0 <= nx < GRID_W and 0 <= ny < GRID_H):
+            # Reverse the whole snake so the head leads back inward, opposite
+            # to its previous motion (a wall "bounce"). Reversing the body is
+            # the only way to flip direction without self-collision.
+            p.body.reverse()
+            p.direction = (-p.direction[0], -p.direction[1])
+            p.pending = p.direction
+
+    # 2. Where each head is now, and where it's about to land.
+    old_heads: dict[str, tuple[int, int]] = {}
+    new_heads: dict[str, tuple[int, int]] = {}
+    for p in alive:
+        hx, hy = p.body[0]
+        old_heads[p.id] = (hx, hy)
         new_heads[p.id] = (hx + p.direction[0], hy + p.direction[1])
 
-    # Head-on collisions: two snakes aiming at the same cell both die.
-    head_counts: dict[tuple[int, int], int] = {}
+    # 3. Head-vs-head deaths. A snake dies if its new head lands on the same
+    #    cell as another head's destination (both approached -> both die) or on
+    #    the cell another head currently occupies (it approached that head).
+    dest_count: dict[tuple[int, int], int] = {}
     for h in new_heads.values():
-        head_counts[h] = head_counts.get(h, 0) + 1
+        dest_count[h] = dest_count.get(h, 0) + 1
 
-    dead: list[Player] = []
+    dead_ids: set[str] = set()
     for p in alive:
-        nx, ny = new_heads[p.id]
-        hit_wall = not (0 <= nx < GRID_W and 0 <= ny < GRID_H)
-        hit_body = (nx, ny) in bodies  # includes self (except the vacating tail, handled loosely)
-        hit_head = head_counts[(nx, ny)] > 1
-        if hit_wall or hit_body or hit_head:
-            dead.append(p)
+        nh = new_heads[p.id]
+        if dest_count[nh] > 1:
+            dead_ids.add(p.id)
+            continue
+        for q in alive:
+            if q.id != p.id and nh == old_heads[q.id]:
+                dead_ids.add(p.id)
+                break
 
-    for p in dead:
-        p.alive = False
-        if p.stat_id is not None:
-            _save_score(p.stat_id, p.score)
-        # Clear the body so a dead snake stops blocking the board and stops
-        # being drawn; the client shows a "Game over" overlay instead.
-        p.body = []
+    for p in alive:
+        if p.id in dead_ids:
+            p.alive = False
+            if p.stat_id is not None:
+                _save_score(p.stat_id, p.score)
+            # Clear the body so a dead snake stops being drawn; the client
+            # shows a "Game over" overlay instead.
+            p.body = []
 
-    # Move survivors.
+    # 4. Move the survivors and resolve food.
     ate = False
     for p in alive:
         if not p.alive:

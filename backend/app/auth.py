@@ -67,6 +67,20 @@ def require_jwt(
     return payload
 
 
+def require_manager(claims: dict[str, Any] = Depends(require_jwt)) -> dict[str, Any]:
+    """Like require_jwt, but also enforces the token belongs to a manager.
+
+    The user type is carried in the token's `type` claim (see
+    create_access_token), so this needs no extra database round-trip.
+    """
+    if claims.get("type") != models.UserType.manager.value:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Manager access required",
+        )
+    return claims
+
+
 def get_current_user(
     claims: dict[str, Any] = Depends(require_jwt),
     db: Session = Depends(get_db),

@@ -33,6 +33,11 @@ async def lifespan(app: FastAPI):
             conn.execute(
                 text("CREATE INDEX ix_orders_user_status ON orders (user_id, status)")
             )
+    if "ix_orders_status_created" not in order_indexes:
+        with engine.begin() as conn:
+            conn.execute(
+                text("CREATE INDEX ix_orders_status_created ON orders (status, created_at)")
+            )
     yield
 
 

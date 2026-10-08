@@ -177,6 +177,77 @@ def delete_item(db: Session, item: models.Item) -> None:
     db.commit()
 
 
+def set_item_availability(
+    db: Session, item: models.Item, is_available: bool
+) -> models.Item:
+    """Manager action: flip whether an item is in stock (orderable)."""
+    item.is_available = is_available
+    db.commit()
+    db.refresh(item)
+    return item
+
+
+def list_out_of_stock_items(db: Session) -> list[models.Item]:
+    """Active items that are currently out of stock, by name."""
+    stmt = (
+        select(models.Item)
+        .where(
+            models.Item.is_active.is_(True),
+            models.Item.is_available.is_(False),
+        )
+        .order_by(models.Item.name)
+    )
+    return list(db.execute(stmt).scalars().all())
+
+
+def list_out_of_stock_toppings(db: Session) -> list[dict]:
+    """Out-of-stock toppings grouped under each (active) item they belong to.
+
+    A topping can be offered by several items, so it may appear under more than
+    one group. Groups and their toppings are sorted by name.
+    """
+    toppings = (
+        db.execute(
+            select(models.Topping).where(
+                models.Topping.is_active.is_(True),
+                models.Topping.is_available.is_(False),
+            )
+        )
+        .scalars()
+        .all()
+    )
+
+    groups: dict[int, dict] = {}
+    for topping in toppings:
+        for item in topping.items:
+            if not item.is_active:
+                continue
+            group = groups.get(item.id)
+            if group is None:
+                group = {"item": item, "toppings": []}
+                groups[item.id] = group
+            group["toppings"].append(topping)
+
+    result = sorted(groups.values(), key=lambda g: g["item"].name)
+    for group in result:
+        group["toppings"].sort(key=lambda t: t.name)
+    return result
+
+
+def get_topping(db: Session, topping_id: int) -> models.Topping | None:
+    return db.get(models.Topping, topping_id)
+
+
+def set_topping_availability(
+    db: Session, topping: models.Topping, is_available: bool
+) -> models.Topping:
+    """Manager action: flip whether a topping is in stock."""
+    topping.is_available = is_available
+    db.commit()
+    db.refresh(topping)
+    return topping
+
+
 # ---- OTP ----
 
 
@@ -215,6 +286,16 @@ def delete_otps(db: Session, otps: list[models.Otp]) -> None:
 def get_user_by_email(db: Session, email: str) -> models.User | None:
     stmt = select(models.User).where(models.User.email_id == email)
     return db.execute(stmt).scalars().first()
+
+
+def manager_exists(db: Session, email: str) -> bool:
+    """True if an account with this email exists and is a manager. Backs the
+    public pre-check on the manager login page (managers can't self-sign-up)."""
+    stmt = select(models.User.id).where(
+        models.User.email_id == email,
+        models.User.user_type == models.UserType.manager,
+    )
+    return db.execute(stmt).first() is not None
 
 
 def create_otp_user(db: Session, email: str) -> models.User:
@@ -446,3 +527,62 @@ def place_order(db: Session, user_id: int) -> schemas.OrderRead | None:
     db.commit()
     db.refresh(cart)
     return _serialize_orders(db, [cart])[0]
+
+
+def list_all_orders(
+    db: Session,
+    *,
+    status: models.OrderStatus,
+    page: int = 1,
+    page_size: int = 10,
+) -> dict:
+    """A page of *every* user's orders with the given status, newest first.
+
+    Backs the manager dashboard. Pagination and the newest-first sort are both
+    pushed to the database (LIMIT/OFFSET + ORDER BY created_at DESC), and the
+    (status, created_at) index covers the filter + sort.
+    """
+    base = select(models.Order).where(models.Order.status == status)
+    total = db.execute(
+        select(func.count()).select_from(base.order_by(None).subquery())
+    ).scalar_one()
+
+    offset = (page - 1) * page_size
+    orders = list(
+        db.execute(
+            base.order_by(models.Order.created_at.desc(), models.Order.id.desc())
+            .limit(page_size)
+            .offset(offset)
+        )
+        .scalars()
+        .all()
+    )
+
+    return {
+        "items": _serialize_orders(db, orders),
+        "total": total,
+        "page": page,
+        "page_size": page_size,
+        "has_more": offset + len(orders) < total,
+    }
+
+
+def manager_update_order(
+    db: Session,
+    order: models.Order,
+    *,
+    status: models.OrderStatus | None = None,
+    payment_status: bool | None = None,
+) -> schemas.OrderRead:
+    """Apply a manager's changes to an order and return the serialized result.
+
+    Transition validity is enforced by the caller; this just persists whatever
+    fields were provided.
+    """
+    if status is not None:
+        order.status = status
+    if payment_status is not None:
+        order.payment_status = payment_status
+    db.commit()
+    db.refresh(order)
+    return _serialize_orders(db, [order])[0]

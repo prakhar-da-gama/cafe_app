@@ -2,10 +2,13 @@ import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import {
   addItemToCart,
   money,
+  setItemAvailability,
+  setToppingAvailability,
   type FullMenuResponse,
   type MenuCategory,
   type MenuItem,
 } from '../api'
+import ConfirmDialog from './ConfirmDialog'
 import DishPhoto from './DishPhoto'
 import MenuItemSheet from './MenuItemSheet'
 
@@ -22,10 +25,12 @@ interface Props {
   subhead?: ReactNode
   /** Shown when the (possibly filtered) menu comes back empty. */
   emptyText?: string
-  /** Opens the cart page (cart glyph). */
-  onOpenCart: () => void
-  /** Opens the orders page, filtered to pending (the "My orders" button). */
-  onOpenOrders: () => void
+  /** Opens the cart page (cart glyph). Omitted in manager mode. */
+  onOpenCart?: () => void
+  /** Opens the orders page (the "My orders" button). Omitted in manager mode. */
+  onOpenOrders?: () => void
+  /** Manager mode: swap add-to-cart for stock controls instead of ordering. */
+  managerMode?: boolean
 }
 
 /** Keep only the live parts of the tree: active categories/subcategories that
@@ -55,6 +60,7 @@ export default function MenuBrowser({
   emptyText = 'The menu is empty right now.',
   onOpenCart,
   onOpenOrders,
+  managerMode = false,
 }: Props) {
   const [menu, setMenu] = useState<MenuCategory[]>([])
   const [loading, setLoading] = useState(true)
@@ -65,6 +71,13 @@ export default function MenuBrowser({
   const [active, setActive] = useState<{ item: MenuItem; candy: number } | null>(
     null,
   )
+  // Pending confirm/warning popup (manager out-of-stock actions).
+  const [confirm, setConfirm] = useState<{
+    title: string
+    message: string
+    run: () => Promise<void>
+  } | null>(null)
+  const [confirmBusy, setConfirmBusy] = useState(false)
 
   useEffect(() => {
     let alive = true
@@ -101,6 +114,98 @@ export default function MenuBrowser({
     }
   }
 
+  // ---- Manager stock controls ----
+
+  // Patch one item (and the open sheet, if it's that item) inside the live tree.
+  const patchItem = (itemId: number, patch: Partial<MenuItem>) => {
+    const apply = (it: MenuItem) => (it.id === itemId ? { ...it, ...patch } : it)
+    setMenu((prev) =>
+      prev.map((c) => ({
+        ...c,
+        subcategories: c.subcategories.map((s) => ({
+          ...s,
+          items: s.items.map(apply),
+        })),
+      })),
+    )
+    setActive((a) =>
+      a && a.item.id === itemId ? { ...a, item: apply(a.item) } : a,
+    )
+  }
+
+  // Patch one topping's availability within an item (and the open sheet).
+  const patchTopping = (
+    itemId: number,
+    toppingId: number,
+    isAvailable: boolean,
+  ) => {
+    const apply = (it: MenuItem) =>
+      it.id === itemId
+        ? {
+            ...it,
+            toppings: it.toppings.map((t) =>
+              t.id === toppingId ? { ...t, is_available: isAvailable } : t,
+            ),
+          }
+        : it
+    setMenu((prev) =>
+      prev.map((c) => ({
+        ...c,
+        subcategories: c.subcategories.map((s) => ({
+          ...s,
+          items: s.items.map(apply),
+        })),
+      })),
+    )
+    setActive((a) =>
+      a && a.item.id === itemId ? { ...a, item: apply(a.item) } : a,
+    )
+  }
+
+  const changeItemAvailability = async (itemId: number, isAvailable: boolean) => {
+    await setItemAvailability(itemId, isAvailable)
+    patchItem(itemId, { is_available: isAvailable })
+  }
+
+  const changeToppingAvailability = async (
+    itemId: number,
+    toppingId: number,
+    isAvailable: boolean,
+  ) => {
+    await setToppingAvailability(toppingId, isAvailable)
+    patchTopping(itemId, toppingId, isAvailable)
+  }
+
+  // Marking out of stock needs a warning + confirm; restocking is immediate.
+  const askItemOutOfStock = (item: MenuItem) =>
+    setConfirm({
+      title: 'Mark out of stock?',
+      message: `"${item.name}" will stop being orderable by customers until you restock it.`,
+      run: () => changeItemAvailability(item.id, false),
+    })
+
+  const restockItem = async (itemId: number) => {
+    try {
+      await changeItemAvailability(itemId, true)
+    } catch (e) {
+      setError((e as Error).message)
+    }
+  }
+
+  const runConfirm = async () => {
+    if (!confirm) return
+    setConfirmBusy(true)
+    setError(null)
+    try {
+      await confirm.run()
+      setConfirm(null)
+    } catch (e) {
+      setError((e as Error).message)
+    } finally {
+      setConfirmBusy(false)
+    }
+  }
+
   const category = useMemo(
     () => menu.find((c) => c.id === activeCat) ?? null,
     [menu, activeCat],
@@ -112,30 +217,32 @@ export default function MenuBrowser({
 
       <div className="menu-head menu-head-row">
         <h1 className="menu-title">{title}</h1>
-        <div className="menu-actions">
-          <button type="button" className="orders-link" onClick={onOpenOrders}>
-            My orders
-          </button>
-          <button
-            type="button"
-            className="cart-badge cart-btn"
-            onClick={onOpenCart}
-            aria-label={`Cart: ${cartCount} items`}
-          >
-            <svg viewBox="0 0 24 24" width="24" height="24" fill="none">
-              <path
-                d="M3 4h2l2.4 12.2a1.6 1.6 0 0 0 1.57 1.3h8.1a1.6 1.6 0 0 0 1.57-1.26L21.5 8H6"
-                stroke="currentColor"
-                strokeWidth="1.9"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-              <circle cx="9.5" cy="20.5" r="1.4" fill="currentColor" />
-              <circle cx="17.5" cy="20.5" r="1.4" fill="currentColor" />
-            </svg>
-            {cartCount > 0 && <span className="cart-count">{cartCount}</span>}
-          </button>
-        </div>
+        {!managerMode && (
+          <div className="menu-actions">
+            <button type="button" className="orders-link" onClick={onOpenOrders}>
+              My orders
+            </button>
+            <button
+              type="button"
+              className="cart-badge cart-btn"
+              onClick={onOpenCart}
+              aria-label={`Cart: ${cartCount} items`}
+            >
+              <svg viewBox="0 0 24 24" width="24" height="24" fill="none">
+                <path
+                  d="M3 4h2l2.4 12.2a1.6 1.6 0 0 0 1.57 1.3h8.1a1.6 1.6 0 0 0 1.57-1.26L21.5 8H6"
+                  stroke="currentColor"
+                  strokeWidth="1.9"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+                <circle cx="9.5" cy="20.5" r="1.4" fill="currentColor" />
+                <circle cx="17.5" cy="20.5" r="1.4" fill="currentColor" />
+              </svg>
+              {cartCount > 0 && <span className="cart-count">{cartCount}</span>}
+            </button>
+          </div>
+        )}
       </div>
 
       {subhead}
@@ -209,18 +316,36 @@ export default function MenuBrowser({
                           </div>
                         </div>
                       </button>
-                      {item.is_available && (
-                        <button
-                          type="button"
-                          className="dish-add"
-                          aria-label={`Add ${item.name} to cart`}
-                          onClick={() => quickAdd(item, candy)}
-                        >
-                          Cart
-                        </button>
-                      )}
                       {!item.is_available && (
                         <span className="dish-out-tag">Sold out</span>
+                      )}
+                      {managerMode ? (
+                        <button
+                          type="button"
+                          className={
+                            item.is_available
+                              ? 'dish-add dish-oos'
+                              : 'dish-add dish-restock'
+                          }
+                          onClick={() =>
+                            item.is_available
+                              ? askItemOutOfStock(item)
+                              : restockItem(item.id)
+                          }
+                        >
+                          {item.is_available ? 'Out of stock' : 'Restock'}
+                        </button>
+                      ) : (
+                        item.is_available && (
+                          <button
+                            type="button"
+                            className="dish-add"
+                            aria-label={`Add ${item.name} to cart`}
+                            onClick={() => quickAdd(item, candy)}
+                          >
+                            Cart
+                          </button>
+                        )
                       )}
                     </div>
                   )
@@ -237,6 +362,26 @@ export default function MenuBrowser({
           candy={active.candy}
           onClose={() => setActive(null)}
           onAdded={() => setCartCount((c) => c + 1)}
+          managerMode={managerMode}
+          onSetItemAvailability={(isAvailable) =>
+            changeItemAvailability(active.item.id, isAvailable)
+          }
+          onSetToppingAvailability={(toppingId, isAvailable) =>
+            changeToppingAvailability(active.item.id, toppingId, isAvailable)
+          }
+          onRequestConfirm={(opts) => setConfirm(opts)}
+        />
+      )}
+
+      {confirm && (
+        <ConfirmDialog
+          title={confirm.title}
+          message={confirm.message}
+          confirmLabel="Mark out of stock"
+          danger
+          busy={confirmBusy}
+          onConfirm={runConfirm}
+          onCancel={() => !confirmBusy && setConfirm(null)}
         />
       )}
     </div>

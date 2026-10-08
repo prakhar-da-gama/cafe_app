@@ -3,6 +3,8 @@ from decimal import Decimal
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
+from .models import OrderStatus
+
 
 class ItemBase(BaseModel):
     subcategory_id: int
@@ -44,6 +46,12 @@ class ItemRead(ItemBase):
     topping_ids: list[int] = []
     created_at: datetime
     updated_at: datetime
+
+
+class AvailabilityUpdate(BaseModel):
+    """Manager toggle for whether an item or topping is in stock."""
+
+    is_available: bool
 
 
 # ---- Full-menu nested read schemas ----
@@ -126,6 +134,26 @@ class FullMenuResponse(BaseModel):
     cart_count: int = 0
 
 
+class ItemSummary(BaseModel):
+    """A lightweight item reference (no nested toppings/variants)."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    name: str
+    price: Decimal
+    photos: list[str] = []
+    is_veg: bool
+    is_available: bool
+
+
+class OutOfStockToppingGroup(BaseModel):
+    """The out-of-stock toppings grouped under one item they belong to."""
+
+    item: ItemSummary
+    toppings: list[ToppingRead]
+
+
 # ---- Cart ----
 
 
@@ -195,6 +223,15 @@ class PaginatedOrders(BaseModel):
     has_more: bool
 
 
+class OrderManagerUpdate(BaseModel):
+    """Manager-driven changes to an order: advance its status along the kitchen
+    workflow and/or mark it paid. Allowed status transitions are enforced by the
+    router; at least one field should be set."""
+
+    status: OrderStatus | None = None
+    payment_status: bool | None = None
+
+
 # ---- Tags ----
 
 
@@ -232,6 +269,10 @@ class VerifyOtpRequest(BaseModel):
 
 class MessageResponse(BaseModel):
     message: str
+
+
+class ExistsResponse(BaseModel):
+    exists: bool
 
 
 class VerifyOtpResponse(BaseModel):

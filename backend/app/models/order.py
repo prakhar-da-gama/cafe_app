@@ -29,8 +29,13 @@ class OrderStatus(str, enum.Enum):
 class Order(Base):
     __tablename__ = "orders"
     # Listing a user's orders is always filtered by (user_id, status) and paged
-    # on the orders table, so index that pair to keep those scans cheap.
-    __table_args__ = (Index("ix_orders_user_status", "user_id", "status"),)
+    # on the orders table, so index that pair to keep those scans cheap. The
+    # manager dashboard filters by status alone and sorts newest-first, so a
+    # (status, created_at) index backs that filter + ORDER BY + pagination.
+    __table_args__ = (
+        Index("ix_orders_user_status", "user_id", "status"),
+        Index("ix_orders_status_created", "status", "created_at"),
+    )
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     # The owning user. Identifies the cart/order (every user has an account via OTP).

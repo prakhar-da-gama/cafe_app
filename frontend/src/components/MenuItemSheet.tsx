@@ -1,5 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { addItemToCart, getItem, money, signedMoney, type MenuItem } from '../api'
+import {
+  addItemToCart,
+  getItem,
+  money,
+  signedMoney,
+  type MenuItem,
+  type Topping,
+} from '../api'
 import DishPhoto from './DishPhoto'
 
 interface Props {
@@ -9,11 +16,35 @@ interface Props {
   onClose: () => void
   /** Called after a line item is successfully added to the cart. */
   onAdded?: () => void
+  /** Manager mode: toppings become stock toggles and the footer manages stock
+   *  instead of ordering. */
+  managerMode?: boolean
+  onSetItemAvailability?: (isAvailable: boolean) => Promise<void>
+  onSetToppingAvailability?: (
+    toppingId: number,
+    isAvailable: boolean,
+  ) => Promise<void>
+  /** Ask the host to show the shared warning/confirm popup. */
+  onRequestConfirm?: (opts: {
+    title: string
+    message: string
+    run: () => Promise<void>
+  }) => void
 }
 
 /** A bottom sheet with the full detail of one dish: large photo, description,
- *  sizes (variants) and add-ons (toppings). */
-export default function MenuItemSheet({ item, candy, onClose, onAdded }: Props) {
+ *  sizes (variants) and add-ons (toppings). In manager mode it doubles as the
+ *  stock editor for the item and its toppings. */
+export default function MenuItemSheet({
+  item,
+  candy,
+  onClose,
+  onAdded,
+  managerMode = false,
+  onSetItemAvailability,
+  onSetToppingAvailability,
+  onRequestConfirm,
+}: Props) {
   // Which size (variant) is picked, and which add-ons are toggled on. The
   // displayed price reflects the base price plus whatever is selected.
   const [variantId, setVariantId] = useState<number | null>(null)
@@ -82,6 +113,44 @@ export default function MenuItemSheet({ item, candy, onClose, onAdded }: Props) 
       next.has(id) ? next.delete(id) : next.add(id)
       return next
     })
+
+  // ---- Manager stock controls ----
+  const [stockBusy, setStockBusy] = useState(false)
+  const [toppingBusy, setToppingBusy] = useState<number | null>(null)
+
+  const toggleToppingStock = async (t: Topping) => {
+    if (!onSetToppingAvailability) return
+    setToppingBusy(t.id)
+    setError(null)
+    try {
+      await onSetToppingAvailability(t.id, !t.is_available)
+    } catch (e) {
+      setError((e as Error).message)
+    } finally {
+      setToppingBusy(null)
+    }
+  }
+
+  const markProductOutOfStock = () =>
+    onRequestConfirm?.({
+      title: 'Mark out of stock?',
+      message: `"${item.name}" will stop being orderable by customers until you restock it.`,
+      run: async () => {
+        await onSetItemAvailability?.(false)
+      },
+    })
+
+  const restockProduct = async () => {
+    setStockBusy(true)
+    setError(null)
+    try {
+      await onSetItemAvailability?.(true)
+    } catch (e) {
+      setError((e as Error).message)
+    } finally {
+      setStockBusy(false)
+    }
+  }
 
   const total = useMemo(() => {
     let sum = Number(item.price)
@@ -262,61 +331,112 @@ export default function MenuItemSheet({ item, candy, onClose, onAdded }: Props) 
             <div className="opt-block">
               <span className="opt-label">Sizes</span>
               <div className="opt-chips">
-                {item.variants.map((v) => (
-                  <button
-                    key={v.id}
-                    type="button"
-                    className={
-                      'opt-chip' + (v.id === variantId ? ' is-selected' : '')
-                    }
-                    aria-pressed={v.id === variantId}
-                    onClick={() =>
-                      setVariantId((cur) => (cur === v.id ? null : v.id))
-                    }
-                  >
-                    {v.name}
-                    <em>{signedMoney(v.price_delta)}</em>
-                  </button>
-                ))}
+                {item.variants.map((v) =>
+                  managerMode ? (
+                    <span key={v.id} className="opt-chip">
+                      {v.name}
+                      <em>{signedMoney(v.price_delta)}</em>
+                    </span>
+                  ) : (
+                    <button
+                      key={v.id}
+                      type="button"
+                      className={
+                        'opt-chip' + (v.id === variantId ? ' is-selected' : '')
+                      }
+                      aria-pressed={v.id === variantId}
+                      onClick={() =>
+                        setVariantId((cur) => (cur === v.id ? null : v.id))
+                      }
+                    >
+                      {v.name}
+                      <em>{signedMoney(v.price_delta)}</em>
+                    </button>
+                  ),
+                )}
               </div>
             </div>
           )}
 
           {item.toppings.length > 0 && (
             <div className="opt-block">
-              <span className="opt-label">Add-ons</span>
+              <span className="opt-label">
+                {managerMode ? 'Add-ons · tap to toggle stock' : 'Add-ons'}
+              </span>
               <div className="opt-chips">
-                {item.toppings.map((t) => (
-                  <button
-                    key={t.id}
-                    type="button"
-                    className={
-                      'opt-chip opt-topping' +
-                      (toppingIds.has(t.id) ? ' is-selected' : '')
-                    }
-                    aria-pressed={toppingIds.has(t.id)}
-                    onClick={() => toggleTopping(t.id)}
-                  >
-                    {t.name}
-                    <em>{signedMoney(t.price)}</em>
-                  </button>
-                ))}
+                {item.toppings.map((t) =>
+                  managerMode ? (
+                    <button
+                      key={t.id}
+                      type="button"
+                      className={
+                        'opt-chip opt-topping' +
+                        (t.is_available ? '' : ' chip-oos')
+                      }
+                      onClick={() => toggleToppingStock(t)}
+                      disabled={toppingBusy === t.id}
+                      title={
+                        t.is_available
+                          ? 'Mark this topping out of stock'
+                          : 'Restock this topping'
+                      }
+                    >
+                      {t.name}
+                      <em>{signedMoney(t.price)}</em>
+                      {!t.is_available && <span className="chip-flag">out</span>}
+                    </button>
+                  ) : (
+                    <button
+                      key={t.id}
+                      type="button"
+                      className={
+                        'opt-chip opt-topping' +
+                        (toppingIds.has(t.id) ? ' is-selected' : '')
+                      }
+                      aria-pressed={toppingIds.has(t.id)}
+                      onClick={() => toggleTopping(t.id)}
+                    >
+                      {t.name}
+                      <em>{signedMoney(t.price)}</em>
+                    </button>
+                  ),
+                )}
               </div>
             </div>
           )}
 
           {error && <p className="form-error sheet-error">{error}</p>}
 
-          <button
-            type="button"
-            className={`candy-btn ${btnColor} sheet-add`}
-            onClick={addToCart}
-            disabled={adding || !item.is_available}
-          >
-            {item.is_available
-              ? `Add to cart · ${money(total)}`
-              : 'Sold out'}
-          </button>
+          {managerMode ? (
+            item.is_available ? (
+              <button
+                type="button"
+                className="candy-btn btn-danger sheet-add"
+                onClick={markProductOutOfStock}
+                disabled={stockBusy}
+              >
+                Mark product out of stock
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="candy-btn btn-mint sheet-add"
+                onClick={restockProduct}
+                disabled={stockBusy}
+              >
+                {stockBusy ? 'Restocking…' : 'Restock product'}
+              </button>
+            )
+          ) : (
+            <button
+              type="button"
+              className={`candy-btn ${btnColor} sheet-add`}
+              onClick={addToCart}
+              disabled={adding || !item.is_available}
+            >
+              {item.is_available ? `Add to cart · ${money(total)}` : 'Sold out'}
+            </button>
+          )}
         </div>
       </div>
     </div>

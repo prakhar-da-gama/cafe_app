@@ -4,10 +4,61 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from .. import crud, schemas
-from ..auth import require_jwt
+from ..auth import require_jwt, require_manager
 from ..database import get_db
 
 router = APIRouter(prefix="/api/menu", tags=["menu"])
+
+
+@router.patch("/toppings/{topping_id}/availability", response_model=schemas.ToppingRead)
+def set_topping_availability(
+    topping_id: int,
+    payload: schemas.AvailabilityUpdate,
+    db: Session = Depends(get_db),
+    _claims: dict[str, Any] = Depends(require_manager),
+):
+    """Manager: mark a topping in or out of stock. Requires a manager JWT."""
+    topping = crud.get_topping(db, topping_id)
+    if topping is None:
+        raise HTTPException(status_code=404, detail="Topping not found")
+    return crud.set_topping_availability(db, topping, payload.is_available)
+
+
+@router.patch("/{item_id}/availability", response_model=schemas.ItemDetail)
+def set_item_availability(
+    item_id: int,
+    payload: schemas.AvailabilityUpdate,
+    db: Session = Depends(get_db),
+    _claims: dict[str, Any] = Depends(require_manager),
+):
+    """Manager: mark a menu item in or out of stock. Requires a manager JWT."""
+    item = crud.get_item(db, item_id)
+    if item is None:
+        raise HTTPException(status_code=404, detail="Menu item not found")
+    return crud.set_item_availability(db, item, payload.is_available)
+
+
+@router.get("/out-of-stock-items", response_model=list[schemas.ItemFull])
+def out_of_stock_items(
+    db: Session = Depends(get_db),
+    _claims: dict[str, Any] = Depends(require_manager),
+):
+    """Manager: all active items that are currently out of stock. Requires a
+    manager JWT."""
+    return crud.list_out_of_stock_items(db)
+
+
+@router.get(
+    "/out-of-stock-toppings",
+    response_model=list[schemas.OutOfStockToppingGroup],
+)
+def out_of_stock_toppings(
+    db: Session = Depends(get_db),
+    _claims: dict[str, Any] = Depends(require_manager),
+):
+    """Manager: out-of-stock toppings grouped under each item they belong to.
+    Requires a manager JWT."""
+    return crud.list_out_of_stock_toppings(db)
 
 
 @router.get("", response_model=list[schemas.ItemRead])

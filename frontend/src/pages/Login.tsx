@@ -1,11 +1,13 @@
 import { useState } from 'react'
-import { sendOtp } from '../api'
+import { doesManagerExist, sendOtp } from '../api'
 
 interface Props {
   onSent: (email: string) => void
+  /** Manager login: gate OTP behind a does-manager-exist check (no sign-up). */
+  managerMode?: boolean
 }
 
-export default function Login({ onSent }: Props) {
+export default function Login({ onSent, managerMode = false }: Props) {
   const [email, setEmail] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -15,8 +17,16 @@ export default function Login({ onSent }: Props) {
     setBusy(true)
     setError(null)
     try {
-      await sendOtp(email.trim())
-      onSent(email.trim())
+      const addr = email.trim()
+      // Managers can't self-register: only send a code if the account exists.
+      if (managerMode) {
+        const { exists } = await doesManagerExist(addr)
+        if (!exists) {
+          throw new Error('No manager account found for this email.')
+        }
+      }
+      await sendOtp(addr)
+      onSent(addr)
     } catch (err) {
       setError((err as Error).message)
     } finally {
@@ -27,7 +37,9 @@ export default function Login({ onSent }: Props) {
   return (
     <div className="screen screen-center">
       <h1 className="hero-title">Coffee Trading Co</h1>
-      <p className="hero-sub">Log in or sign up to continue</p>
+      <p className="hero-sub">
+        {managerMode ? 'Manager login' : 'Log in or sign up to continue'}
+      </p>
 
       <div className="card auth-card">
         <form onSubmit={submit} className="stack">
@@ -53,7 +65,9 @@ export default function Login({ onSent }: Props) {
       </div>
 
       <p className="fine-print">
-        We'll text a one-time code to your inbox. No passwords, ever.
+        {managerMode
+          ? "Managers only. We'll email a one-time code to your inbox."
+          : "We'll text a one-time code to your inbox. No passwords, ever."}
       </p>
     </div>
   )

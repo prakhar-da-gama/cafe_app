@@ -208,6 +208,16 @@ function authHeaders(): Record<string, string> {
 
 // ---- Auth ----
 
+// Public pre-check for the manager login: true if a manager account exists for
+// this email. Managers are provisioned (no self sign-up), so the login page
+// calls this before sending an OTP and rejects unknown emails.
+export function doesManagerExist(email: string): Promise<{ exists: boolean }> {
+  const params = new URLSearchParams({ email })
+  return fetch(`/api/auth/does-manager-exist?${params.toString()}`).then((r) =>
+    handle<{ exists: boolean }>(r),
+  )
+}
+
 export function sendOtp(email: string): Promise<{ message: string }> {
   return fetch('/api/auth/send-otp', {
     method: 'POST',
@@ -337,6 +347,60 @@ export function getItem(itemId: number): Promise<MenuItem> {
   )
 }
 
+// Manager: mark a menu item in/out of stock. Returns the updated item.
+export function setItemAvailability(
+  itemId: number,
+  isAvailable: boolean,
+): Promise<MenuItem> {
+  return fetch(`/api/menu/${itemId}/availability`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body: JSON.stringify({ is_available: isAvailable }),
+  }).then((r) => handle<MenuItem>(r))
+}
+
+// Manager: mark a topping in/out of stock. Returns the updated topping.
+export function setToppingAvailability(
+  toppingId: number,
+  isAvailable: boolean,
+): Promise<Topping> {
+  return fetch(`/api/menu/toppings/${toppingId}/availability`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body: JSON.stringify({ is_available: isAvailable }),
+  }).then((r) => handle<Topping>(r))
+}
+
+// A lightweight item reference (no nested toppings/variants).
+export interface ItemSummary {
+  id: number
+  name: string
+  price: number | string
+  photos: string[]
+  is_veg: boolean
+  is_available: boolean
+}
+
+// Out-of-stock toppings grouped under one item they belong to.
+export interface OutOfStockToppingGroup {
+  item: ItemSummary
+  toppings: Topping[]
+}
+
+// Manager: all active items currently out of stock.
+export function getOutOfStockItems(): Promise<MenuItem[]> {
+  return fetch('/api/menu/out-of-stock-items', { headers: authHeaders() }).then(
+    (r) => handle<MenuItem[]>(r),
+  )
+}
+
+// Manager: out-of-stock toppings grouped under each item they belong to.
+export function getOutOfStockToppings(): Promise<OutOfStockToppingGroup[]> {
+  return fetch('/api/menu/out-of-stock-toppings', {
+    headers: authHeaders(),
+  }).then((r) => handle<OutOfStockToppingGroup[]>(r))
+}
+
 // ---- Cart ----
 
 export function addItemToCart(
@@ -381,6 +445,38 @@ export function placeOrder(): Promise<Order> {
   return fetch('/api/orders/place', {
     method: 'POST',
     headers: authHeaders(),
+  }).then((r) => handle<Order>(r))
+}
+
+// ---- Orders (manager) ----
+
+// Manager view: a page of every user's orders with the given status, newest
+// first, paginated on the orders table. Requires a manager token.
+export function listAllOrders(
+  status: OrderStatus,
+  page = 1,
+  pageSize = 10,
+): Promise<PaginatedOrders> {
+  const params = new URLSearchParams({
+    status,
+    page: String(page),
+    page_size: String(pageSize),
+  })
+  return fetch(`/api/orders/all?${params.toString()}`, {
+    headers: authHeaders(),
+  }).then((r) => handle<PaginatedOrders>(r))
+}
+
+// Manager action: advance an order's status along the kitchen workflow and/or
+// mark it paid. Returns the updated order. Requires a manager token.
+export function updateOrder(
+  orderId: number,
+  changes: { status?: OrderStatus; payment_status?: boolean },
+): Promise<Order> {
+  return fetch(`/api/orders/${orderId}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body: JSON.stringify(changes),
   }).then((r) => handle<Order>(r))
 }
 

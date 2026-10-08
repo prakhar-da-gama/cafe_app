@@ -1,6 +1,7 @@
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from pydantic import EmailStr
 from sqlalchemy.orm import Session
 
 from .. import crud, schemas
@@ -13,6 +14,17 @@ router = APIRouter(prefix="/api/auth", tags=["auth"])
 # TEMPORARY dev bypass: this code verifies any email without a real OTP.
 # Remove before anything that isn't local development.
 DEV_DUMMY_OTP = "123456"
+
+
+@router.get("/does-manager-exist", response_model=schemas.ExistsResponse)
+def does_manager_exist(
+    email: EmailStr = Query(..., description="Email to check for a manager account."),
+    db: Session = Depends(get_db),
+):
+    """Public: true if a manager account exists for this email. The manager
+    login page calls this before sending an OTP, since managers are provisioned
+    (no self sign-up) — an unknown email should be rejected, not onboarded."""
+    return schemas.ExistsResponse(exists=crud.manager_exists(db, email.lower()))
 
 
 @router.post("/send-otp", response_model=schemas.MessageResponse)

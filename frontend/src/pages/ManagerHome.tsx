@@ -1,0 +1,97 @@
+import { useEffect, useState } from 'react'
+import { clearToken, getMe, type User } from '../api'
+import ManagerOrders from './ManagerOrders'
+
+interface Props {
+  onSignedOut: () => void
+  onViewMenu: () => void
+  onViewOosItems: () => void
+  onViewOosToppings: () => void
+}
+
+/** The manager dashboard shell: confirms the session belongs to a manager
+ *  (bouncing non-managers who arrive with a customer token), then renders the
+ *  orders dashboard under a slim header. */
+export default function ManagerHome({
+  onSignedOut,
+  onViewMenu,
+  onViewOosItems,
+  onViewOosToppings,
+}: Props) {
+  const [user, setUser] = useState<User | null>(null)
+
+  useEffect(() => {
+    let alive = true
+    getMe()
+      .then((u) => {
+        if (!alive) return
+        // A customer token must not unlock the manager area.
+        if (u.user_type !== 'manager') {
+          clearToken()
+          onSignedOut()
+          return
+        }
+        setUser(u)
+      })
+      .catch(() => {
+        clearToken()
+        onSignedOut()
+      })
+    return () => {
+      alive = false
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  const logout = () => {
+    clearToken()
+    onSignedOut()
+  }
+
+  if (!user) {
+    return (
+      <div className="screen screen-center">
+        <p className="hero-sub">Signing you in…</p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="screen menu-screen mgr-screen">
+      <header className="cafe-header">
+        <div className="brand">
+          <div className="brand-stack">
+            <span className="brand-name">Coffee Trading Co</span>
+            <button type="button" className="hdr-logout" onClick={logout}>
+              Log out
+            </button>
+          </div>
+        </div>
+        <div className="hdr-actions">
+          <button type="button" className="menu-btn" onClick={onViewMenu}>
+            View full menu
+          </button>
+          <span className="mgr-tag">Manager</span>
+        </div>
+      </header>
+
+      <div className="menu-head menu-head-row">
+        <h1 className="menu-title">Orders</h1>
+        <div className="mgr-nav">
+          <button type="button" className="orders-link" onClick={onViewOosItems}>
+            Out-of-stock items
+          </button>
+          <button
+            type="button"
+            className="orders-link"
+            onClick={onViewOosToppings}
+          >
+            Out-of-stock add-ons
+          </button>
+        </div>
+      </div>
+
+      <ManagerOrders />
+    </div>
+  )
+}

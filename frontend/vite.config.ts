@@ -3,6 +3,9 @@ import { defineConfig } from 'vite'
 
 // https://vite.dev/config/
 export default defineConfig({
+  // Serve the app under /app/ so the domain root can host a separate landing
+  // page. API calls stay on absolute /api/... paths and resolve at the root.
+  base: '/app/',
   plugins: [react()],
   server: {
     proxy: {

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import './App.css'
 import { getToken, type Tag } from './api'
+import { useScreen } from './useScreen'
 import Login from './pages/Login'
 import VerifyOtp from './pages/VerifyOtp'
 import EnterName from './pages/EnterName'
@@ -29,7 +30,9 @@ type Screen =
 
 function App() {
   // A returning visitor with a saved token skips straight to the dashboard.
-  const [screen, setScreen] = useState<Screen>(() =>
+  // `screen` is kept in sync with browser history so Back / back-swipe moves
+  // between screens instead of unloading the whole site.
+  const { screen, navigate, goBack } = useScreen<Screen>(
     getToken() ? 'dashboard' : 'login',
   )
   const [email, setEmail] = useState('')
@@ -37,17 +40,8 @@ function App() {
   const [selection, setSelection] = useState<Tag[]>([])
   // The Play button in the header opens the game lobby popup over any screen.
   const [showGamePopup, setShowGamePopup] = useState(false)
-  // Where the back button on the cart/orders pages should return to, so they
-  // can be reached from either menu (or the cart → orders) and go back sensibly.
-  const [returnTo, setReturnTo] = useState<Screen>('fullmenu')
-  const openCart = () => {
-    setReturnTo(screen)
-    setScreen('cart')
-  }
-  const openOrders = () => {
-    setReturnTo(screen)
-    setScreen('orders')
-  }
+  const openCart = () => navigate('cart')
+  const openOrders = () => navigate('orders')
 
   return (
     <div className="app">
@@ -55,7 +49,7 @@ function App() {
         <Login
           onSent={(e) => {
             setEmail(e)
-            setScreen('otp')
+            navigate('otp')
           }}
         />
       )}
@@ -63,9 +57,9 @@ function App() {
       {screen === 'otp' && (
         <VerifyOtp
           email={email}
-          onBack={() => setScreen('login')}
+          onBack={goBack}
           onVerified={(nameRequired) =>
-            setScreen(nameRequired ? 'name' : 'dashboard')
+            navigate(nameRequired ? 'name' : 'dashboard')
           }
         />
       )}
@@ -74,7 +68,7 @@ function App() {
         <EnterName
           onDone={(n) => {
             setName(n)
-            setScreen('dashboard')
+            navigate('dashboard')
           }}
         />
       )}
@@ -82,28 +76,25 @@ function App() {
       {screen === 'dashboard' && (
         <DashboardCustomer
           greetingName={name}
-          onViewMenu={() => setScreen('fullmenu')}
-          onOpenChat={() => setScreen('chat')}
+          onViewMenu={() => navigate('fullmenu')}
+          onOpenChat={() => navigate('chat')}
           onPlay={() => setShowGamePopup(true)}
           onGoAhead={(chosen) => {
             setSelection(chosen)
-            setScreen('menu')
+            navigate('menu')
           }}
         />
       )}
 
       {screen === 'chat' && (
-        <BaristaChat
-          onBack={() => setScreen('dashboard')}
-          onViewMenu={() => setScreen('fullmenu')}
-        />
+        <BaristaChat onBack={goBack} onViewMenu={() => navigate('fullmenu')} />
       )}
 
       {screen === 'menu' && (
         <PersonalisedMenu
           selection={selection}
-          onBack={() => setScreen('dashboard')}
-          onViewMenu={() => setScreen('fullmenu')}
+          onBack={goBack}
+          onViewMenu={() => navigate('fullmenu')}
           onOpenCart={openCart}
           onOpenOrders={openOrders}
         />
@@ -111,7 +102,7 @@ function App() {
 
       {screen === 'fullmenu' && (
         <FullMenu
-          onBack={() => setScreen('dashboard')}
+          onBack={goBack}
           onOpenCart={openCart}
           onOpenOrders={openOrders}
         />
@@ -119,13 +110,13 @@ function App() {
 
       {screen === 'cart' && (
         <MyCart
-          onBack={() => setScreen(returnTo)}
-          onViewMenu={() => setScreen('fullmenu')}
+          onBack={goBack}
+          onViewMenu={() => navigate('fullmenu')}
           onOpenOrders={openOrders}
           onPlaced={() => {
-            // The cart is now empty; return from orders to the menu, not here.
-            setReturnTo('fullmenu')
-            setScreen('orders')
+            // The cart is now empty, so replace it in history: Back from Orders
+            // should skip the empty cart and return to whatever preceded it.
+            navigate('orders', { replace: true })
           }}
         />
       )}
@@ -133,27 +124,25 @@ function App() {
       {screen === 'orders' && (
         <MyOrders
           initialStatus="pending"
-          onBack={() => setScreen(returnTo)}
-          onViewMenu={() => setScreen('fullmenu')}
+          onBack={goBack}
+          onViewMenu={() => navigate('fullmenu')}
         />
       )}
 
-      {screen === 'game' && <SnakeGame onBack={() => setScreen('dashboard')} />}
+      {screen === 'game' && <SnakeGame onBack={goBack} />}
 
-      {screen === 'gamestats' && (
-        <GameStats onBack={() => setScreen('dashboard')} />
-      )}
+      {screen === 'gamestats' && <GameStats onBack={goBack} />}
 
       {showGamePopup && (
         <GamePopup
           onClose={() => setShowGamePopup(false)}
           onViewStats={() => {
             setShowGamePopup(false)
-            setScreen('gamestats')
+            navigate('gamestats')
           }}
           onPlay={() => {
             setShowGamePopup(false)
-            setScreen('game')
+            navigate('game')
           }}
         />
       )}

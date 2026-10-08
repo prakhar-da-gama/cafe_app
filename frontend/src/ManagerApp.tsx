@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import './App.css'
 import { getToken } from './api'
+import { useScreen } from './useScreen'
 import Login from './pages/Login'
 import VerifyOtp from './pages/VerifyOtp'
 import ManagerHome from './pages/ManagerHome'
@@ -16,7 +17,9 @@ type Screen = 'login' | 'otp' | 'home' | 'menu' | 'oos-items' | 'oos-toppings'
 export default function ManagerApp() {
   // A returning manager with a saved token skips straight to the home screen;
   // ManagerHome re-validates the token actually belongs to a manager.
-  const [screen, setScreen] = useState<Screen>(() =>
+  // `screen` is kept in sync with browser history so Back / back-swipe moves
+  // between screens instead of unloading the whole site.
+  const { screen, navigate, goBack } = useScreen<Screen>(
     getToken() ? 'home' : 'login',
   )
   const [email, setEmail] = useState('')
@@ -28,7 +31,7 @@ export default function ManagerApp() {
           managerMode
           onSent={(e) => {
             setEmail(e)
-            setScreen('otp')
+            navigate('otp')
           }}
         />
       )}
@@ -36,29 +39,25 @@ export default function ManagerApp() {
       {screen === 'otp' && (
         <VerifyOtp
           email={email}
-          onBack={() => setScreen('login')}
-          onVerified={() => setScreen('home')}
+          onBack={goBack}
+          onVerified={() => navigate('home')}
         />
       )}
 
       {screen === 'home' && (
         <ManagerHome
-          onSignedOut={() => setScreen('login')}
-          onViewMenu={() => setScreen('menu')}
-          onViewOosItems={() => setScreen('oos-items')}
-          onViewOosToppings={() => setScreen('oos-toppings')}
+          onSignedOut={() => navigate('login')}
+          onViewMenu={() => navigate('menu')}
+          onViewOosItems={() => navigate('oos-items')}
+          onViewOosToppings={() => navigate('oos-toppings')}
         />
       )}
 
-      {screen === 'menu' && <ManagerMenu onBack={() => setScreen('home')} />}
+      {screen === 'menu' && <ManagerMenu onBack={goBack} />}
 
-      {screen === 'oos-items' && (
-        <OutOfStockItems onBack={() => setScreen('home')} />
-      )}
+      {screen === 'oos-items' && <OutOfStockItems onBack={goBack} />}
 
-      {screen === 'oos-toppings' && (
-        <OutOfStockToppings onBack={() => setScreen('home')} />
-      )}
+      {screen === 'oos-toppings' && <OutOfStockToppings onBack={goBack} />}
     </div>
   )
 }

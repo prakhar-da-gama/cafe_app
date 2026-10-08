@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import {
   addItemToCart,
   money,
@@ -78,6 +78,17 @@ export default function MenuBrowser({
     run: () => Promise<void>
   } | null>(null)
   const [confirmBusy, setConfirmBusy] = useState(false)
+
+  // Scroll-spy plumbing: the list renders every category stacked, and the
+  // active pill follows whichever category has scrolled to the top — so
+  // scrolling past one category advances the pills to the next.
+  const scrollRef = useRef<HTMLDivElement | null>(null)
+  const navRef = useRef<HTMLDivElement | null>(null)
+  const catRefs = useRef(new Map<number, HTMLElement>())
+  const pillRefs = useRef(new Map<number, HTMLButtonElement>())
+  // While a pill-tap smooth-scroll is animating, pause the spy so it doesn't
+  // flicker through the categories it passes on the way.
+  const programmaticUntil = useRef(0)
 
   useEffect(() => {
     let alive = true
@@ -206,10 +217,66 @@ export default function MenuBrowser({
     }
   }
 
-  const category = useMemo(
-    () => menu.find((c) => c.id === activeCat) ?? null,
-    [menu, activeCat],
-  )
+  // As the list scrolls, mark the category whose top has reached the viewport
+  // top as active (and the last one once scrolled to the very bottom, so short
+  // trailing categories still get selected).
+  useEffect(() => {
+    const el = scrollRef.current
+    if (!el || menu.length === 0) return
+    let raf = 0
+    const onScroll = () => {
+      if (raf) return
+      raf = requestAnimationFrame(() => {
+        raf = 0
+        if (Date.now() < programmaticUntil.current) return
+        const containerTop = el.getBoundingClientRect().top
+        const atBottom =
+          el.scrollTop + el.clientHeight >= el.scrollHeight - 2
+        let current = menu[0].id
+        for (const c of menu) {
+          const sec = catRefs.current.get(c.id)
+          if (sec && sec.getBoundingClientRect().top - containerTop <= 24) {
+            current = c.id
+          }
+        }
+        if (atBottom) current = menu[menu.length - 1].id
+        setActiveCat((prev) => (prev === current ? prev : current))
+      })
+    }
+    el.addEventListener('scroll', onScroll, { passive: true })
+    return () => {
+      el.removeEventListener('scroll', onScroll)
+      if (raf) cancelAnimationFrame(raf)
+    }
+  }, [menu])
+
+  // Keep the active pill scrolled into view in the horizontal nav.
+  useEffect(() => {
+    if (activeCat == null) return
+    const nav = navRef.current
+    const pill = pillRefs.current.get(activeCat)
+    if (!nav || !pill) return
+    const navRect = nav.getBoundingClientRect()
+    const pillRect = pill.getBoundingClientRect()
+    const target =
+      nav.scrollLeft +
+      (pillRect.left - navRect.left) -
+      (nav.clientWidth - pill.clientWidth) / 2
+    nav.scrollTo({ left: Math.max(0, target), behavior: 'smooth' })
+  }, [activeCat])
+
+  // Tapping a pill jumps the list to that category.
+  const goToCategory = (id: number) => {
+    const el = scrollRef.current
+    const sec = catRefs.current.get(id)
+    if (!el || !sec) return
+    setActiveCat(id)
+    programmaticUntil.current = Date.now() + 700
+    const top =
+      sec.getBoundingClientRect().top - el.getBoundingClientRect().top +
+      el.scrollTop
+    el.scrollTo({ top: Math.max(0, top - 4), behavior: 'smooth' })
+  }
 
   return (
     <div className="screen full-menu">
@@ -254,14 +321,18 @@ export default function MenuBrowser({
       )}
 
       {menu.length > 0 && (
-        <nav className="cat-nav" aria-label="Menu categories">
+        <nav className="cat-nav" aria-label="Menu categories" ref={navRef}>
           {menu.map((c, i) => (
             <button
               key={c.id}
               type="button"
+              ref={(el) => {
+                if (el) pillRefs.current.set(c.id, el)
+                else pillRefs.current.delete(c.id)
+              }}
               className={c.id === activeCat ? 'cat-pill cat-on' : 'cat-pill'}
               data-candy={(i % 8) + 1}
-              onClick={() => setActiveCat(c.id)}
+              onClick={() => goToCategory(c.id)}
               aria-pressed={c.id === activeCat}
             >
               {c.name}
@@ -270,12 +341,24 @@ export default function MenuBrowser({
         </nav>
       )}
 
-      {category && (
-        <div className="menu-scroll" key={category.id}>
-          {category.subcategories.map((sub) => (
+      {menu.length > 0 && (
+        <div className="menu-scroll" ref={scrollRef}>
+          {menu.map((c, ci) => (
+            <section
+              key={c.id}
+              className="cat-section"
+              ref={(el) => {
+                if (el) catRefs.current.set(c.id, el)
+                else catRefs.current.delete(c.id)
+              }}
+            >
+              <h2 className="cat-section-title" data-candy={(ci % 8) + 1}>
+                {c.name}
+              </h2>
+              {c.subcategories.map((sub) => (
             <section key={sub.id} className="subcat">
               <div className="subcat-head">
-                <h2 className="subcat-name">{sub.name}</h2>
+                <h3 className="subcat-name">{sub.name}</h3>
                 {sub.description && (
                   <p className="subcat-desc">{sub.description}</p>
                 )}
@@ -300,7 +383,7 @@ export default function MenuBrowser({
                       >
                         <DishPhoto item={item} candy={candy} />
                         <div className="dish-info">
-                          <h3 className="dish-name">{item.name}</h3>
+                          <h4 className="dish-name">{item.name}</h4>
                           <div className="dish-meta">
                             <span
                               className={
@@ -351,6 +434,8 @@ export default function MenuBrowser({
                   )
                 })}
               </div>
+            </section>
+              ))}
             </section>
           ))}
         </div>

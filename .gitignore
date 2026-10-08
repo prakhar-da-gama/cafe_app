@@ -14,3 +14,6 @@ frontend/dev-server.log
 Thumbs.db
 .vscode/
 .idea/
+
+# Marketing data (not tracked)
+cafe_marketing/

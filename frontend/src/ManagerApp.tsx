@@ -6,10 +6,18 @@ import Login from './pages/Login'
 import VerifyOtp from './pages/VerifyOtp'
 import ManagerHome from './pages/ManagerHome'
 import ManagerMenu from './pages/ManagerMenu'
+import ManageMenu from './pages/ManageMenu'
 import OutOfStockItems from './pages/OutOfStockItems'
 import OutOfStockToppings from './pages/OutOfStockToppings'
 
-type Screen = 'login' | 'otp' | 'home' | 'menu' | 'oos-items' | 'oos-toppings'
+type Screen =
+  | 'login'
+  | 'otp'
+  | 'home'
+  | 'menu'
+  | 'manage-menu'
+  | 'oos-items'
+  | 'oos-toppings'
 
 /** The manager area (served at /manager). Login-only for now: the same login +
  *  OTP screens as the customer app, but the login gates on does-manager-exist
@@ -48,12 +56,15 @@ export default function ManagerApp() {
         <ManagerHome
           onSignedOut={() => navigate('login')}
           onViewMenu={() => navigate('menu')}
+          onManageMenu={() => navigate('manage-menu')}
           onViewOosItems={() => navigate('oos-items')}
           onViewOosToppings={() => navigate('oos-toppings')}
         />
       )}
 
       {screen === 'menu' && <ManagerMenu onBack={goBack} />}
+
+      {screen === 'manage-menu' && <ManageMenu onBack={goBack} />}
 
       {screen === 'oos-items' && <OutOfStockItems onBack={goBack} />}
 

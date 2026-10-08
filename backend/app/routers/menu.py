@@ -61,6 +61,54 @@ def out_of_stock_toppings(
     return crud.list_out_of_stock_toppings(db)
 
 
+@router.post(
+    "/categories",
+    response_model=schemas.CategoryFull,
+    status_code=status.HTTP_201_CREATED,
+)
+def create_category(
+    payload: schemas.CategoryCreate,
+    db: Session = Depends(get_db),
+    _claims: dict[str, Any] = Depends(require_manager),
+):
+    """Manager: add a new top-level menu category. Requires a manager JWT."""
+    return crud.create_category(db, payload)
+
+
+@router.post(
+    "/subcategories",
+    response_model=schemas.SubcategoryFull,
+    status_code=status.HTTP_201_CREATED,
+)
+def create_subcategory(
+    payload: schemas.SubcategoryCreate,
+    db: Session = Depends(get_db),
+    _claims: dict[str, Any] = Depends(require_manager),
+):
+    """Manager: add a subcategory under an existing category. Requires a
+    manager JWT."""
+    if crud.get_category(db, payload.category_id) is None:
+        raise HTTPException(status_code=404, detail="Category not found")
+    return crud.create_subcategory(db, payload)
+
+
+@router.post(
+    "/items",
+    response_model=schemas.ItemDetail,
+    status_code=status.HTTP_201_CREATED,
+)
+def create_menu_item_managed(
+    payload: schemas.ItemCreate,
+    db: Session = Depends(get_db),
+    _claims: dict[str, Any] = Depends(require_manager),
+):
+    """Manager: add a new dish under an existing subcategory. Requires a
+    manager JWT."""
+    if crud.get_subcategory(db, payload.subcategory_id) is None:
+        raise HTTPException(status_code=404, detail="Subcategory not found")
+    return crud.create_item(db, payload)
+
+
 @router.get("", response_model=list[schemas.ItemRead])
 def list_menu_items(
     subcategory_id: int | None = Query(default=None),

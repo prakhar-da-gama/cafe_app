@@ -35,6 +35,64 @@ def get_item(db: Session, item_id: int) -> models.Item | None:
     return db.get(models.Item, item_id)
 
 
+def get_category(db: Session, category_id: int) -> models.Category | None:
+    return db.get(models.Category, category_id)
+
+
+def get_subcategory(db: Session, subcategory_id: int) -> models.Subcategory | None:
+    return db.get(models.Subcategory, subcategory_id)
+
+
+def _next_display_order(db: Session, column, *conditions) -> int:
+    """One past the current max display_order (0 if none), so new rows append to
+    the end. Any extra conditions scope the max (e.g. to one category)."""
+    stmt = select(func.coalesce(func.max(column), -1))
+    for condition in conditions:
+        stmt = stmt.where(condition)
+    return int(db.execute(stmt).scalar_one()) + 1
+
+
+def create_category(db: Session, data: schemas.CategoryCreate) -> models.Category:
+    order = data.display_order
+    if order is None:
+        order = _next_display_order(db, models.Category.display_order)
+    category = models.Category(
+        name=data.name,
+        description=data.description,
+        photos=list(data.photos),
+        display_order=order,
+        is_active=data.is_active,
+    )
+    db.add(category)
+    db.commit()
+    db.refresh(category)
+    return category
+
+
+def create_subcategory(
+    db: Session, data: schemas.SubcategoryCreate
+) -> models.Subcategory:
+    order = data.display_order
+    if order is None:
+        order = _next_display_order(
+            db,
+            models.Subcategory.display_order,
+            models.Subcategory.category_id == data.category_id,
+        )
+    subcategory = models.Subcategory(
+        category_id=data.category_id,
+        name=data.name,
+        description=data.description,
+        photos=list(data.photos),
+        display_order=order,
+        is_active=data.is_active,
+    )
+    db.add(subcategory)
+    db.commit()
+    db.refresh(subcategory)
+    return subcategory
+
+
 def get_full_menu(
     db: Session, tag_ids: list[int] | None = None
 ) -> list[schemas.CategoryFull] | list[models.Category]:
@@ -150,6 +208,14 @@ def list_items_by_tags(
 def create_item(db: Session, data: schemas.ItemCreate) -> models.Item:
     payload = data.model_dump()
     topping_ids = payload.pop("topping_ids", [])
+    # With no explicit position, append to the end of its subcategory so new
+    # dishes don't jump ahead of the existing, deliberately ordered ones.
+    if not payload.get("display_order"):
+        payload["display_order"] = _next_display_order(
+            db,
+            models.Item.display_order,
+            models.Item.subcategory_id == payload["subcategory_id"],
+        )
     item = models.Item(**payload)
     item.toppings = _load_toppings(db, topping_ids)
     db.add(item)

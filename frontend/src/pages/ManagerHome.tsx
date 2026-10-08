@@ -5,6 +5,7 @@ import ManagerOrders from './ManagerOrders'
 interface Props {
   onSignedOut: () => void
   onViewMenu: () => void
+  onManageMenu: () => void
   onViewOosItems: () => void
   onViewOosToppings: () => void
 }
@@ -15,6 +16,7 @@ interface Props {
 export default function ManagerHome({
   onSignedOut,
   onViewMenu,
+  onManageMenu,
   onViewOosItems,
   onViewOosToppings,
 }: Props) {
@@ -68,6 +70,9 @@ export default function ManagerHome({
           </div>
         </div>
         <div className="hdr-actions">
+          <button type="button" className="menu-btn" onClick={onManageMenu}>
+            Add to menu
+          </button>
           <button type="button" className="menu-btn" onClick={onViewMenu}>
             View full menu
           </button>

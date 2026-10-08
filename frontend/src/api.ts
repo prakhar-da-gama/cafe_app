@@ -401,6 +401,67 @@ export function getOutOfStockToppings(): Promise<OutOfStockToppingGroup[]> {
   }).then((r) => handle<OutOfStockToppingGroup[]>(r))
 }
 
+// ---- Menu authoring (manager) ----
+
+export interface CategoryCreate {
+  name: string
+  description?: string | null
+  photos?: string[]
+  is_active?: boolean
+}
+
+export interface SubcategoryCreate {
+  category_id: number
+  name: string
+  description?: string | null
+  photos?: string[]
+  is_active?: boolean
+}
+
+export interface ItemCreate {
+  subcategory_id: number
+  name: string
+  description?: string | null
+  price: number
+  photos?: string[]
+  tag_ids?: number[]
+  topping_ids?: number[]
+  is_veg?: boolean
+  is_available?: boolean
+}
+
+// Manager: create a new top-level category. Returns it (with no subcategories
+// yet). Requires a manager token.
+export function createCategory(input: CategoryCreate): Promise<MenuCategory> {
+  return fetch('/api/menu/categories', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body: JSON.stringify(input),
+  }).then((r) => handle<MenuCategory>(r))
+}
+
+// Manager: create a subcategory under an existing category. Requires a manager
+// token.
+export function createSubcategory(
+  input: SubcategoryCreate,
+): Promise<Subcategory> {
+  return fetch('/api/menu/subcategories', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body: JSON.stringify(input),
+  }).then((r) => handle<Subcategory>(r))
+}
+
+// Manager: create a dish under an existing subcategory. Requires a manager
+// token.
+export function createItem(input: ItemCreate): Promise<MenuItem> {
+  return fetch('/api/menu/items', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body: JSON.stringify(input),
+  }).then((r) => handle<MenuItem>(r))
+}
+
 // ---- Cart ----
 
 export function addItemToCart(

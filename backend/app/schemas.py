@@ -134,6 +134,28 @@ class FullMenuResponse(BaseModel):
     cart_count: int = 0
 
 
+# ---- Manager create schemas (categories / subcategories) ----
+
+
+class CategoryCreate(BaseModel):
+    name: str = Field(..., min_length=1, max_length=80)
+    description: str | None = None
+    photos: list[str] = []
+    # Position among categories; appended to the end when omitted.
+    display_order: int | None = None
+    is_active: bool = True
+
+
+class SubcategoryCreate(BaseModel):
+    category_id: int
+    name: str = Field(..., min_length=1, max_length=80)
+    description: str | None = None
+    photos: list[str] = []
+    # Position within its category; appended to the end when omitted.
+    display_order: int | None = None
+    is_active: bool = True
+
+
 class ItemSummary(BaseModel):
     """A lightweight item reference (no nested toppings/variants)."""
 

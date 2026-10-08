@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 
 from sqlalchemy import Boolean, DateTime
 from sqlalchemy import Enum as SAEnum
-from sqlalchemy import ForeignKey, Numeric, Text, func
+from sqlalchemy import ForeignKey, Index, Numeric, Text, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ..database import Base
@@ -28,6 +28,9 @@ class OrderStatus(str, enum.Enum):
 
 class Order(Base):
     __tablename__ = "orders"
+    # Listing a user's orders is always filtered by (user_id, status) and paged
+    # on the orders table, so index that pair to keep those scans cheap.
+    __table_args__ = (Index("ix_orders_user_status", "user_id", "status"),)
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     # The owning user. Identifies the cart/order (every user has an account via OTP).

@@ -22,6 +22,10 @@ interface Props {
   subhead?: ReactNode
   /** Shown when the (possibly filtered) menu comes back empty. */
   emptyText?: string
+  /** Opens the cart page (cart glyph). */
+  onOpenCart: () => void
+  /** Opens the orders page, filtered to pending (the "My orders" button). */
+  onOpenOrders: () => void
 }
 
 /** Keep only the live parts of the tree: active categories/subcategories that
@@ -49,6 +53,8 @@ export default function MenuBrowser({
   header,
   subhead,
   emptyText = 'The menu is empty right now.',
+  onOpenCart,
+  onOpenOrders,
 }: Props) {
   const [menu, setMenu] = useState<MenuCategory[]>([])
   const [loading, setLoading] = useState(true)
@@ -106,19 +112,29 @@ export default function MenuBrowser({
 
       <div className="menu-head menu-head-row">
         <h1 className="menu-title">{title}</h1>
-        <div className="cart-badge" aria-label={`Cart: ${cartCount} items`}>
-          <svg viewBox="0 0 24 24" width="24" height="24" fill="none">
-            <path
-              d="M3 4h2l2.4 12.2a1.6 1.6 0 0 0 1.57 1.3h8.1a1.6 1.6 0 0 0 1.57-1.26L21.5 8H6"
-              stroke="currentColor"
-              strokeWidth="1.9"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-            <circle cx="9.5" cy="20.5" r="1.4" fill="currentColor" />
-            <circle cx="17.5" cy="20.5" r="1.4" fill="currentColor" />
-          </svg>
-          {cartCount > 0 && <span className="cart-count">{cartCount}</span>}
+        <div className="menu-actions">
+          <button type="button" className="orders-link" onClick={onOpenOrders}>
+            My orders
+          </button>
+          <button
+            type="button"
+            className="cart-badge cart-btn"
+            onClick={onOpenCart}
+            aria-label={`Cart: ${cartCount} items`}
+          >
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="none">
+              <path
+                d="M3 4h2l2.4 12.2a1.6 1.6 0 0 0 1.57 1.3h8.1a1.6 1.6 0 0 0 1.57-1.26L21.5 8H6"
+                stroke="currentColor"
+                strokeWidth="1.9"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              <circle cx="9.5" cy="20.5" r="1.4" fill="currentColor" />
+              <circle cx="17.5" cy="20.5" r="1.4" fill="currentColor" />
+            </svg>
+            {cartCount > 0 && <span className="cart-count">{cartCount}</span>}
+          </button>
         </div>
       </div>
 
@@ -161,13 +177,15 @@ export default function MenuBrowser({
               <div className="dish-grid">
                 {sub.items.map((item, i) => {
                   const candy = (i % 8) + 1
+                  const cardClass =
+                    'dish-card' +
+                    (item.is_available ? '' : ' dish-out') +
+                    (item.is_recommended ? ' dish-rec' : '')
                   return (
-                    <div
-                      key={item.id}
-                      className={
-                        item.is_available ? 'dish-card' : 'dish-card dish-out'
-                      }
-                    >
+                    <div key={item.id} className={cardClass} data-candy={candy}>
+                      {item.is_recommended && (
+                        <span className="dish-rec-tag">Top picks</span>
+                      )}
                       <button
                         type="button"
                         className="dish-open"

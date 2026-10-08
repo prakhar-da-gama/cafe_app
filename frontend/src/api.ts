@@ -92,6 +92,8 @@ export interface MenuItem {
   is_available: boolean
   display_order: number
   is_active: boolean
+  // Set by the personalised menu for items matching the user's chosen flavours.
+  is_recommended: boolean
   toppings: Topping[]
   variants: Variant[]
 }
@@ -139,6 +141,47 @@ export interface OrderItem {
   variant_ids: number[]
   quantity: number
   price: number | string
+}
+
+// The lifecycle of an order. `cart` is the open draft; `pending` onwards are
+// placed orders moving through the kitchen.
+export type OrderStatus =
+  | 'cart'
+  | 'pending'
+  | 'preparing'
+  | 'ready'
+  | 'completed'
+  | 'cancelled'
+
+// One line of an order, fully expanded: the item plus the specific toppings
+// and variants chosen, and the unit price snapshot taken when it was added.
+export interface OrderLine {
+  id: number
+  item_id: number
+  quantity: number
+  price: number | string
+  item: MenuItem
+  toppings: Topping[]
+  variants: Variant[]
+}
+
+export interface Order {
+  id: number
+  status: OrderStatus
+  total_amount: number | string
+  payment_status: boolean
+  extra_notes: string | null
+  created_at: string
+  updated_at: string
+  order_items: OrderLine[]
+}
+
+export interface PaginatedOrders {
+  items: Order[]
+  total: number
+  page: number
+  page_size: number
+  has_more: boolean
 }
 
 // ---- Fetch plumbing ----
@@ -265,14 +308,23 @@ export function listTags(): Promise<Tag[]> {
 // The full nested menu: categories -> subcategories -> items (+toppings/variants),
 // plus the current cart line-item count. The per-item `description` is omitted
 // here to keep the payload small; fetch it with getItem() when a dish is opened.
-//
-// Pass tag ids to get the personalised menu: the exact same nested response,
-// filtered to items matching any of those tags. Omit them for the whole menu.
-export function getFullMenu(tagIds: number[] = []): Promise<FullMenuResponse> {
+export function getFullMenu(): Promise<FullMenuResponse> {
+  return fetch('/api/menu/get-full-menu', {
+    headers: authHeaders(),
+  }).then((r) => handle<FullMenuResponse>(r))
+}
+
+// The personalised menu: the same nested shape and the same items as the full
+// menu (nothing filtered out), but items matching the given tags come back with
+// `is_recommended: true` and floated to the front of each subcategory, followed
+// by the rest. Pass the user's chosen flavour tag ids.
+export function getPersonalisedMenu(
+  tagIds: number[] = [],
+): Promise<FullMenuResponse> {
   const params = new URLSearchParams()
   for (const id of tagIds) params.append('tag_ids', String(id))
   const qs = params.toString()
-  return fetch(`/api/menu/get-full-menu${qs ? `?${qs}` : ''}`, {
+  return fetch(`/api/menu/get-personalised-menu${qs ? `?${qs}` : ''}`, {
     headers: authHeaders(),
   }).then((r) => handle<FullMenuResponse>(r))
 }
@@ -303,6 +355,33 @@ export function addItemToCart(
       quantity,
     }),
   }).then((r) => handle<OrderItem>(r))
+}
+
+// ---- Orders ----
+
+// A page of the user's orders for one status (newest first). `cart` returns the
+// single open cart; each line comes with its item, toppings, variants and price.
+export function listOrders(
+  status: OrderStatus,
+  page = 1,
+  pageSize = 10,
+): Promise<PaginatedOrders> {
+  const params = new URLSearchParams({
+    status,
+    page: String(page),
+    page_size: String(pageSize),
+  })
+  return fetch(`/api/orders?${params.toString()}`, {
+    headers: authHeaders(),
+  }).then((r) => handle<PaginatedOrders>(r))
+}
+
+// Check out the cart: stamp its total and move it from `cart` to `pending`.
+export function placeOrder(): Promise<Order> {
+  return fetch('/api/orders/place', {
+    method: 'POST',
+    headers: authHeaders(),
+  }).then((r) => handle<Order>(r))
 }
 
 // ---- Helpers ----

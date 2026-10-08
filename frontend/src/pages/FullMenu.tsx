@@ -5,10 +5,12 @@ import MenuBrowser from '../components/MenuBrowser'
 
 interface Props {
   onBack: () => void
+  onOpenCart: () => void
+  onOpenOrders: () => void
 }
 
 /** The full menu: browse by category, then subcategory; tap a dish for detail. */
-export default function FullMenu({ onBack }: Props) {
+export default function FullMenu({ onBack, onOpenCart, onOpenOrders }: Props) {
   const fetchMenu = useCallback(() => getFullMenu(), [])
 
   return (
@@ -17,6 +19,8 @@ export default function FullMenu({ onBack }: Props) {
       fetchKey="full"
       title="The full menu"
       header={<CafeHeader menuActive onBack={onBack} />}
+      onOpenCart={onOpenCart}
+      onOpenOrders={onOpenOrders}
     />
   )
 }

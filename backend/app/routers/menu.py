@@ -43,6 +43,25 @@ def get_full_menu(
     }
 
 
+@router.get("/get-personalised-menu", response_model=schemas.FullMenuResponse)
+def get_personalised_menu(
+    tag_ids: list[int] = Query(default=[]),
+    db: Session = Depends(get_db),
+    claims: dict[str, Any] = Depends(require_jwt),
+):
+    """Personalised menu: the full nested menu with the same shape and the same
+    items as get-full-menu (nothing is filtered out), but the items matching the
+    given tags are flagged is_recommended and floated to the front of each
+    subcategory, followed by the rest. Also returns the user's cart line-item
+    count. Requires a valid JWT bearer token.
+
+    Pass tag_ids repeated in the query string (e.g. ?tag_ids=1&tag_ids=4)."""
+    return {
+        "categories": crud.get_personalised_menu(db, tag_ids=tag_ids),
+        "cart_count": crud.get_cart_item_count(db, int(claims["sub"])),
+    }
+
+
 @router.get("/get-item/{item_id}", response_model=schemas.ItemDetail)
 def get_item_detail(
     item_id: int,

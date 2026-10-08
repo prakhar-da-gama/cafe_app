@@ -69,6 +69,42 @@ def get_full_menu(
     return pruned
 
 
+def get_personalised_menu(
+    db: Session, tag_ids: list[int] | None = None
+) -> list[schemas.CategoryFull]:
+    """The personalised menu: the full nested tree with *nothing pruned* — the
+    same categories, subcategories and items as the full menu.
+
+    The difference is ordering and flagging: within each subcategory the items
+    whose tags overlap the requested ones are marked ``is_recommended`` and
+    floated to the front, followed by the remaining items in their normal order.
+    With no ``tag_ids`` nothing is recommended, so it reduces to the full menu.
+
+    Flagging/reordering happens on detached Pydantic copies so the loaded ORM
+    relationships are never mutated."""
+    stmt = select(models.Category).order_by(
+        models.Category.display_order, models.Category.name
+    )
+    categories = list(db.execute(stmt).scalars().all())
+    wanted = set(tag_ids or [])
+
+    result: list[schemas.CategoryFull] = []
+    for category in categories:
+        cat = schemas.CategoryFull.model_validate(category)
+        for sub in cat.subcategories:
+            recommended: list[schemas.ItemFull] = []
+            others: list[schemas.ItemFull] = []
+            for item in sub.items:
+                if wanted & set(item.tag_ids):
+                    item.is_recommended = True
+                    recommended.append(item)
+                else:
+                    others.append(item)
+            sub.items = recommended + others
+        result.append(cat)
+    return result
+
+
 def list_items_by_tags(
     db: Session, tag_ids: list[int], page: int = 1, page_size: int = 10
 ) -> dict:
@@ -274,3 +310,139 @@ def add_item_to_cart(
     db.commit()
     db.refresh(order_item)
     return order_item
+
+
+def _serialize_orders(
+    db: Session, orders: list[models.Order]
+) -> list[schemas.OrderRead]:
+    """Expand a list of orders into read models, resolving each line's item,
+    chosen toppings and chosen variants.
+
+    The referenced items/toppings/variants are batch-loaded across all lines of
+    all orders (three queries total), so this stays free of N+1 regardless of
+    how many orders or lines are on the page.
+    """
+    item_ids: set[int] = set()
+    topping_ids: set[int] = set()
+    variant_ids: set[int] = set()
+    for order in orders:
+        for line in order.order_items:
+            item_ids.add(line.item_id)
+            topping_ids.update(line.topping_ids or [])
+            variant_ids.update(line.variant_ids or [])
+
+    def _by_id(model, ids: set[int]) -> dict:
+        if not ids:
+            return {}
+        rows = db.execute(select(model).where(model.id.in_(ids))).scalars().all()
+        return {row.id: row for row in rows}
+
+    items = _by_id(models.Item, item_ids)
+    toppings = _by_id(models.Topping, topping_ids)
+    variants = _by_id(models.Variant, variant_ids)
+
+    result: list[schemas.OrderRead] = []
+    for order in orders:
+        lines = []
+        for line in order.order_items:
+            item = items.get(line.item_id)
+            if item is None:
+                continue  # item row vanished; skip rather than 500 the page
+            lines.append(
+                schemas.OrderLineRead(
+                    id=line.id,
+                    item_id=line.item_id,
+                    quantity=line.quantity,
+                    price=line.price,
+                    item=schemas.ItemFull.model_validate(item),
+                    toppings=[
+                        schemas.ToppingRead.model_validate(toppings[t])
+                        for t in (line.topping_ids or [])
+                        if t in toppings
+                    ],
+                    variants=[
+                        schemas.VariantRead.model_validate(variants[v])
+                        for v in (line.variant_ids or [])
+                        if v in variants
+                    ],
+                )
+            )
+        result.append(
+            schemas.OrderRead(
+                id=order.id,
+                status=order.status.value,
+                total_amount=order.total_amount,
+                payment_status=order.payment_status,
+                extra_notes=order.extra_notes,
+                created_at=order.created_at,
+                updated_at=order.updated_at,
+                order_items=lines,
+            )
+        )
+    return result
+
+
+def list_orders(
+    db: Session,
+    *,
+    user_id: int,
+    status: models.OrderStatus,
+    page: int = 1,
+    page_size: int = 10,
+) -> dict:
+    """A page of the user's orders with the given status, newest first.
+
+    Pagination is applied on the orders table (one `cart` at most, so the cart
+    status simply returns a single-element page). Line items are expanded by
+    `_serialize_orders`; the (user_id, status) index backs the filter + sort.
+    """
+    base = select(models.Order).where(
+        models.Order.user_id == user_id,
+        models.Order.status == status,
+    )
+    total = db.execute(
+        select(func.count()).select_from(base.order_by(None).subquery())
+    ).scalar_one()
+
+    offset = (page - 1) * page_size
+    orders = list(
+        db.execute(
+            base.order_by(models.Order.created_at.desc(), models.Order.id.desc())
+            .limit(page_size)
+            .offset(offset)
+        )
+        .scalars()
+        .all()
+    )
+
+    return {
+        "items": _serialize_orders(db, orders),
+        "total": total,
+        "page": page,
+        "page_size": page_size,
+        "has_more": offset + len(orders) < total,
+    }
+
+
+def place_order(db: Session, user_id: int) -> schemas.OrderRead | None:
+    """Check out the user's cart: stamp its total and flip it to `pending`.
+
+    Returns the placed order, or None if there's no cart or it's empty (so the
+    caller can surface a 400 rather than creating an empty order).
+    """
+    cart = db.execute(
+        select(models.Order).where(
+            models.Order.user_id == user_id,
+            models.Order.status == models.OrderStatus.cart,
+        )
+    ).scalars().first()
+    if cart is None or not cart.order_items:
+        return None
+
+    cart.total_amount = sum(
+        (line.price * line.quantity for line in cart.order_items), Decimal("0")
+    )
+    cart.status = models.OrderStatus.pending
+    db.commit()
+    db.refresh(cart)
+    return _serialize_orders(db, [cart])[0]

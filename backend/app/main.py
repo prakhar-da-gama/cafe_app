@@ -8,7 +8,7 @@ from sqlalchemy import inspect, text
 
 from .config import get_settings
 from .database import Base, engine, ensure_database_exists
-from .routers import auth, cart, game, menu, tags, uploads, users
+from .routers import auth, cart, game, menu, orders, tags, uploads, users
 from .routers.uploads import UPLOAD_DIR
 
 settings = get_settings()
@@ -25,6 +25,14 @@ async def lifespan(app: FastAPI):
     if "photo_path" not in columns:
         with engine.begin() as conn:
             conn.execute(text("ALTER TABLE users ADD COLUMN photo_path VARCHAR(255) NULL"))
+    # Likewise, add the (user_id, status) index to an older orders table that
+    # predates it, so order listing stays indexed on existing databases.
+    order_indexes = {i["name"] for i in inspect(engine).get_indexes("orders")}
+    if "ix_orders_user_status" not in order_indexes:
+        with engine.begin() as conn:
+            conn.execute(
+                text("CREATE INDEX ix_orders_user_status ON orders (user_id, status)")
+            )
     yield
 
 
@@ -42,6 +50,7 @@ app.include_router(auth.router)
 app.include_router(cart.router)
 app.include_router(game.router)
 app.include_router(menu.router)
+app.include_router(orders.router)
 app.include_router(tags.router)
 app.include_router(uploads.router)
 app.include_router(users.router)

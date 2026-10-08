@@ -81,6 +81,9 @@ class ItemFull(BaseModel):
     is_available: bool
     display_order: int
     is_active: bool
+    # Set by the personalised menu for items matching the user's chosen flavours;
+    # always False for the plain full menu (the ORM item has no such column).
+    is_recommended: bool = False
     toppings: list[ToppingRead] = []
     variants: list[VariantRead] = []
 
@@ -149,6 +152,47 @@ class OrderItemRead(BaseModel):
 
 class CartCountResponse(BaseModel):
     cart_count: int = 0
+
+
+# ---- Orders ----
+
+
+class OrderLineRead(BaseModel):
+    """One line of an order: the snapshotted quantity/price plus the full item
+    and the specific toppings and variants that were chosen for this line."""
+
+    id: int
+    item_id: int
+    quantity: int
+    # Unit price snapshot taken when the line was added (base + variants + toppings).
+    price: Decimal
+    item: ItemFull
+    toppings: list[ToppingRead] = []
+    variants: list[VariantRead] = []
+
+
+class OrderRead(BaseModel):
+    """An order (or the cart) with its fully expanded line items."""
+
+    id: int
+    status: str
+    total_amount: Decimal
+    payment_status: bool
+    extra_notes: str | None = None
+    created_at: datetime
+    updated_at: datetime
+    order_items: list[OrderLineRead] = []
+
+
+class PaginatedOrders(BaseModel):
+    """A page of the user's orders for a given status (one cart at most for the
+    `cart` status), newest first, paged on the orders table."""
+
+    items: list[OrderRead]
+    total: int
+    page: int
+    page_size: int
+    has_more: bool
 
 
 # ---- Tags ----

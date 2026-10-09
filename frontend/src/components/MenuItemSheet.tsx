@@ -4,10 +4,13 @@ import {
   getItem,
   money,
   signedMoney,
+  viewItemRatings,
+  type ItemReviewsResponse,
   type MenuItem,
   type Topping,
 } from '../api'
 import DishPhoto from './DishPhoto'
+import StarRating from './StarRating'
 
 interface Props {
   item: MenuItem
@@ -117,6 +120,28 @@ export default function MenuItemSheet({
   // ---- Manager stock controls ----
   const [stockBusy, setStockBusy] = useState(false)
   const [toppingBusy, setToppingBusy] = useState<number | null>(null)
+
+  // ---- Manager item reviews ----
+  // The average rating is fetched when the manager opens the sheet so it shows
+  // on the popup itself; the "Show reviews" button reveals the detailed list.
+  const [reviews, setReviews] = useState<ItemReviewsResponse | null>(null)
+  const [reviewsOpen, setReviewsOpen] = useState(false)
+  const [reviewsLoading, setReviewsLoading] = useState(false)
+  const [reviewsError, setReviewsError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!managerMode) return
+    let alive = true
+    setReviewsLoading(true)
+    setReviewsError(null)
+    viewItemRatings(item.id)
+      .then((r) => alive && setReviews(r))
+      .catch((e) => alive && setReviewsError((e as Error).message))
+      .finally(() => alive && setReviewsLoading(false))
+    return () => {
+      alive = false
+    }
+  }, [managerMode, item.id])
 
   const toggleToppingStock = async (t: Topping) => {
     if (!onSetToppingAvailability) return
@@ -402,6 +427,74 @@ export default function MenuItemSheet({
                   ),
                 )}
               </div>
+            </div>
+          )}
+
+          {managerMode && (
+            <div className="opt-block item-reviews">
+              <div className="item-reviews-head">
+                <span className="opt-label">Ratings &amp; reviews</span>
+                {reviews && reviews.rating_count > 0 ? (
+                  <div className="item-reviews-avg">
+                    <StarRating
+                      value={reviews.average_rating ?? 0}
+                      size={18}
+                      label="Average rating"
+                    />
+                    <span className="item-reviews-avg-num">
+                      {reviews.average_rating?.toFixed(1)}
+                    </span>
+                    <span className="muted">
+                      ({reviews.rating_count})
+                    </span>
+                  </div>
+                ) : (
+                  !reviewsLoading && (
+                    <span className="muted">No ratings yet</span>
+                  )
+                )}
+              </div>
+
+              {reviewsError && <p className="form-error">{reviewsError}</p>}
+
+              {reviews && reviews.reviews.length > 0 && (
+                <button
+                  type="button"
+                  className="link-btn item-reviews-toggle"
+                  onClick={() => setReviewsOpen((o) => !o)}
+                >
+                  {reviewsOpen
+                    ? 'Hide reviews'
+                    : `Show reviews (${reviews.reviews.length})`}
+                </button>
+              )}
+
+              {reviewsOpen && reviews && (
+                <ul className="item-reviews-list">
+                  {reviews.reviews.map((r) => (
+                    <li key={r.order_item_id} className="item-review">
+                      <div className="item-review-top">
+                        {r.rating != null && (
+                          <StarRating value={r.rating} size={14} />
+                        )}
+                        <span className="item-review-when">
+                          {new Date(r.created_at).toLocaleDateString()}
+                        </span>
+                      </div>
+                      {r.review && (
+                        <p className="item-review-text">{r.review}</p>
+                      )}
+                      {r.review_photo_paths.length > 0 && (
+                        <div className="line-review-photos">
+                          {r.review_photo_paths.map((p) => (
+                            <img key={p} src={p} alt="Review" loading="lazy" />
+                          ))}
+                        </div>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
           )}
 

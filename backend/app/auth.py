@@ -68,15 +68,30 @@ def require_jwt(
 
 
 def require_manager(claims: dict[str, Any] = Depends(require_jwt)) -> dict[str, Any]:
-    """Like require_jwt, but also enforces the token belongs to a manager.
+    """Like require_jwt, but enforces the token belongs to a manager *or* an
+    admin. Admins can reach everything a manager can (plus their own area).
 
     The user type is carried in the token's `type` claim (see
     create_access_token), so this needs no extra database round-trip.
     """
-    if claims.get("type") != models.UserType.manager.value:
+    if claims.get("type") not in (
+        models.UserType.manager.value,
+        models.UserType.admin.value,
+    ):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Manager access required",
+        )
+    return claims
+
+
+def require_admin(claims: dict[str, Any] = Depends(require_jwt)) -> dict[str, Any]:
+    """Like require_jwt, but enforces the token belongs to an admin. Used to
+    gate the admin-only area (which sits above the manager dashboard)."""
+    if claims.get("type") != models.UserType.admin.value:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin access required",
         )
     return claims
 

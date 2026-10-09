@@ -1,13 +1,30 @@
 import { money, signedMoney, type OrderLine } from '../api'
+import OrderItemReview from './OrderItemReview'
 
 interface Props {
   lines: OrderLine[]
+  /** When true (completed orders), each line gets a star-rating reviewer. */
+  reviewable?: boolean
+  /** Called with a line's saved review so the parent can update its state. */
+  onLineReviewed?: (
+    lineId: number,
+    changes: {
+      rating: number | null
+      review: string | null
+      review_photo_paths: string[]
+    },
+  ) => void
 }
 
 /** The expanded line items of an order (or cart): each with its dish, the
  *  chosen sizes and add-ons, quantity, and line subtotal. Shared by the cart
- *  and my-orders pages so they read identically. */
-export default function OrderLines({ lines }: Props) {
+ *  and my-orders pages so they read identically. On completed orders it also
+ *  renders a per-item reviewer. */
+export default function OrderLines({
+  lines,
+  reviewable = false,
+  onLineReviewed,
+}: Props) {
   return (
     <div className="order-lines">
       {lines.map((line) => (
@@ -48,6 +65,13 @@ export default function OrderLines({ lines }: Props) {
               {money(Number(line.price) * line.quantity)}
             </span>
           </div>
+
+          {reviewable && (
+            <OrderItemReview
+              line={line}
+              onSaved={(changes) => onLineReviewed?.(line.id, changes)}
+            />
+          )}
         </article>
       ))}
     </div>

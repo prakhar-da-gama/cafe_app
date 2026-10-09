@@ -1,6 +1,14 @@
 import { useEffect, useState } from 'react'
-import { clearToken, getMe, type User } from '../api'
+import {
+  clearToken,
+  getMe,
+  getServiceRatingSummary,
+  type ServiceRatingSummary,
+  type User,
+} from '../api'
 import ManagerOrders from './ManagerOrders'
+import ServiceReviewsPanel from '../components/ServiceReviewsPanel'
+import StarRating from '../components/StarRating'
 
 interface Props {
   onSignedOut: () => void
@@ -21,14 +29,27 @@ export default function ManagerHome({
   onViewOosToppings,
 }: Props) {
   const [user, setUser] = useState<User | null>(null)
+  const [serviceRating, setServiceRating] = useState<ServiceRatingSummary | null>(
+    null,
+  )
+  const [reviewsOpen, setReviewsOpen] = useState(false)
+
+  useEffect(() => {
+    getServiceRatingSummary()
+      .then(setServiceRating)
+      .catch(() => {
+        /* the rating badge is non-critical; ignore failures */
+      })
+  }, [])
 
   useEffect(() => {
     let alive = true
     getMe()
       .then((u) => {
         if (!alive) return
-        // A customer token must not unlock the manager area.
-        if (u.user_type !== 'manager') {
+        // A customer token must not unlock the manager area. Admins may view it
+        // too (they sit above managers).
+        if (u.user_type !== 'manager' && u.user_type !== 'admin') {
           clearToken()
           onSignedOut()
           return
@@ -60,7 +81,7 @@ export default function ManagerHome({
 
   return (
     <div className="screen menu-screen mgr-screen">
-      <header className="cafe-header">
+      <header className="cafe-header mgr-dash-header">
         <div className="brand">
           <div className="brand-stack">
             <span className="brand-name">Coffee Trading Co</span>
@@ -76,13 +97,32 @@ export default function ManagerHome({
           <button type="button" className="menu-btn" onClick={onViewMenu}>
             View full menu
           </button>
-          <span className="mgr-tag">Manager</span>
         </div>
       </header>
 
-      <div className="menu-head menu-head-row">
+      <div className="menu-head mgr-dash-head">
         <h1 className="menu-title">Orders</h1>
         <div className="mgr-nav">
+          <button
+            type="button"
+            className="service-rating-badge"
+            onClick={() => setReviewsOpen(true)}
+            title="View service reviews"
+          >
+            <StarRating
+              value={serviceRating?.average_rating ?? 0}
+              size={16}
+              label="Average service rating"
+            />
+            <span className="service-rating-num">
+              {serviceRating?.average_rating != null
+                ? serviceRating.average_rating.toFixed(1)
+                : '—'}
+            </span>
+            <span className="muted">
+              Service ({serviceRating?.rating_count ?? 0})
+            </span>
+          </button>
           <button type="button" className="orders-link" onClick={onViewOosItems}>
             Out-of-stock items
           </button>
@@ -97,6 +137,10 @@ export default function ManagerHome({
       </div>
 
       <ManagerOrders />
+
+      {reviewsOpen && (
+        <ServiceReviewsPanel onClose={() => setReviewsOpen(false)} />
+      )}
     </div>
   )
 }

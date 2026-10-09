@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { listOrders, money, type Order, type OrderStatus } from '../api'
 import CafeHeader from '../components/CafeHeader'
 import OrderLines from '../components/OrderLines'
+import ServiceReviewCard from '../components/ServiceReviewCard'
 
 interface Props {
   /** Which status the filter opens on (e.g. `pending` from the menus). */
@@ -56,6 +57,34 @@ export default function MyOrders({
     load(status, 1)
   }, [status, load])
 
+  // Fold a saved line review back into local state so the card stays in sync
+  // without a refetch.
+  const handleLineReviewed = useCallback(
+    (
+      orderId: number,
+      lineId: number,
+      changes: {
+        rating: number | null
+        review: string | null
+        review_photo_paths: string[]
+      },
+    ) => {
+      setOrders((prev) =>
+        prev.map((o) =>
+          o.id !== orderId
+            ? o
+            : {
+                ...o,
+                order_items: o.order_items.map((l) =>
+                  l.id === lineId ? { ...l, ...changes } : l,
+                ),
+              },
+        ),
+      )
+    },
+    [],
+  )
+
   return (
     <div className="screen menu-screen">
       <CafeHeader onBack={onBack} onViewMenu={onViewMenu} />
@@ -98,12 +127,22 @@ export default function MyOrders({
               </span>
             </div>
 
-            <OrderLines lines={order.order_items} />
+            <OrderLines
+              lines={order.order_items}
+              reviewable={order.status === 'completed'}
+              onLineReviewed={(lineId, changes) =>
+                handleLineReviewed(order.id, lineId, changes)
+              }
+            />
 
             <div className="cart-total-row">
               <span>Total</span>
               <span className="cart-total">{money(order.total_amount)}</span>
             </div>
+
+            {order.status === 'completed' && (
+              <ServiceReviewCard orderId={order.id} />
+            )}
           </section>
         ))}
       </div>

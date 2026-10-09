@@ -22,6 +22,8 @@ class ItemBase(BaseModel):
 class ItemCreate(ItemBase):
     # Topping ids to allow on this item (written through the M2M relationship).
     topping_ids: list[int] = []
+    # Variant ids offered by this item (written through the M2M relationship).
+    variant_ids: list[int] = []
 
 
 class ItemUpdate(BaseModel):
@@ -32,6 +34,7 @@ class ItemUpdate(BaseModel):
     photos: list[str] | None = None
     tag_ids: list[int] | None = None
     topping_ids: list[int] | None = None
+    variant_ids: list[int] | None = None
     is_veg: bool | None = None
     is_available: bool | None = None
     display_order: int | None = None
@@ -42,8 +45,10 @@ class ItemRead(ItemBase):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
-    # Populated from the Item.topping_ids property (derived from the relationship).
+    # Populated from the Item.topping_ids / variant_ids properties (derived from
+    # the M2M relationships).
     topping_ids: list[int] = []
+    variant_ids: list[int] = []
     created_at: datetime
     updated_at: datetime
 
@@ -156,6 +161,27 @@ class SubcategoryCreate(BaseModel):
     is_active: bool = True
 
 
+class ToppingCreate(BaseModel):
+    """Create a topping in the shared pool; its id is then linked to one or
+    more items via the item_toppings association."""
+
+    name: str = Field(..., min_length=1, max_length=80)
+    price: Decimal = Field(default=Decimal("0"), ge=0)
+    photos: list[str] = []
+    is_available: bool = True
+    is_active: bool = True
+
+
+class VariantCreate(BaseModel):
+    """Create a variant in the shared pool; its id is then linked to one or
+    more items via the item_variants association."""
+
+    name: str = Field(..., min_length=1, max_length=80)
+    description: str | None = None
+    # Signed adjustment to the item's base price (e.g. Large = +40, Small = -20).
+    price_delta: Decimal = Decimal("0")
+
+
 class ItemSummary(BaseModel):
     """A lightweight item reference (no nested toppings/variants)."""
 
@@ -186,6 +212,20 @@ class AddToCartRequest(BaseModel):
     # Single selected variant, if the item offers variants.
     variant_id: int | None = None
     quantity: int = Field(default=1, ge=1)
+    # Optional review fields (normally left blank at add-to-cart time and filled
+    # in later via the review endpoint once the order is completed).
+    rating: int | None = Field(default=None, ge=0, le=5)
+    review: str | None = None
+    review_photo_paths: list[str] = []
+
+
+class OrderItemReviewUpdate(BaseModel):
+    """Customer review for a single completed order line. Every field is
+    optional so a review can set a star rating, a note, photos, or any mix."""
+
+    rating: int | None = Field(default=None, ge=0, le=5)
+    review: str | None = None
+    review_photo_paths: list[str] | None = None
 
 
 class OrderItemRead(BaseModel):
@@ -198,6 +238,9 @@ class OrderItemRead(BaseModel):
     variant_ids: list[int] = []
     quantity: int
     price: Decimal
+    rating: int | None = None
+    review: str | None = None
+    review_photo_paths: list[str] = []
 
 
 class CartCountResponse(BaseModel):
@@ -219,6 +262,10 @@ class OrderLineRead(BaseModel):
     item: ItemFull
     toppings: list[ToppingRead] = []
     variants: list[VariantRead] = []
+    # Customer review of this line (present once left; all optional).
+    rating: int | None = None
+    review: str | None = None
+    review_photo_paths: list[str] = []
 
 
 class OrderRead(BaseModel):
@@ -252,6 +299,81 @@ class OrderManagerUpdate(BaseModel):
 
     status: OrderStatus | None = None
     payment_status: bool | None = None
+
+
+# ---- Item reviews (manager view) ----
+
+
+class ItemReviewEntry(BaseModel):
+    """One customer review of an item, pulled from an order line it appears on."""
+
+    order_item_id: int
+    order_id: int
+    rating: int | None = None
+    review: str | None = None
+    review_photo_paths: list[str] = []
+    created_at: datetime
+
+
+class ItemReviewsResponse(BaseModel):
+    """All reviews left for one menu item across every order it appears on,
+    plus the average star rating. Powers the manager's "view ratings" popup."""
+
+    item_id: int
+    average_rating: float | None = None
+    rating_count: int = 0
+    reviews: list[ItemReviewEntry] = []
+
+
+# ---- Service reviews ----
+
+
+class ServiceReviewCreate(BaseModel):
+    """A customer's overall service review for one completed order."""
+
+    order_id: int
+    rating: int = Field(..., ge=0, le=5)
+    review: str | None = None
+    review_images: list[str] = []
+
+
+class ServiceReviewUpdate(BaseModel):
+    """Partial edit of a service review; only the fields set are changed."""
+
+    rating: int | None = Field(default=None, ge=0, le=5)
+    review: str | None = None
+    review_images: list[str] | None = None
+
+
+class ServiceReviewRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    order_id: int
+    user_id: int
+    rating: int
+    review: str | None = None
+    review_images: list[str] = []
+    created_at: datetime
+    updated_at: datetime
+
+
+class PaginatedServiceReviews(BaseModel):
+    """A page of service reviews (newest first) plus the overall average."""
+
+    items: list[ServiceReviewRead]
+    total: int
+    page: int
+    page_size: int
+    has_more: bool
+    average_rating: float | None = None
+
+
+class ServiceRatingSummary(BaseModel):
+    """Headline service rating for the manager dashboard."""
+
+    average_rating: float | None = None
+    rating_count: int = 0
 
 
 # ---- Tags ----

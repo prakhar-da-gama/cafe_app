@@ -19,6 +19,13 @@ def _load_toppings(db: Session, topping_ids: list[int]) -> list[models.Topping]:
     return list(db.execute(stmt).scalars().all())
 
 
+def _load_variants(db: Session, variant_ids: list[int]) -> list[models.Variant]:
+    if not variant_ids:
+        return []
+    stmt = select(models.Variant).where(models.Variant.id.in_(variant_ids))
+    return list(db.execute(stmt).scalars().all())
+
+
 def list_items(
     db: Session, subcategory_id: int | None = None, available_only: bool = False
 ) -> list[models.Item]:
@@ -208,6 +215,7 @@ def list_items_by_tags(
 def create_item(db: Session, data: schemas.ItemCreate) -> models.Item:
     payload = data.model_dump()
     topping_ids = payload.pop("topping_ids", [])
+    variant_ids = payload.pop("variant_ids", [])
     # With no explicit position, append to the end of its subcategory so new
     # dishes don't jump ahead of the existing, deliberately ordered ones.
     if not payload.get("display_order"):
@@ -218,6 +226,7 @@ def create_item(db: Session, data: schemas.ItemCreate) -> models.Item:
         )
     item = models.Item(**payload)
     item.toppings = _load_toppings(db, topping_ids)
+    item.variants = _load_variants(db, variant_ids)
     db.add(item)
     db.commit()
     db.refresh(item)
@@ -229,13 +238,46 @@ def update_item(
 ) -> models.Item:
     payload = data.model_dump(exclude_unset=True)
     topping_ids = payload.pop("topping_ids", None)
+    variant_ids = payload.pop("variant_ids", None)
     for field, value in payload.items():
         setattr(item, field, value)
     if topping_ids is not None:
         item.toppings = _load_toppings(db, topping_ids)
+    if variant_ids is not None:
+        item.variants = _load_variants(db, variant_ids)
     db.commit()
     db.refresh(item)
     return item
+
+
+def create_topping(db: Session, data: schemas.ToppingCreate) -> models.Topping:
+    """Add a topping to the shared pool. Linking it to items happens separately
+    (via each item's topping_ids)."""
+    topping = models.Topping(
+        name=data.name,
+        price=data.price,
+        photos=list(data.photos),
+        is_available=data.is_available,
+        is_active=data.is_active,
+    )
+    db.add(topping)
+    db.commit()
+    db.refresh(topping)
+    return topping
+
+
+def create_variant(db: Session, data: schemas.VariantCreate) -> models.Variant:
+    """Add a variant to the shared pool. Linking it to items happens separately
+    (via each item's variant_ids)."""
+    variant = models.Variant(
+        name=data.name,
+        description=data.description,
+        price_delta=data.price_delta,
+    )
+    db.add(variant)
+    db.commit()
+    db.refresh(variant)
+    return variant
 
 
 def delete_item(db: Session, item: models.Item) -> None:
@@ -364,6 +406,16 @@ def manager_exists(db: Session, email: str) -> bool:
     return db.execute(stmt).first() is not None
 
 
+def admin_exists(db: Session, email: str) -> bool:
+    """True if an account with this email exists and is an admin. Backs the
+    public pre-check on the admin login page (admins can't self-sign-up)."""
+    stmt = select(models.User.id).where(
+        models.User.email_id == email,
+        models.User.user_type == models.UserType.admin,
+    )
+    return db.execute(stmt).first() is not None
+
+
 def create_otp_user(db: Session, email: str) -> models.User:
     """Create a passwordless, nameless account for a verified email."""
     user = models.User(
@@ -427,6 +479,9 @@ def add_item_to_cart(
     topping_ids: list[int],
     variant_id: int | None,
     quantity: int,
+    rating: int | None = None,
+    review: str | None = None,
+    review_photo_paths: list[str] | None = None,
 ) -> models.OrderItem:
     """Add a validated line item to the user's cart, snapshotting its unit price.
 
@@ -452,6 +507,9 @@ def add_item_to_cart(
         variant_ids=variant_ids,
         quantity=quantity,
         price=total,
+        rating=rating,
+        review=review,
+        review_photo_paths=list(review_photo_paths or []),
     )
     db.add(order_item)
     db.commit()
@@ -512,6 +570,9 @@ def _serialize_orders(
                         for v in (line.variant_ids or [])
                         if v in variants
                     ],
+                    rating=line.rating,
+                    review=line.review,
+                    review_photo_paths=line.review_photo_paths or [],
                 )
             )
         result.append(
@@ -652,3 +713,208 @@ def manager_update_order(
     db.commit()
     db.refresh(order)
     return _serialize_orders(db, [order])[0]
+
+
+def update_order_item_review(
+    db: Session,
+    *,
+    user_id: int,
+    order_item_id: int,
+    rating: int | None,
+    review: str | None,
+    review_photo_paths: list[str] | None,
+) -> models.OrderItem | None:
+    """Set the review (rating / note / photos) on one of the user's completed
+    order lines.
+
+    Returns the updated line, or None if it doesn't exist, doesn't belong to the
+    user, or its order isn't completed yet (so the caller can 404/400). Only the
+    fields passed in are changed; omit a field to leave it untouched.
+    """
+    line = db.get(models.OrderItem, order_item_id)
+    if line is None:
+        return None
+    order = db.get(models.Order, line.order_id)
+    if order is None or order.user_id != user_id:
+        return None
+    if order.status != models.OrderStatus.completed:
+        return None
+
+    if rating is not None:
+        line.rating = rating
+    if review is not None:
+        line.review = review
+    if review_photo_paths is not None:
+        line.review_photo_paths = list(review_photo_paths)
+
+    db.commit()
+    db.refresh(line)
+    return line
+
+
+def view_rating_of_an_item_from_order_items(
+    db: Session, item_id: int
+) -> schemas.ItemReviewsResponse:
+    """Every review left for a menu item, gathered from the order lines that
+    reference it, plus the average star rating.
+
+    The relationship is item → order_items via ``order_items.item_id``; we pull
+    all lines for this item that carry a rating, a note, or photos, newest order
+    first, and average the (non-null) ratings for the headline figure.
+    """
+    rows = list(
+        db.execute(
+            select(models.OrderItem, models.Order.created_at)
+            .join(models.Order, models.OrderItem.order_id == models.Order.id)
+            .where(models.OrderItem.item_id == item_id)
+            .order_by(models.Order.created_at.desc(), models.OrderItem.id.desc())
+        ).all()
+    )
+
+    reviews: list[schemas.ItemReviewEntry] = []
+    ratings: list[int] = []
+    for line, created_at in rows:
+        photos = line.review_photo_paths or []
+        has_review = line.rating is not None or bool(line.review) or bool(photos)
+        if not has_review:
+            continue
+        if line.rating is not None:
+            ratings.append(line.rating)
+        reviews.append(
+            schemas.ItemReviewEntry(
+                order_item_id=line.id,
+                order_id=line.order_id,
+                rating=line.rating,
+                review=line.review,
+                review_photo_paths=photos,
+                created_at=created_at,
+            )
+        )
+
+    average = round(sum(ratings) / len(ratings), 2) if ratings else None
+    return schemas.ItemReviewsResponse(
+        item_id=item_id,
+        average_rating=average,
+        rating_count=len(ratings),
+        reviews=reviews,
+    )
+
+
+# ---- Service reviews ----
+
+
+def get_service_review_for_order(
+    db: Session, order_id: int
+) -> models.ServiceReview | None:
+    """The existing service review for an order, if any."""
+    return db.execute(
+        select(models.ServiceReview).where(
+            models.ServiceReview.order_id == order_id
+        )
+    ).scalars().first()
+
+
+def create_service_review(
+    db: Session, *, user_id: int, data: schemas.ServiceReviewCreate
+) -> models.ServiceReview | None:
+    """Create the overall service review for one of the user's completed orders.
+
+    Returns None if the order doesn't exist, isn't the user's, or isn't
+    completed; the caller turns that into a 400. Returns the existing review
+    unchanged if one already exists (caller surfaces a 409).
+    """
+    order = db.get(models.Order, data.order_id)
+    if order is None or order.user_id != user_id:
+        return None
+    if order.status != models.OrderStatus.completed:
+        return None
+
+    review = models.ServiceReview(
+        order_id=data.order_id,
+        user_id=user_id,
+        rating=data.rating,
+        review=data.review,
+        review_images=list(data.review_images),
+    )
+    db.add(review)
+    db.commit()
+    db.refresh(review)
+    return review
+
+
+def update_service_review(
+    db: Session,
+    *,
+    user_id: int,
+    review_id: int,
+    rating: int | None,
+    review: str | None,
+    review_images: list[str] | None,
+) -> models.ServiceReview | None:
+    """Edit one of the user's service reviews. Only the fields passed are
+    changed. Returns None if the review doesn't exist or isn't the user's."""
+    row = db.get(models.ServiceReview, review_id)
+    if row is None or row.user_id != user_id:
+        return None
+
+    if rating is not None:
+        row.rating = rating
+    if review is not None:
+        row.review = review
+    if review_images is not None:
+        row.review_images = list(review_images)
+
+    db.commit()
+    db.refresh(row)
+    return row
+
+
+def _service_average(db: Session) -> tuple[float | None, int]:
+    """(average rating, number of reviews) across all service reviews."""
+    count = db.execute(
+        select(func.count()).select_from(models.ServiceReview)
+    ).scalar_one()
+    if not count:
+        return None, 0
+    avg = db.execute(select(func.avg(models.ServiceReview.rating))).scalar_one()
+    return (round(float(avg), 2) if avg is not None else None), count
+
+
+def get_service_rating_summary(db: Session) -> dict:
+    """Headline service rating (average + count) for the manager dashboard."""
+    average, count = _service_average(db)
+    return {"average_rating": average, "rating_count": count}
+
+
+def list_service_reviews(
+    db: Session, *, page: int = 1, page_size: int = 10
+) -> dict:
+    """A page of service reviews, newest first, plus the overall average."""
+    base = select(models.ServiceReview)
+    total = db.execute(
+        select(func.count()).select_from(base.order_by(None).subquery())
+    ).scalar_one()
+
+    offset = (page - 1) * page_size
+    rows = list(
+        db.execute(
+            base.order_by(
+                models.ServiceReview.created_at.desc(),
+                models.ServiceReview.id.desc(),
+            )
+            .limit(page_size)
+            .offset(offset)
+        )
+        .scalars()
+        .all()
+    )
+
+    average, _ = _service_average(db)
+    return {
+        "items": [schemas.ServiceReviewRead.model_validate(r) for r in rows],
+        "total": total,
+        "page": page,
+        "page_size": page_size,
+        "has_more": offset + len(rows) < total,
+        "average_rating": average,
+    }

@@ -88,6 +88,48 @@ def manager_update_order(
     )
 
 
+@router.patch("/items/{order_item_id}", response_model=schemas.OrderItemRead)
+def review_order_item(
+    order_item_id: int,
+    payload: schemas.OrderItemReviewUpdate,
+    db: Session = Depends(get_db),
+    claims: dict[str, Any] = Depends(require_jwt),
+):
+    """Customer: leave (or update) a review on one line of a completed order —
+    a 0–5 star rating, a free-text note, and/or uploaded photo paths, all
+    optional. Fails with 404 if the line isn't the caller's, or 400 if the order
+    isn't completed yet. Requires a valid JWT bearer token."""
+    line = crud.update_order_item_review(
+        db,
+        user_id=int(claims["sub"]),
+        order_item_id=order_item_id,
+        rating=payload.rating,
+        review=payload.review,
+        review_photo_paths=payload.review_photo_paths,
+    )
+    if line is None:
+        raise HTTPException(
+            status_code=400,
+            detail="Order line not found, not yours, or its order isn't completed",
+        )
+    return line
+
+
+@router.get(
+    "/items/{item_id}/reviews", response_model=schemas.ItemReviewsResponse
+)
+def view_rating_of_an_item_from_order_items(
+    item_id: int,
+    db: Session = Depends(get_db),
+    _claims: dict[str, Any] = Depends(require_manager),
+):
+    """Manager: all reviews left for a menu item, gathered from every order line
+    that references it (item → order_items via item_id), plus the average star
+    rating. Backs the "view ratings" popup on the manager's full menu. Requires
+    a manager JWT."""
+    return crud.view_rating_of_an_item_from_order_items(db, item_id)
+
+
 @router.post("/place", response_model=schemas.OrderRead)
 def place_order(
     db: Session = Depends(get_db),

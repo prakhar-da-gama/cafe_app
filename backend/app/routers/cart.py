@@ -55,6 +55,9 @@ def add_item_to_cart(
         topping_ids=payload.topping_ids,
         variant_id=payload.variant_id,
         quantity=payload.quantity,
+        rating=payload.rating,
+        review=payload.review,
+        review_photo_paths=payload.review_photo_paths,
     )
 
 

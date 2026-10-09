@@ -27,6 +27,17 @@ def does_manager_exist(
     return schemas.ExistsResponse(exists=crud.manager_exists(db, email.lower()))
 
 
+@router.get("/does-admin-exist", response_model=schemas.ExistsResponse)
+def does_admin_exist(
+    email: EmailStr = Query(..., description="Email to check for an admin account."),
+    db: Session = Depends(get_db),
+):
+    """Public: true if an admin account exists for this email. The admin login
+    page calls this before sending an OTP, since admins are provisioned (no self
+    sign-up) — an unknown email should be rejected, not onboarded."""
+    return schemas.ExistsResponse(exists=crud.admin_exists(db, email.lower()))
+
+
 @router.post("/send-otp", response_model=schemas.MessageResponse)
 def send_otp(payload: schemas.SendOtpRequest, db: Session = Depends(get_db)):
     email = payload.email.lower()

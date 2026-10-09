@@ -8,7 +8,17 @@ from sqlalchemy import inspect, text
 
 from .config import get_settings
 from .database import Base, engine, ensure_database_exists
-from .routers import auth, cart, game, menu, orders, tags, uploads, users
+from .routers import (
+    auth,
+    cart,
+    game,
+    menu,
+    orders,
+    service_reviews,
+    tags,
+    uploads,
+    users,
+)
 from .routers.uploads import UPLOAD_DIR
 
 settings = get_settings()
@@ -56,6 +66,7 @@ app.include_router(cart.router)
 app.include_router(game.router)
 app.include_router(menu.router)
 app.include_router(orders.router)
+app.include_router(service_reviews.router)
 app.include_router(tags.router)
 app.include_router(uploads.router)
 app.include_router(users.router)

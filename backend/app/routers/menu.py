@@ -93,6 +93,36 @@ def create_subcategory(
 
 
 @router.post(
+    "/toppings",
+    response_model=schemas.ToppingRead,
+    status_code=status.HTTP_201_CREATED,
+)
+def create_topping_managed(
+    payload: schemas.ToppingCreate,
+    db: Session = Depends(get_db),
+    _claims: dict[str, Any] = Depends(require_manager),
+):
+    """Manager: add a topping to the shared pool, returning it with its new id so
+    the caller can link it to a dish. Requires a manager JWT."""
+    return crud.create_topping(db, payload)
+
+
+@router.post(
+    "/variants",
+    response_model=schemas.VariantRead,
+    status_code=status.HTTP_201_CREATED,
+)
+def create_variant_managed(
+    payload: schemas.VariantCreate,
+    db: Session = Depends(get_db),
+    _claims: dict[str, Any] = Depends(require_manager),
+):
+    """Manager: add a variant to the shared pool, returning it with its new id so
+    the caller can link it to a dish. Requires a manager JWT."""
+    return crud.create_variant(db, payload)
+
+
+@router.post(
     "/items",
     response_model=schemas.ItemDetail,
     status_code=status.HTTP_201_CREATED,

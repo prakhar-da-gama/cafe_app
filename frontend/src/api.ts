@@ -141,6 +141,9 @@ export interface OrderItem {
   variant_ids: number[]
   quantity: number
   price: number | string
+  rating: number | null
+  review: string | null
+  review_photo_paths: string[]
 }
 
 // The lifecycle of an order. `cart` is the open draft; `pending` onwards are
@@ -163,6 +166,53 @@ export interface OrderLine {
   item: MenuItem
   toppings: Topping[]
   variants: Variant[]
+  // Customer review of this line, left once the order is completed.
+  rating: number | null
+  review: string | null
+  review_photo_paths: string[]
+}
+
+// One review of a menu item, gathered from an order line (manager view).
+export interface ItemReviewEntry {
+  order_item_id: number
+  order_id: number
+  rating: number | null
+  review: string | null
+  review_photo_paths: string[]
+  created_at: string
+}
+
+export interface ItemReviewsResponse {
+  item_id: number
+  average_rating: number | null
+  rating_count: number
+  reviews: ItemReviewEntry[]
+}
+
+// Overall per-order service review.
+export interface ServiceReview {
+  id: number
+  order_id: number
+  user_id: number
+  rating: number
+  review: string | null
+  review_images: string[]
+  created_at: string
+  updated_at: string
+}
+
+export interface PaginatedServiceReviews {
+  items: ServiceReview[]
+  total: number
+  page: number
+  page_size: number
+  has_more: boolean
+  average_rating: number | null
+}
+
+export interface ServiceRatingSummary {
+  average_rating: number | null
+  rating_count: number
 }
 
 export interface Order {
@@ -214,6 +264,16 @@ function authHeaders(): Record<string, string> {
 export function doesManagerExist(email: string): Promise<{ exists: boolean }> {
   const params = new URLSearchParams({ email })
   return fetch(`/api/auth/does-manager-exist?${params.toString()}`).then((r) =>
+    handle<{ exists: boolean }>(r),
+  )
+}
+
+// Public pre-check for the admin login: true if an admin account exists for
+// this email. Admins are provisioned (no self sign-up), so the login page
+// calls this before sending an OTP and rejects unknown emails.
+export function doesAdminExist(email: string): Promise<{ exists: boolean }> {
+  const params = new URLSearchParams({ email })
+  return fetch(`/api/auth/does-admin-exist?${params.toString()}`).then((r) =>
     handle<{ exists: boolean }>(r),
   )
 }
@@ -426,8 +486,22 @@ export interface ItemCreate {
   photos?: string[]
   tag_ids?: number[]
   topping_ids?: number[]
+  variant_ids?: number[]
   is_veg?: boolean
   is_available?: boolean
+}
+
+export interface ToppingCreate {
+  name: string
+  price?: number
+  photos?: string[]
+  is_available?: boolean
+}
+
+export interface VariantCreate {
+  name: string
+  description?: string | null
+  price_delta?: number
 }
 
 // Manager: create a new top-level category. Returns it (with no subcategories
@@ -450,6 +524,26 @@ export function createSubcategory(
     headers: { 'Content-Type': 'application/json', ...authHeaders() },
     body: JSON.stringify(input),
   }).then((r) => handle<Subcategory>(r))
+}
+
+// Manager: add a topping to the shared pool, returning it with its new id so
+// it can be linked to a dish. Requires a manager token.
+export function createTopping(input: ToppingCreate): Promise<Topping> {
+  return fetch('/api/menu/toppings', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body: JSON.stringify(input),
+  }).then((r) => handle<Topping>(r))
+}
+
+// Manager: add a variant to the shared pool, returning it with its new id so
+// it can be linked to a dish. Requires a manager token.
+export function createVariant(input: VariantCreate): Promise<Variant> {
+  return fetch('/api/menu/variants', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body: JSON.stringify(input),
+  }).then((r) => handle<Variant>(r))
 }
 
 // Manager: create a dish under an existing subcategory. Requires a manager
@@ -539,6 +633,93 @@ export function updateOrder(
     headers: { 'Content-Type': 'application/json', ...authHeaders() },
     body: JSON.stringify(changes),
   }).then((r) => handle<Order>(r))
+}
+
+// ---- Reviews ----
+
+// Customer: leave/update the review (rating, note, photos) on one line of a
+// completed order. Any subset of fields may be sent.
+export function reviewOrderItem(
+  orderItemId: number,
+  changes: {
+    rating?: number | null
+    review?: string | null
+    review_photo_paths?: string[]
+  },
+): Promise<OrderItem> {
+  return fetch(`/api/orders/items/${orderItemId}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body: JSON.stringify(changes),
+  }).then((r) => handle<OrderItem>(r))
+}
+
+// Manager: all reviews left for a menu item (from its order lines) plus the
+// average star rating. Requires a manager token.
+export function viewItemRatings(itemId: number): Promise<ItemReviewsResponse> {
+  return fetch(`/api/orders/items/${itemId}/reviews`, {
+    headers: authHeaders(),
+  }).then((r) => handle<ItemReviewsResponse>(r))
+}
+
+// Customer: the overall service review already left for an order (or null).
+export function getServiceReviewForOrder(
+  orderId: number,
+): Promise<ServiceReview | null> {
+  return fetch(`/api/service-reviews/for-order/${orderId}`, {
+    headers: authHeaders(),
+  }).then((r) => handle<ServiceReview | null>(r))
+}
+
+// Customer: create the overall service review for a completed order.
+export function createServiceReview(input: {
+  order_id: number
+  rating: number
+  review?: string | null
+  review_images?: string[]
+}): Promise<ServiceReview> {
+  return fetch('/api/service-reviews', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body: JSON.stringify(input),
+  }).then((r) => handle<ServiceReview>(r))
+}
+
+// Customer: edit an existing service review.
+export function updateServiceReview(
+  reviewId: number,
+  changes: {
+    rating?: number | null
+    review?: string | null
+    review_images?: string[]
+  },
+): Promise<ServiceReview> {
+  return fetch(`/api/service-reviews/${reviewId}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body: JSON.stringify(changes),
+  }).then((r) => handle<ServiceReview>(r))
+}
+
+// Manager: the headline service rating (average + count).
+export function getServiceRatingSummary(): Promise<ServiceRatingSummary> {
+  return fetch('/api/service-reviews/summary', {
+    headers: authHeaders(),
+  }).then((r) => handle<ServiceRatingSummary>(r))
+}
+
+// Manager: a page of service reviews, newest first, plus the overall average.
+export function listServiceReviews(
+  page = 1,
+  pageSize = 10,
+): Promise<PaginatedServiceReviews> {
+  const params = new URLSearchParams({
+    page: String(page),
+    page_size: String(pageSize),
+  })
+  return fetch(`/api/service-reviews?${params.toString()}`, {
+    headers: authHeaders(),
+  }).then((r) => handle<PaginatedServiceReviews>(r))
 }
 
 // ---- Helpers ----

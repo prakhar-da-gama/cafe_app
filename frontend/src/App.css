@@ -9,6 +9,9 @@
   min-height: 100dvh;
   padding: 0 18px;
   position: relative;
+  /* Never let a wide child make the phone view scroll sideways. `clip` keeps
+     the sticky header working (it doesn't create a scroll container). */
+  overflow-x: clip;
   /* Soft peach-white phone screen; colour comes from buttons and tags */
   background:
     radial-gradient(95% 55% at 50% 0%, var(--cream-2), transparent 70%),
@@ -1903,6 +1906,56 @@
   color: var(--ink);
   margin: 0;
 }
+
+/* Collapsible authoring sections: a clickable header that reveals the form. */
+.section-card { padding: 0; overflow: hidden; }
+.section-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 18px 22px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  text-align: left;
+}
+.section-chevron {
+  flex-shrink: 0;
+  font-family: 'Fredoka', sans-serif;
+  font-size: 1.5rem;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--candy-1);
+}
+.section-body { padding: 0 22px 22px; }
+
+/* Inline variant/topping rows in the dish form: name + price + remove. */
+.option-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.option-row .option-name { flex: 1 1 auto; min-width: 0; }
+.option-row .option-price { flex: 0 0 82px; width: 82px; }
+.option-remove {
+  flex: 0 0 auto;
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border: 2px solid var(--line);
+  border-radius: 50%;
+  background: #fff;
+  color: var(--ink-soft);
+  font-size: 0.9rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+.option-remove:hover { border-color: var(--danger); color: var(--danger); }
 .form-ok {
   color: #178a63;
   font-weight: 700;
@@ -2169,6 +2222,23 @@
 
 /* ---- Out-of-stock pages ---- */
 .mgr-nav { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* ---- Manager dashboard: mobile-friendly header + orders head ---- */
+/* Let the header's action buttons wrap under the brand instead of pushing the
+   layout wider than the phone screen. */
+.mgr-dash-header { flex-wrap: wrap; row-gap: 10px; }
+.mgr-dash-header .hdr-actions { flex-wrap: wrap; justify-content: flex-end; }
+
+/* Centre the "Orders" title and keep the two out-of-stock links on one row. */
+.mgr-dash-head {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  text-align: center;
+}
+.mgr-dash-head .mgr-nav { flex-wrap: nowrap; justify-content: center; }
+.mgr-dash-head .orders-link { padding: 6px 11px; font-size: 0.8rem; }
 .oos-list { display: flex; flex-direction: column; gap: 10px; }
 .oos-row {
   display: flex;
@@ -2201,3 +2271,265 @@
 .oos-group { display: flex; flex-direction: column; gap: 10px; }
 .oos-group-head { display: flex; align-items: center; gap: 8px; margin: 0 2px; }
 .oos-group-name { font-size: 1.1rem; color: var(--ink); }
+
+/* ============================================================
+   Reviews & ratings — stars, per-item reviews, service reviews
+   ============================================================ */
+
+/* ---- Star rating ---- */
+.star-rating { display: inline-flex; align-items: center; gap: 2px; line-height: 0; }
+.star-svg { display: block; }
+.star-svg .star-base { fill: #e9ddcf; }
+.star-svg .star-fill { fill: #ffb92e; }
+.star-rating.is-interactive { gap: 4px; }
+.star-btn {
+  border: none;
+  background: transparent;
+  padding: 2px;
+  cursor: pointer;
+  line-height: 0;
+  border-radius: 8px;
+  transition: transform 0.1s ease;
+}
+.star-btn:hover:not(:disabled) { transform: scale(1.15); }
+.star-btn:active { transform: scale(0.95); }
+.star-btn:focus-visible { outline: 3px solid var(--candy-6); outline-offset: 1px; }
+
+/* ---- Small inline link-style button ---- */
+.link-btn {
+  border: none;
+  background: transparent;
+  color: var(--candy-6);
+  font-family: 'Fredoka', sans-serif;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  padding: 4px 2px;
+}
+.link-btn:hover { text-decoration: underline; }
+.link-btn:disabled { opacity: 0.5; cursor: default; }
+
+/* ---- Shared review bits (photos + textarea) ---- */
+.review-textarea {
+  width: 100%;
+  resize: vertical;
+  min-height: 64px;
+  padding: 10px 12px;
+  border: 2px solid #efe2d6;
+  border-radius: var(--radius-sm);
+  background: #fffdfb;
+  font: inherit;
+  color: var(--ink);
+}
+.review-textarea:focus {
+  outline: none;
+  border-color: var(--candy-1);
+  box-shadow: 0 0 0 4px rgba(255, 111, 181, 0.18);
+}
+.review-photos { display: flex; flex-wrap: wrap; gap: 8px; }
+.review-photo-thumb {
+  position: relative;
+  width: 60px;
+  height: 60px;
+  border-radius: 12px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.review-photo-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.review-photo-remove {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 20px;
+  height: 20px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+}
+.review-photo-add {
+  width: 60px;
+  height: 60px;
+  flex-shrink: 0;
+  border: 2px dashed #e0cdba;
+  border-radius: 12px;
+  background: #fffdfb;
+  color: var(--ink-soft);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  font-size: 1.2rem;
+}
+.review-photo-add span { font-size: 0.62rem; font-weight: 600; }
+.review-photo-add:disabled { opacity: 0.6; cursor: default; }
+
+/* ---- Per-item reviewer (completed order lines) ---- */
+.line-review {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed #efe2d6;
+}
+.line-review-open { width: 100%; }
+.line-review-form { display: flex; flex-direction: column; gap: 10px; }
+.line-review-stars { display: flex; flex-direction: column; gap: 4px; }
+.line-review-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.line-review-summary { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.line-review-edit { margin-left: auto; }
+.line-review-text {
+  margin: 6px 0 0;
+  font-size: 0.92rem;
+  color: var(--ink-soft);
+  font-style: italic;
+}
+.line-review-photos { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.line-review-photos img {
+  width: 56px;
+  height: 56px;
+  object-fit: cover;
+  border-radius: 10px;
+}
+
+/* ---- Overall service review (completed orders) ---- */
+.service-review {
+  margin-top: 14px;
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  background: #fff6ef;
+  border: 1px solid #f1e3d5;
+}
+.service-review-form { display: flex; flex-direction: column; gap: 10px; }
+.service-review-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.service-review-label { font-weight: 700; color: var(--ink); font-size: 0.95rem; }
+.service-review-head .link-btn { margin-left: auto; }
+
+/* ---- Manager: item reviews in the detail sheet ---- */
+.item-reviews { gap: 10px; }
+.item-reviews-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.item-reviews-avg { display: flex; align-items: center; gap: 6px; }
+.item-reviews-avg-num { font-weight: 800; color: var(--ink); }
+.item-reviews-toggle { align-self: flex-start; }
+.item-reviews-list {
+  list-style: none;
+  margin: 4px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 320px;
+  overflow-y: auto;
+}
+.item-review {
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: #fff6ef;
+  border: 1px solid #f1e3d5;
+}
+.item-review-top { display: flex; align-items: center; gap: 8px; }
+.item-review-when { font-size: 0.78rem; color: var(--ink-soft); margin-left: auto; }
+.item-review-text { margin: 6px 0 0; font-size: 0.9rem; color: var(--ink); }
+
+/* ---- Manager dashboard: service rating badge + reviews sheet ---- */
+.service-rating-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid #f1e3d5;
+  background: #fff6ef;
+  cursor: pointer;
+  font-family: 'Fredoka', sans-serif;
+  font-weight: 600;
+  color: var(--ink);
+}
+.service-rating-badge:hover { filter: brightness(0.98); }
+.service-rating-num { font-weight: 800; }
+.service-reviews-sheet { display: flex; flex-direction: column; max-height: 86dvh; }
+.service-reviews-head {
+  padding: 18px 18px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border-bottom: 1px solid #f1e3d5;
+}
+.service-reviews-body {
+  padding: 14px 18px 20px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.service-reviews-body .item-reviews-list { max-height: none; overflow: visible; }
+
+/* ============================================================
+   Admin console — portal tiles
+   ============================================================ */
+.admin-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: linear-gradient(120deg, var(--candy-1), var(--candy-6));
+  color: #fff;
+  font-family: 'Fredoka', sans-serif;
+  font-weight: 700;
+  font-size: 0.82rem;
+  letter-spacing: 0.02em;
+}
+.admin-tiles {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  padding: 4px 0 24px;
+}
+.admin-tile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  min-height: 120px;
+  padding: 16px;
+  border: none;
+  border-radius: var(--radius);
+  cursor: pointer;
+  text-align: left;
+  color: #fff;
+  background: linear-gradient(150deg, var(--candy), #ffffff00),
+    linear-gradient(150deg, var(--candy), var(--candy-6));
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.14);
+  transition: transform 0.12s ease, box-shadow 0.12s ease, filter 0.15s;
+}
+.admin-tile:hover { filter: brightness(1.04); transform: translateY(-2px); }
+.admin-tile:active { transform: translateY(0); box-shadow: 0 5px 12px rgba(0, 0, 0, 0.16); }
+.admin-tile:focus-visible { outline: 3px solid var(--candy-6); outline-offset: 2px; }
+.admin-tile-title {
+  font-family: 'Fredoka', sans-serif;
+  font-weight: 800;
+  font-size: 1.08rem;
+  line-height: 1.15;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.18);
+}
+.admin-tile-blurb { font-size: 0.82rem; opacity: 0.92; }
+.admin-tile-soon {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.32);
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+/* The first tile (manager dashboard) spans the full width to stand out. */
+.admin-tile:first-child { grid-column: 1 / -1; min-height: 96px; }

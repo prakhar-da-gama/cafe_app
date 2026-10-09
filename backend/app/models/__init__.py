@@ -6,6 +6,7 @@ from .item import Item
 from .order import Order, OrderStatus
 from .order_item import OrderItem
 from .otp import Otp
+from .service_review import ServiceReview
 from .subcategory import Subcategory
 from .tag import Tag
 from .topping import Topping
@@ -24,6 +25,7 @@ __all__ = [
     "Order",
     "OrderStatus",
     "OrderItem",
+    "ServiceReview",
     "Otp",
     "GameStat",
     "item_toppings",

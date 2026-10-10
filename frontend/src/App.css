@@ -1531,13 +1531,79 @@
 .ghost-btn.sm { font-size: 0.78rem; padding: 8px 12px; }
 .center-block { display: block; margin: 12px auto 0; }
 
+/* Inline "fix grammar" button docked to the right edge of a text input. The
+   input reserves right padding so typed text never slips under the button. */
+.grammar-wrap { position: relative; display: block; }
+.grammar-wrap .text-input.has-grammar {
+  width: 100%;
+  padding-right: 46px;
+}
+.grammar-btn {
+  position: absolute;
+  top: 50%;
+  right: 7px;
+  transform: translateY(-50%);
+  width: 30px;
+  height: 30px;
+  border: none;
+  border-radius: 9px;
+  background: linear-gradient(135deg, #52e0b0, #14b98a);
+  color: #fff;
+  font-weight: 800;
+  font-size: 0.98rem;
+  line-height: 1;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 0 #0e9b72;
+  transition: filter 0.15s, transform 0.1s;
+}
+.grammar-btn:hover:not(:disabled) { filter: brightness(1.06); }
+.grammar-btn:active:not(:disabled) { transform: translateY(calc(-50% + 1px)); }
+.grammar-btn:disabled { opacity: 0.45; cursor: default; }
+.grammar-btn.is-revert {
+  background: linear-gradient(135deg, #ffd27a, #ff9f2e);
+  box-shadow: 0 2px 0 #e07c15;
+  font-size: 1.05rem;
+}
+
 /* AI "Format with AI" controls in the category form: the single Format button
    stretches like the other form buttons; once suggestions arrive the actions
    sit in a row that wraps on narrow screens. */
-.ai-format { display: flex; flex-direction: column; }
+.ai-format { display: flex; flex-direction: column; gap: 7px; }
 .ai-format .candy-btn { width: 100%; }
+.ai-progress {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--ink-soft);
+  text-align: center;
+}
 .ai-btn-row { display: flex; flex-wrap: wrap; gap: 8px; }
 .ai-btn-row > * { flex: 1 1 8rem; }
+
+/* Popup shown when the AI recommends filing a subcategory under a brand-new
+   category (rendered over the shared .sheet-overlay backdrop). */
+.ai-pop {
+  position: relative;
+  width: 100%;
+  max-width: 420px;
+  margin: auto;
+  align-self: center;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.ai-pop-title { margin: 0; }
+.ai-pop-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  border: 2px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: #fff;
+}
 
 /* ---- Game lobby popup ---- */
 .game-pop {

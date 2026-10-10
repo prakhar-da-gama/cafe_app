@@ -522,10 +522,8 @@ export interface FormatCategoryRequest {
 export interface FormatCategoryResponse {
   original_name: string
   original_description: string | null
-  recommended_name_1: string
-  recommended_name_2: string
-  recommended_description_1: string
-  recommended_description_2: string
+  recommended_names: string[]
+  recommended_descriptions: string[]
 }
 
 // Manager: ask the AI assistant to polish a category name + description. Returns
@@ -551,6 +549,56 @@ export function createSubcategory(
     headers: { 'Content-Type': 'application/json', ...authHeaders() },
     body: JSON.stringify(input),
   }).then((r) => handle<Subcategory>(r))
+}
+
+export interface FormatSubcategoryRequest {
+  name: string
+  description?: string | null
+  category_id: number
+}
+
+export interface FormatSubcategoryResponse {
+  original_name: string
+  original_description: string | null
+  recommended_names: string[]
+  recommended_descriptions: string[]
+  // Set if the assistant thinks the subcategory fits an existing category
+  // better than the selected one.
+  recommended_existing_category_id: number | null
+  recommended_existing_category_name: string | null
+  // Set if the assistant thinks a brand-new category should be created for it.
+  suggested_create_new_category: boolean
+  suggested_new_category_name: string | null
+  suggested_new_category_description: string | null
+}
+
+// Manager: ask the AI assistant to polish a subcategory name + description,
+// given the category it is currently filed under. Returns two suggested
+// rewrites of each, and may recommend moving it to an existing category or
+// creating a new one. Costs 5 AI credits per call; requires a manager token.
+export function formatSubcategory(
+  input: FormatSubcategoryRequest,
+): Promise<FormatSubcategoryResponse> {
+  return fetch('/api/ai/menu/format-subcategory', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body: JSON.stringify(input),
+  }).then((r) => handle<FormatSubcategoryResponse>(r))
+}
+
+export interface GrammarFixResponse {
+  original_text: string
+  fixed_text: string
+}
+
+// Manager: fix the grammar, spelling and capitalisation of an arbitrary piece
+// of text. Costs 1 AI credit per call; requires a manager token.
+export function fixGrammar(text: string): Promise<GrammarFixResponse> {
+  return fetch('/api/ai/menu/fix-grammar', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body: JSON.stringify({ text }),
+  }).then((r) => handle<GrammarFixResponse>(r))
 }
 
 // Manager: add a topping to the shared pool, returning it with its new id so

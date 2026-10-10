@@ -54,9 +54,9 @@ def format_category(
     tenant: models.TenantRightsAndInformation = Depends(require_ai_credits(FORMAT_COST)),
     _claims: dict[str, Any] = Depends(require_manager),
 ):
-    """Polish a menu category with the AI assistant: returns two suggested names
-    and two suggested descriptions, using a cached understanding of the whole
-    menu as context. Costs 5 AI credits."""
+    """Polish a menu category with the AI assistant: returns five suggested
+    names and five suggested descriptions, using a cached understanding of the
+    whole menu as context. Costs 5 AI credits."""
     menu_description = _ensure_menu_description(db, tenant)
     suggestion = gemini.improve_category(
         payload.name, payload.description, menu_description
@@ -68,10 +68,8 @@ def format_category(
     return schemas.FormatCategoryResponse(
         original_name=payload.name,
         original_description=payload.description,
-        recommended_name_1=suggestion.recommended_name_1,
-        recommended_name_2=suggestion.recommended_name_2,
-        recommended_description_1=suggestion.recommended_description_1,
-        recommended_description_2=suggestion.recommended_description_2,
+        recommended_names=suggestion.recommended_names,
+        recommended_descriptions=suggestion.recommended_descriptions,
     )
 
 
@@ -82,7 +80,7 @@ def format_subcategory(
     tenant: models.TenantRightsAndInformation = Depends(require_ai_credits(FORMAT_COST)),
     _claims: dict[str, Any] = Depends(require_manager),
 ):
-    """Polish a menu subcategory with the AI assistant. Returns two suggested
+    """Polish a menu subcategory with the AI assistant. Returns five suggested
     names and descriptions, may recommend an existing category that fits better
     than the selected one, and may flag that a brand-new category should be
     created. Costs 5 AI credits."""
@@ -123,10 +121,8 @@ def format_subcategory(
     return schemas.FormatSubcategoryResponse(
         original_name=payload.name,
         original_description=payload.description,
-        recommended_name_1=suggestion.recommended_name_1,
-        recommended_name_2=suggestion.recommended_name_2,
-        recommended_description_1=suggestion.recommended_description_1,
-        recommended_description_2=suggestion.recommended_description_2,
+        recommended_names=suggestion.recommended_names,
+        recommended_descriptions=suggestion.recommended_descriptions,
         recommended_existing_category_id=recommended_id,
         recommended_existing_category_name=recommended_name,
         suggested_create_new_category=suggestion.suggested_create_new_category,

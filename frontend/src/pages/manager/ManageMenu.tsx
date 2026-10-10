@@ -5,11 +5,14 @@ import {
   createSubcategory,
   createTopping,
   createVariant,
+  fixGrammar,
   formatCategory,
+  formatSubcategory,
   getFullMenu,
   listTags,
   uploadImage,
   type FormatCategoryResponse,
+  type FormatSubcategoryResponse,
   type MenuCategory,
   type Tag,
 } from '../../api'
@@ -99,6 +102,273 @@ function Feedback({ ok, error }: { ok: string | null; error: string | null }) {
   return null
 }
 
+/** A text input with a small green "G" button on its right that fixes the
+ *  typed text's grammar/spelling via the AI assistant (1 credit). After a fix
+ *  the button becomes a revert button that restores the original text; typing
+ *  anything flips it back to the "G" button and forgets the saved original. */
+function GrammarInput({
+  value,
+  onChange,
+  onError,
+  className,
+  ...rest
+}: {
+  value: string
+  onChange: (v: string) => void
+  onError?: (msg: string | null) => void
+  className?: string
+} & Omit<
+  React.InputHTMLAttributes<HTMLInputElement>,
+  'value' | 'onChange' | 'className' | 'onError'
+>) {
+  const [mode, setMode] = useState<'fix' | 'revert'>('fix')
+  const [previous, setPrevious] = useState('')
+  const [busy, setBusy] = useState(false)
+
+  const handleType = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Any manual edit invalidates a pending revert.
+    if (mode === 'revert') {
+      setMode('fix')
+      setPrevious('')
+    }
+    onChange(e.target.value)
+  }
+
+  const fix = async () => {
+    const text = value.trim()
+    if (!text) return
+    setBusy(true)
+    onError?.(null)
+    try {
+      const res = await fixGrammar(text)
+      setPrevious(value)
+      onChange(res.fixed_text)
+      setMode('revert')
+    } catch (err) {
+      onError?.((err as Error).message)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const revert = () => {
+    onChange(previous)
+    setPrevious('')
+    setMode('fix')
+  }
+
+  const isRevert = mode === 'revert'
+  return (
+    <div className="grammar-wrap">
+      <input
+        {...rest}
+        value={value}
+        onChange={handleType}
+        className={'text-input has-grammar' + (className ? ' ' + className : '')}
+      />
+      <button
+        type="button"
+        className={isRevert ? 'grammar-btn is-revert' : 'grammar-btn'}
+        onClick={isRevert ? revert : fix}
+        disabled={busy || (!isRevert && !value.trim())}
+        title={
+          isRevert
+            ? 'Revert to your original text'
+            : 'Fix grammar & spelling (1 credit)'
+        }
+        aria-label={
+          isRevert ? 'Revert to your original text' : 'Fix grammar and spelling'
+        }
+      >
+        {busy ? '…' : isRevert ? '↶' : 'G'}
+      </button>
+    </div>
+  )
+}
+
+// ---- Shared "Format with AI" assistant ----
+
+/** The shape both the category and subcategory format responses share: five
+ *  suggested names paired with five suggested descriptions. */
+interface Suggestable {
+  recommended_names: string[]
+  recommended_descriptions: string[]
+}
+
+/** Drives the "Format with AI" flow for a name+description pair. One paid call
+ *  returns five ordered suggestions; the manager can cycle through all of them
+ *  for free ("Try again" / "Use previous"), revert to what they typed ("Use
+ *  original"), and only pay again once every suggestion has been seen
+ *  ("Generate new"). `minReady` lets a form require more than a 3-char name
+ *  (the subcategory form also needs a category selected). */
+function useAiFormat<T extends Suggestable>({
+  name,
+  description,
+  setName,
+  setDescription,
+  minReady,
+  fetcher,
+  onError,
+  onResult,
+}: {
+  name: string
+  description: string
+  setName: (v: string) => void
+  setDescription: (v: string) => void
+  minReady: boolean
+  fetcher: () => Promise<T>
+  onError: (m: string | null) => void
+  onResult?: (res: T) => void
+}) {
+  const [busy, setBusy] = useState(false)
+  const [suggestion, setSuggestion] = useState<T | null>(null)
+  const [original, setOriginal] = useState<{
+    name: string
+    description: string
+  } | null>(null)
+  const [idx, setIdx] = useState(0)
+
+  const count = suggestion
+    ? Math.min(
+        suggestion.recommended_names.length,
+        suggestion.recommended_descriptions.length,
+      )
+    : 0
+
+  const apply = (s: T, i: number) => {
+    setName(s.recommended_names[i])
+    setDescription(s.recommended_descriptions[i])
+    setIdx(i)
+  }
+
+  const ready = name.trim().length >= 3 && minReady
+
+  // The paid call, used by both "Format with AI" and "Generate new". The typed
+  // values are captured only on the first run so "Use original" always reverts
+  // to them, not to a previously-shown suggestion.
+  const run = async () => {
+    if (!ready) return
+    setBusy(true)
+    onError(null)
+    try {
+      const captured = original ?? { name, description }
+      const res = await fetcher()
+      setOriginal(captured)
+      setSuggestion(res)
+      apply(res, 0)
+      onResult?.(res)
+    } catch (err) {
+      onError((err as Error).message)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const reset = () => {
+    setSuggestion(null)
+    setOriginal(null)
+    setIdx(0)
+  }
+
+  const useOriginal = () => {
+    if (original) {
+      setName(original.name)
+      setDescription(original.description)
+    }
+    reset()
+  }
+
+  const next = () => {
+    if (suggestion && idx < count - 1) apply(suggestion, idx + 1)
+  }
+  const prev = () => {
+    if (suggestion && idx > 0) apply(suggestion, idx - 1)
+  }
+
+  return {
+    busy,
+    hasSuggestion: suggestion !== null,
+    idx,
+    count,
+    ready,
+    run,
+    reset,
+    useOriginal,
+    next,
+    prev,
+  }
+}
+
+type AiFormat = ReturnType<typeof useAiFormat>
+
+/** Renders the Format-with-AI button row from a `useAiFormat` instance: a single
+ *  "Format with AI" button until suggestions exist, then Use original / Use
+ *  previous / Try again, with the last suggestion swapping "Try again" for the
+ *  paid "Generate new". */
+function AiFormatControls({ ai }: { ai: AiFormat }) {
+  if (!ai.hasSuggestion) {
+    return (
+      <div className="ai-format">
+        <button
+          type="button"
+          className="candy-btn btn-sky"
+          onClick={ai.run}
+          disabled={ai.busy || !ai.ready}
+        >
+          {ai.busy ? 'Formatting…' : 'Format with AI (5 credits)'}
+        </button>
+      </div>
+    )
+  }
+  const isLast = ai.idx >= ai.count - 1
+  return (
+    <div className="ai-format">
+      <span className="ai-progress">
+        Suggestion {ai.idx + 1} of {ai.count}
+      </span>
+      <div className="ai-btn-row">
+        <button
+          type="button"
+          className="ghost-btn"
+          onClick={ai.useOriginal}
+          disabled={ai.busy}
+        >
+          Use original
+        </button>
+        {ai.idx > 0 && (
+          <button
+            type="button"
+            className="ghost-btn"
+            onClick={ai.prev}
+            disabled={ai.busy}
+          >
+            Use previous
+          </button>
+        )}
+        {isLast ? (
+          <button
+            type="button"
+            className="candy-btn btn-sky"
+            onClick={ai.run}
+            disabled={ai.busy}
+          >
+            {ai.busy ? 'Formatting…' : 'Generate new (5 credits)'}
+          </button>
+        ) : (
+          <button
+            type="button"
+            className="candy-btn btn-sky"
+            onClick={ai.next}
+            disabled={ai.busy}
+          >
+            Try again (0 credits)
+          </button>
+        )}
+      </div>
+    </div>
+  )
+}
+
 // ---- Create category ----
 
 function AddCategoryForm({ onCreated }: { onCreated: () => void }) {
@@ -108,74 +378,21 @@ function AddCategoryForm({ onCreated }: { onCreated: () => void }) {
   const [error, setError] = useState<string | null>(null)
   const [ok, setOk] = useState<string | null>(null)
 
-  // AI "Format with AI" assistant state. One call returns two suggested
-  // rewrites; `suggestion` holds that response, `original` remembers what the
-  // manager typed so "Use original" can revert, and `stage` drives which set of
-  // buttons shows: 'idle' (not run), 'first' (suggestion 1 applied), 'second'
-  // (suggestion 2 applied). Switching between the two suggestions costs nothing;
-  // only "Format with AI" and "Generate new" call the paid endpoint.
-  const [aiBusy, setAiBusy] = useState(false)
-  const [suggestion, setSuggestion] = useState<FormatCategoryResponse | null>(
-    null,
-  )
-  const [original, setOriginal] = useState<{
-    name: string
-    description: string
-  } | null>(null)
-  const [stage, setStage] = useState<'idle' | 'first' | 'second'>('idle')
-
-  const resetAi = () => {
-    setSuggestion(null)
-    setOriginal(null)
-    setStage('idle')
-  }
-
-  // Calls the paid endpoint (first "Format with AI" run or a later "Generate
-  // new"), then shows its first suggestion. The original fields are captured
-  // only on the first run so "Use original" always reverts to what was typed.
-  const runFormat = async () => {
-    if (name.trim().length < 3) return
-    setAiBusy(true)
-    setError(null)
-    setOk(null)
-    try {
-      const captured = original ?? { name, description }
-      const res = await formatCategory({
+  // "Format with AI" assistant: one paid call returns five suggestions the
+  // manager can cycle through for free before paying again.
+  const ai = useAiFormat<FormatCategoryResponse>({
+    name,
+    description,
+    setName,
+    setDescription,
+    minReady: true,
+    onError: setError,
+    fetcher: () =>
+      formatCategory({
         name: name.trim(),
         description: description.trim() || null,
-      })
-      setOriginal(captured)
-      setSuggestion(res)
-      setName(res.recommended_name_1)
-      setDescription(res.recommended_description_1)
-      setStage('first')
-    } catch (err) {
-      setError((err as Error).message)
-    } finally {
-      setAiBusy(false)
-    }
-  }
-
-  const useOriginal = () => {
-    if (original) {
-      setName(original.name)
-      setDescription(original.description)
-    }
-    resetAi()
-  }
-
-  const showSuggestion = (which: 1 | 2) => {
-    if (!suggestion) return
-    setName(
-      which === 1 ? suggestion.recommended_name_1 : suggestion.recommended_name_2,
-    )
-    setDescription(
-      which === 1
-        ? suggestion.recommended_description_1
-        : suggestion.recommended_description_2,
-    )
-    setStage(which === 1 ? 'first' : 'second')
-  }
+      }),
+  })
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -192,7 +409,7 @@ function AddCategoryForm({ onCreated }: { onCreated: () => void }) {
       setOk(`Added category “${cat.name}”.`)
       setName('')
       setDescription('')
-      resetAi()
+      ai.reset()
       onCreated()
     } catch (err) {
       setError((err as Error).message)
@@ -205,90 +422,31 @@ function AddCategoryForm({ onCreated }: { onCreated: () => void }) {
     <form onSubmit={submit} className="stack">
       <label className="field">
         <span className="field-label">Name</span>
-        <input
+        <GrammarInput
           type="text"
           required
           maxLength={80}
           value={name}
-          onChange={(e) => setName(e.target.value)}
+          onChange={setName}
+          onError={setError}
           placeholder="e.g. Hot Coffees"
-          className="text-input"
         />
       </label>
 
       <label className="field">
         <span className="field-label">Description (optional)</span>
-        <input
+        <GrammarInput
           type="text"
           value={description}
-          onChange={(e) => setDescription(e.target.value)}
+          onChange={setDescription}
+          onError={setError}
           placeholder="A short line shown under the heading"
-          className="text-input"
         />
       </label>
 
       <Feedback ok={ok} error={error} />
 
-      <div className="ai-format">
-        {stage === 'idle' && (
-          <button
-            type="button"
-            className="candy-btn btn-sky"
-            onClick={runFormat}
-            disabled={aiBusy || name.trim().length < 3}
-          >
-            {aiBusy ? 'Formatting…' : 'Format with AI (5 credits)'}
-          </button>
-        )}
-        {stage === 'first' && (
-          <div className="ai-btn-row">
-            <button
-              type="button"
-              className="ghost-btn"
-              onClick={useOriginal}
-              disabled={aiBusy}
-            >
-              Use original
-            </button>
-            <button
-              type="button"
-              className="candy-btn btn-sky"
-              onClick={() => showSuggestion(2)}
-              disabled={aiBusy}
-            >
-              Try again (0 credits)
-            </button>
-          </div>
-        )}
-        {stage === 'second' && (
-          <div className="ai-btn-row">
-            <button
-              type="button"
-              className="ghost-btn"
-              onClick={useOriginal}
-              disabled={aiBusy}
-            >
-              Use original
-            </button>
-            <button
-              type="button"
-              className="ghost-btn"
-              onClick={() => showSuggestion(1)}
-              disabled={aiBusy}
-            >
-              Use previous
-            </button>
-            <button
-              type="button"
-              className="candy-btn btn-sky"
-              onClick={runFormat}
-              disabled={aiBusy}
-            >
-              {aiBusy ? 'Formatting…' : 'Generate new (5 credits)'}
-            </button>
-          </div>
-        )}
-      </div>
+      <AiFormatControls ai={ai} />
 
       <button
         type="submit"
@@ -317,6 +475,60 @@ function AddSubcategoryForm({
   const [error, setError] = useState<string | null>(null)
   const [ok, setOk] = useState<string | null>(null)
 
+  // The paid endpoint may also decide this subcategory belongs under a
+  // brand-new category; when it does we surface that in a popup (`newCat`).
+  const [newCat, setNewCat] = useState<{ name: string; description: string } | null>(
+    null,
+  )
+  const [creatingCat, setCreatingCat] = useState(false)
+
+  // "Format with AI" assistant: five suggestions per paid call, cycled for
+  // free. Requires a category to be selected as well as a 3-char name, and
+  // opens the new-category popup whenever a response recommends one.
+  const ai = useAiFormat<FormatSubcategoryResponse>({
+    name,
+    description,
+    setName,
+    setDescription,
+    minReady: !!categoryId,
+    onError: setError,
+    fetcher: () =>
+      formatSubcategory({
+        name: name.trim(),
+        description: description.trim() || null,
+        category_id: Number(categoryId),
+      }),
+    onResult: (res) => {
+      if (res.suggested_create_new_category && res.suggested_new_category_name) {
+        setNewCat({
+          name: res.suggested_new_category_name,
+          description: res.suggested_new_category_description ?? '',
+        })
+      }
+    },
+  })
+
+  // From the popup: create the AI-suggested category, then file the subcategory
+  // under it by selecting it in the picker.
+  const createRecommendedCategory = async () => {
+    if (!newCat) return
+    setCreatingCat(true)
+    setError(null)
+    try {
+      const cat = await createCategory({
+        name: newCat.name,
+        description: newCat.description || null,
+      })
+      await Promise.resolve(onCreated())
+      setCategoryId(String(cat.id))
+      setNewCat(null)
+    } catch (err) {
+      setError((err as Error).message)
+    } finally {
+      setCreatingCat(false)
+    }
+  }
+
   const submit = async (e: React.FormEvent) => {
     e.preventDefault()
     const clean = name.trim()
@@ -333,6 +545,7 @@ function AddSubcategoryForm({
       setOk(`Added subcategory “${sub.name}”.`)
       setName('')
       setDescription('')
+      ai.reset()
       onCreated()
     } catch (err) {
       setError((err as Error).message)
@@ -362,29 +575,31 @@ function AddSubcategoryForm({
 
       <label className="field">
         <span className="field-label">Name</span>
-        <input
+        <GrammarInput
           type="text"
           required
           maxLength={80}
           value={name}
-          onChange={(e) => setName(e.target.value)}
+          onChange={setName}
+          onError={setError}
           placeholder="e.g. Espresso-based"
-          className="text-input"
         />
       </label>
 
       <label className="field">
         <span className="field-label">Description (optional)</span>
-        <input
+        <GrammarInput
           type="text"
           value={description}
-          onChange={(e) => setDescription(e.target.value)}
+          onChange={setDescription}
+          onError={setError}
           placeholder="A short line shown under the heading"
-          className="text-input"
         />
       </label>
 
       <Feedback ok={ok} error={error} />
+
+      <AiFormatControls ai={ai} />
 
       <button
         type="submit"
@@ -393,6 +608,48 @@ function AddSubcategoryForm({
       >
         {busy ? 'Adding…' : 'Add subcategory'}
       </button>
+
+      {newCat && (
+        <div
+          className="sheet-overlay"
+          onClick={() => !creatingCat && setNewCat(null)}
+        >
+          <div
+            className="card ai-pop"
+            role="dialog"
+            aria-modal="true"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="ai-pop-title">AI suggests a new category</h3>
+            <p className="muted">
+              This subcategory might fit better in a brand-new category than the
+              one you picked. Create it and file the subcategory under it?
+            </p>
+            <div className="ai-pop-card">
+              <strong>{newCat.name}</strong>
+              {newCat.description && <span>{newCat.description}</span>}
+            </div>
+            <div className="ai-btn-row">
+              <button
+                type="button"
+                className="ghost-btn"
+                onClick={() => setNewCat(null)}
+                disabled={creatingCat}
+              >
+                Not now
+              </button>
+              <button
+                type="button"
+                className="candy-btn btn-grape"
+                onClick={createRecommendedCategory}
+                disabled={creatingCat}
+              >
+                {creatingCat ? 'Creating…' : 'Create category'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </form>
   )
 }
@@ -597,14 +854,14 @@ function AddItemForm({
 
       <label className="field">
         <span className="field-label">Name</span>
-        <input
+        <GrammarInput
           type="text"
           required
           maxLength={120}
           value={name}
-          onChange={(e) => setName(e.target.value)}
+          onChange={setName}
+          onError={setError}
           placeholder="e.g. Cardamom Cappuccino"
-          className="text-input"
         />
       </label>
 
@@ -645,12 +902,12 @@ function AddItemForm({
 
       <label className="field">
         <span className="field-label">Description (optional)</span>
-        <input
+        <GrammarInput
           type="text"
           value={description}
-          onChange={(e) => setDescription(e.target.value)}
+          onChange={setDescription}
+          onError={setError}
           placeholder="Shown when the dish is opened"
-          className="text-input"
         />
       </label>
 

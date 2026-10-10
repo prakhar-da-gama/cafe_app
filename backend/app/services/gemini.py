@@ -25,19 +25,15 @@ settings = get_settings()
 class CategorySuggestion(BaseModel):
     """What the model returns when polishing a category."""
 
-    recommended_name_1: str
-    recommended_name_2: str
-    recommended_description_1: str
-    recommended_description_2: str
+    recommended_names: list[str]
+    recommended_descriptions: list[str]
 
 
 class SubcategorySuggestion(BaseModel):
     """What the model returns when polishing a subcategory."""
 
-    recommended_name_1: str
-    recommended_name_2: str
-    recommended_description_1: str
-    recommended_description_2: str
+    recommended_names: list[str]
+    recommended_descriptions: list[str]
     # Name of an existing category (other than the selected one) that fits
     # better, or null if the selected one is fine.
     recommended_existing_category_name: str | None = None
@@ -155,20 +151,21 @@ def generate_menu_description(menu_json: str) -> str:
 def improve_category(
     name: str, description: str | None, menu_description: str
 ) -> CategorySuggestion:
-    """Suggest two improved names and two improved descriptions for a category,
-    using the cached restaurant understanding as context."""
+    """Suggest five improved names and five improved descriptions for a
+    category, using the cached restaurant understanding as context."""
     prompt = (
         "You are helping a cafe manager polish a MENU CATEGORY.\n\n"
         "Context — understanding of this restaurant:\n"
         f"{menu_description}\n\n"
         f"Category name provided: {name!r}\n"
         f"Category description provided: {description or '(none)'}\n\n"
-        "Using the restaurant context, propose two improved category names and "
-        "two improved category descriptions. Fix grammar and spelling, improve "
-        "capitalisation, and you may add tasteful symbols/emoji where they suit "
-        "the restaurant's style. Keep names short and appetising; keep each "
-        "description to one or two sentences. Return them in the structured "
-        "fields."
+        "Using the restaurant context, propose exactly five improved category "
+        "names and exactly five improved category descriptions, ordered best "
+        "first and each distinct from the others. Fix grammar and spelling, "
+        "improve capitalisation, and you may add tasteful symbols/emoji where "
+        "they suit the restaurant's style. Keep names short and appetising; keep "
+        "each description to one or two sentences. Return recommended_names with "
+        "five names and recommended_descriptions with five descriptions."
     )
     return _generate_structured(prompt, CategorySuggestion)  # type: ignore[return-value]
 
@@ -193,9 +190,11 @@ def improve_subcategory(
         f"Category the manager selected for it: {selected_category_name!r}\n"
         f"All existing categories: {categories_list}\n\n"
         "Tasks:\n"
-        "1. Propose two improved subcategory names and two improved "
-        "descriptions (fix grammar/spelling/capitalisation, tasteful "
-        "symbols/emoji allowed, keep them short and appetising).\n"
+        "1. Propose exactly five improved subcategory names and exactly five "
+        "improved descriptions, ordered best first and each distinct from the "
+        "others (fix grammar/spelling/capitalisation, tasteful symbols/emoji "
+        "allowed, keep them short and appetising). Return recommended_names "
+        "with five names and recommended_descriptions with five descriptions.\n"
         "2. If one of the OTHER existing categories fits this subcategory "
         "clearly better than the selected one, set "
         "recommended_existing_category_name to that category's exact name; "

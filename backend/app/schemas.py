@@ -490,15 +490,13 @@ class FormatCategoryRequest(BaseModel):
 
 
 class FormatCategoryResponse(BaseModel):
-    """The manager's original category alongside two AI-suggested rewrites of
+    """The manager's original category alongside five AI-suggested rewrites of
     both its name and its description."""
 
     original_name: str
     original_description: str | None = None
-    recommended_name_1: str
-    recommended_name_2: str
-    recommended_description_1: str
-    recommended_description_2: str
+    recommended_names: list[str]
+    recommended_descriptions: list[str]
 
 
 class FormatSubcategoryRequest(BaseModel):
@@ -513,10 +511,8 @@ class FormatSubcategoryRequest(BaseModel):
 class FormatSubcategoryResponse(BaseModel):
     original_name: str
     original_description: str | None = None
-    recommended_name_1: str
-    recommended_name_2: str
-    recommended_description_1: str
-    recommended_description_2: str
+    recommended_names: list[str]
+    recommended_descriptions: list[str]
     # If the assistant thinks the subcategory fits an *existing* category better
     # than the selected one, that category is named here (null otherwise).
     recommended_existing_category_id: int | None = None

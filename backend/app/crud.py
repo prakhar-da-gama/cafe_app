@@ -1,9 +1,9 @@
 import json
 import secrets
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 
-from sqlalchemy import JSON, cast, func, literal, select
+from sqlalchemy import JSON, cast, delete, func, literal, select
 from sqlalchemy.orm import Session
 
 from . import models, schemas
@@ -302,6 +302,225 @@ def create_variant(db: Session, data: schemas.VariantCreate) -> models.Variant:
 
 def delete_item(db: Session, item: models.Item) -> None:
     db.delete(item)
+    db.commit()
+
+
+# ---- Whole-menu replace / backup / restore ----
+
+
+def menu_has_content(db: Session) -> bool:
+    """True if a menu already exists (any category). Used to decide whether a
+    photo import needs to warn-and-replace rather than just populate."""
+    return (
+        db.execute(select(func.count()).select_from(models.Category)).scalar_one()
+        > 0
+    )
+
+
+def orders_reference_menu(db: Session) -> bool:
+    """True if any order line (including open carts) points at a menu item.
+
+    Items are hard-deleted when the whole menu is replaced, but order_items.
+    item_id is an ON DELETE RESTRICT foreign key, so such a delete would fail.
+    Callers refuse the replace in this case rather than lose order history.
+    """
+    return (
+        db.execute(select(func.count()).select_from(models.OrderItem)).scalar_one()
+        > 0
+    )
+
+
+def snapshot_full_menu(db: Session) -> dict:
+    """Serialise the entire menu into the neutral structure
+    :func:`rebuild_menu_from_structure` can rebuild from: the tag vocabulary plus
+    categories -> subcategories -> items (with description, tags-by-name, and
+    per-item toppings/variants). Ids are dropped; they are regenerated on
+    rebuild. Decimals are stored as strings to keep full precision in JSON."""
+    tags = list(
+        db.execute(select(models.Tag).order_by(models.Tag.id)).scalars().all()
+    )
+    tag_name_by_id = {t.id: t.tag for t in tags}
+
+    categories = list(
+        db.execute(
+            select(models.Category).order_by(
+                models.Category.display_order, models.Category.name
+            )
+        )
+        .scalars()
+        .all()
+    )
+
+    cat_out: list[dict] = []
+    for cat in categories:
+        subs_out: list[dict] = []
+        for sub in cat.subcategories:
+            items_out: list[dict] = []
+            for item in sub.items:
+                items_out.append(
+                    {
+                        "name": item.name,
+                        "description": item.description,
+                        "price": str(item.price),
+                        "photos": list(item.photos or []),
+                        "is_veg": item.is_veg,
+                        "is_available": item.is_available,
+                        "display_order": item.display_order,
+                        "is_active": item.is_active,
+                        "tags": [
+                            tag_name_by_id[t]
+                            for t in (item.tag_ids or [])
+                            if t in tag_name_by_id
+                        ],
+                        "toppings": [
+                            {
+                                "name": t.name,
+                                "price": str(t.price),
+                                "photos": list(t.photos or []),
+                                "is_available": t.is_available,
+                                "is_active": t.is_active,
+                            }
+                            for t in item.toppings
+                        ],
+                        "variants": [
+                            {
+                                "name": v.name,
+                                "description": v.description,
+                                "price_delta": str(v.price_delta),
+                            }
+                            for v in item.variants
+                        ],
+                    }
+                )
+            subs_out.append(
+                {
+                    "name": sub.name,
+                    "description": sub.description,
+                    "photos": list(sub.photos or []),
+                    "display_order": sub.display_order,
+                    "is_active": sub.is_active,
+                    "items": items_out,
+                }
+            )
+        cat_out.append(
+            {
+                "name": cat.name,
+                "description": cat.description,
+                "photos": list(cat.photos or []),
+                "display_order": cat.display_order,
+                "is_active": cat.is_active,
+                "subcategories": subs_out,
+            }
+        )
+
+    return {
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "tags": [t.tag for t in tags],
+        "categories": cat_out,
+    }
+
+
+def clear_menu(db: Session) -> None:
+    """Hard-delete every menu row: item<->topping / item<->variant links, then
+    items, variants, toppings, subcategories, categories and the tag vocabulary.
+
+    Callers must first confirm :func:`orders_reference_menu` is False, otherwise
+    the items delete hits the ON DELETE RESTRICT from order_items.
+    """
+    db.execute(delete(models.item_toppings))
+    db.execute(delete(models.item_variants))
+    db.execute(delete(models.Item))
+    db.execute(delete(models.Variant))
+    db.execute(delete(models.Topping))
+    db.execute(delete(models.Subcategory))
+    db.execute(delete(models.Category))
+    db.execute(delete(models.Tag))
+    db.commit()
+
+
+def rebuild_menu_from_structure(
+    db: Session, tags: list[str], categories: list[dict]
+) -> None:
+    """Build a whole menu from the neutral (tags, categories) structure produced
+    by a photo import or read from a backup.
+
+    The tag vocabulary is created first and items reference it by name. Every
+    item gets its own fresh topping and variant rows even when names repeat, so
+    nothing is shared between dishes. Assumes the menu has already been cleared.
+    """
+    tag_id_by_cf: dict[str, int] = {}
+    for name in tags:
+        key = (name or "").strip()
+        if not key or key.casefold() in tag_id_by_cf:
+            continue
+        tag = models.Tag(tag=key)
+        db.add(tag)
+        db.flush()
+        tag_id_by_cf[key.casefold()] = tag.id
+
+    for ci, cat in enumerate(categories):
+        category = models.Category(
+            name=cat["name"],
+            description=cat.get("description"),
+            photos=list(cat.get("photos") or []),
+            display_order=cat.get("display_order", ci),
+            is_active=cat.get("is_active", True),
+        )
+        db.add(category)
+        db.flush()
+
+        for si, sub in enumerate(cat.get("subcategories", [])):
+            subcategory = models.Subcategory(
+                category_id=category.id,
+                name=sub["name"],
+                description=sub.get("description"),
+                photos=list(sub.get("photos") or []),
+                display_order=sub.get("display_order", si),
+                is_active=sub.get("is_active", True),
+            )
+            db.add(subcategory)
+            db.flush()
+
+            for ii, item in enumerate(sub.get("items", [])):
+                item_tag_ids: list[int] = []
+                for tname in item.get("tags", []):
+                    tid = tag_id_by_cf.get((tname or "").strip().casefold())
+                    if tid is not None and tid not in item_tag_ids:
+                        item_tag_ids.append(tid)
+
+                row = models.Item(
+                    subcategory_id=subcategory.id,
+                    name=item["name"],
+                    description=item.get("description"),
+                    price=Decimal(str(item.get("price", 0) or 0)),
+                    photos=list(item.get("photos") or []),
+                    tag_ids=item_tag_ids,
+                    is_veg=item.get("is_veg", True),
+                    is_available=item.get("is_available", True),
+                    display_order=item.get("display_order", ii),
+                    is_active=item.get("is_active", True),
+                )
+                row.toppings = [
+                    models.Topping(
+                        name=t["name"],
+                        price=Decimal(str(t.get("price", 0) or 0)),
+                        photos=list(t.get("photos") or []),
+                        is_available=t.get("is_available", True),
+                        is_active=t.get("is_active", True),
+                    )
+                    for t in item.get("toppings", [])
+                ]
+                row.variants = [
+                    models.Variant(
+                        name=v["name"],
+                        description=v.get("description"),
+                        price_delta=Decimal(str(v.get("price_delta", 0) or 0)),
+                    )
+                    for v in item.get("variants", [])
+                ]
+                db.add(row)
+
+    _mark_menu_changed(db)
     db.commit()
 
 

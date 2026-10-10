@@ -3,6 +3,7 @@ import DishAiPage, { type ChatMsg } from '../../components/DishAiPage'
 import {
   createCategory,
   createItem,
+  createMenuFromPhoto,
   createSubcategory,
   createTopping,
   createVariant,
@@ -11,16 +12,21 @@ import {
   formatCategory,
   formatSubcategory,
   getFullMenu,
+  getMenuBackups,
   listTags,
+  restoreMenuFromBackup,
   sendDishAssistantMessage,
   startDishAssistant,
   uploadImage,
   type DishAssistantForm,
   type FormatCategoryResponse,
   type FormatSubcategoryResponse,
+  type MenuBackupInfo,
   type MenuCategory,
+  type MenuImportResponse,
   type Tag,
 } from '../../api'
+import ConfirmDialog from '../../components/ConfirmDialog'
 import ManagerHeader from '../../components/ManagerHeader'
 
 interface Props {
@@ -59,6 +65,9 @@ export default function ManageMenu({ onBack }: Props) {
       </div>
 
       <div className="manage-forms">
+        <Collapsible title="Create the whole menu from photos">
+          <CreateMenuFromPhotos onCreated={refreshMenu} />
+        </Collapsible>
         <Collapsible title="Create new category">
           <AddCategoryForm onCreated={refreshMenu} />
         </Collapsible>
@@ -105,6 +114,236 @@ function Feedback({ ok, error }: { ok: string | null; error: string | null }) {
   if (error) return <p className="form-error">{error}</p>
   if (ok) return <p className="form-ok">{ok}</p>
   return null
+}
+
+// ---- Create the whole menu from photos ----
+
+/** Format an ISO timestamp for the backup list; falls back to the raw string. */
+function formatStamp(iso: string | null): string {
+  if (!iso) return 'Unknown time'
+  const d = new Date(iso)
+  return Number.isNaN(d.getTime()) ? iso : d.toLocaleString()
+}
+
+/** Upload one or more photos of a physical menu, optionally add instructions,
+ *  and have Gemini build the entire menu from them (20 credits). When a menu
+ *  already exists the server asks for confirmation first (a warning with Cancel
+ *  / Replace); on confirm it backs up the current menu, wipes it, and rebuilds.
+ *  The one stored backup is listed below with a Restore action. */
+function CreateMenuFromPhotos({ onCreated }: { onCreated: () => void }) {
+  const [paths, setPaths] = useState<string[]>([])
+  const [uploading, setUploading] = useState(false)
+  const [instructions, setInstructions] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [ok, setOk] = useState<string | null>(null)
+  // Set when the server replied 409 (a menu already exists): shows the warning.
+  const [confirmOpen, setConfirmOpen] = useState(false)
+  const [backups, setBackups] = useState<MenuBackupInfo[]>([])
+  // The backup path pending a restore confirmation, and the one in flight.
+  const [restorePath, setRestorePath] = useState<string | null>(null)
+  const [restoring, setRestoring] = useState(false)
+
+  const refreshBackups = useCallback(() => {
+    getMenuBackups()
+      .then(setBackups)
+      .catch(() => {})
+  }, [])
+
+  useEffect(() => {
+    refreshBackups()
+  }, [refreshBackups])
+
+  const onFiles = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files ?? [])
+    if (!files.length) return
+    setUploading(true)
+    setError(null)
+    try {
+      const uploaded: string[] = []
+      for (const file of files) {
+        const { path } = await uploadImage(file)
+        uploaded.push(path)
+      }
+      setPaths((prev) => [...prev, ...uploaded])
+    } catch (err) {
+      setError((err as Error).message)
+    } finally {
+      setUploading(false)
+      e.target.value = ''
+    }
+  }
+
+  const removePath = (p: string) =>
+    setPaths((prev) => prev.filter((x) => x !== p))
+
+  const summary = (r: MenuImportResponse) =>
+    `Built ${r.categories} categories, ${r.subcategories} subcategories, ` +
+    `${r.items} dishes and ${r.tags} tags.`
+
+  // One import attempt. confirm=false is the first try; if the server says a
+  // menu already exists we open the warning, and the Replace button retries
+  // with confirm=true.
+  const run = async (confirm: boolean) => {
+    setBusy(true)
+    setError(null)
+    setOk(null)
+    try {
+      const res = await createMenuFromPhoto(
+        paths,
+        instructions.trim() || null,
+        confirm,
+      )
+      if (res.status === 'confirm_required') {
+        setConfirmOpen(true)
+        return
+      }
+      setOk(summary(res.result))
+      setPaths([])
+      setInstructions('')
+      onCreated()
+      refreshBackups()
+    } catch (err) {
+      setError((err as Error).message)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const confirmReplace = async () => {
+    setConfirmOpen(false)
+    await run(true)
+  }
+
+  const doRestore = async () => {
+    if (!restorePath) return
+    setRestoring(true)
+    setError(null)
+    setOk(null)
+    try {
+      const r = await restoreMenuFromBackup(restorePath)
+      setOk(`Restored ${r.categories} categories and ${r.items} dishes.`)
+      onCreated()
+      refreshBackups()
+    } catch (err) {
+      setError((err as Error).message)
+    } finally {
+      setRestoring(false)
+      setRestorePath(null)
+    }
+  }
+
+  const canCreate = paths.length > 0 && !uploading && !busy
+
+  return (
+    <div className="stack">
+      <div className="field">
+        <span className="field-label">Menu photos</span>
+        <input
+          type="file"
+          accept="image/*"
+          multiple
+          onChange={onFiles}
+          className="text-input file-input"
+        />
+        {uploading && <p className="muted">Uploading…</p>}
+        {paths.length > 0 && (
+          <div className="photo-grid">
+            {paths.map((p) => (
+              <div className="photo-preview" key={p}>
+                <img src={p} alt="Menu page" />
+                <button
+                  type="button"
+                  className="ghost-btn sm"
+                  onClick={() => removePath(p)}
+                >
+                  Remove
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <label className="field">
+        <span className="field-label">Instructions (optional)</span>
+        <textarea
+          value={instructions}
+          onChange={(e) => setInstructions(e.target.value)}
+          placeholder="Anything to guide the import, e.g. prices are in rupees, skip the drinks page…"
+          className="text-input"
+          rows={3}
+        />
+      </label>
+
+      <Feedback ok={ok} error={error} />
+
+      <button
+        type="button"
+        className="candy-btn btn-grape"
+        onClick={() => run(false)}
+        disabled={!canCreate}
+      >
+        {busy ? 'Reading the menu…' : 'Create menu from photos (20 credits)'}
+      </button>
+
+      {backups.length > 0 && (
+        <div className="field">
+          <span className="field-label">Backup</span>
+          <p className="muted">
+            Replacing the menu backs up the current one here. Restoring swaps it
+            back in (and backs up what it replaces).
+          </p>
+          <div className="backup-list">
+            {backups.map((b) => (
+              <div className="backup-row" key={b.path}>
+                <div className="backup-meta">
+                  <strong>{formatStamp(b.created_at)}</strong>
+                  <span className="muted">
+                    {b.categories} categories · {b.items} dishes
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  className="ghost-btn sm"
+                  onClick={() => setRestorePath(b.path)}
+                  disabled={restoring}
+                >
+                  Restore
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {confirmOpen && (
+        <ConfirmDialog
+          title="Replace the whole menu?"
+          message="A menu already exists. Creating from photos will back up the current menu, then delete every category, subcategory, dish, variant, topping and tag and replace them with the ones read from your photos."
+          confirmLabel="Back up & replace"
+          cancelLabel="Cancel"
+          danger
+          busy={busy}
+          onConfirm={confirmReplace}
+          onCancel={() => setConfirmOpen(false)}
+        />
+      )}
+
+      {restorePath && (
+        <ConfirmDialog
+          title="Restore this backup?"
+          message="This replaces the current menu with the backed-up one. The current menu is backed up first, so you can switch back again."
+          confirmLabel="Restore"
+          cancelLabel="Cancel"
+          danger
+          busy={restoring}
+          onConfirm={doRestore}
+          onCancel={() => setRestorePath(null)}
+        />
+      )}
+    </div>
+  )
 }
 
 /** A text input with a small green "G" button on its right that fixes the

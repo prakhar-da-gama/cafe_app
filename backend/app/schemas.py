@@ -597,3 +597,45 @@ class DishAssistantStartResponse(BaseModel):
 
 class DishAssistantMessageResponse(BaseModel):
     reply: DishAssistantReply
+
+
+# ---- Create menu from photos / backup / restore ----
+
+
+class MenuImportRequest(BaseModel):
+    """Build the whole menu from photos of a physical menu. ``photo_paths`` are
+    public upload paths (/api/uploads/<name>) from the upload endpoint, and
+    ``instructions`` is optional free text to steer the extraction. When a menu
+    already exists the call is refused with 409 unless ``confirm_overwrite`` is
+    set — that is the warning the manager must accept before the menu is wiped
+    and replaced."""
+
+    photo_paths: list[str] = Field(..., min_length=1)
+    instructions: str | None = None
+    confirm_overwrite: bool = False
+
+
+class RestoreBackupRequest(BaseModel):
+    backup_path: str = Field(..., min_length=1)
+
+
+class MenuImportResponse(BaseModel):
+    """What a successful import/restore built, plus the backup it wrote of the
+    menu that was replaced (null when there was nothing to back up)."""
+
+    categories: int
+    subcategories: int
+    items: int
+    tags: int
+    toppings: int
+    variants: int
+    backup_path: str | None = None
+
+
+class MenuBackupInfo(BaseModel):
+    """One stored backup for the manager's restore list."""
+
+    path: str
+    created_at: str | None = None
+    categories: int = 0
+    items: int = 0

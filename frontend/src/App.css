@@ -2422,6 +2422,46 @@
   border-radius: var(--radius-sm);
   border: 2px solid var(--line);
 }
+
+/* Grid of uploaded menu-page thumbnails in the photo-import section. */
+.photo-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 6px;
+}
+.photo-grid .photo-preview {
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 0;
+}
+.photo-grid .photo-preview img {
+  width: 92px;
+  height: 92px;
+}
+
+/* The stored-backup list and its rows in the photo-import section. */
+.backup-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 6px;
+}
+.backup-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 2px solid var(--line);
+  border-radius: var(--radius-sm);
+}
+.backup-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 0.9rem;
+}
 .mgr-tag {
   font-family: 'Fredoka', sans-serif;
   font-weight: 600;

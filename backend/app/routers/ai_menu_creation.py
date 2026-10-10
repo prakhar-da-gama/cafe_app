@@ -15,7 +15,7 @@ from sqlalchemy.orm import Session
 from .. import crud, models, schemas
 from ..auth import require_ai_credits, require_manager
 from ..database import get_db
-from ..services import dish_sessions, gemini
+from ..services import dish_sessions, gemini, menu_backups
 
 router = APIRouter(prefix="/api/ai/menu", tags=["ai-menu"])
 
@@ -26,6 +26,8 @@ GRAMMAR_COST = 1
 # credits; every follow-up message costs 1.
 DISH_START_COST = 5
 DISH_MESSAGE_COST = 1
+# Reading a whole menu off photos is one heavyweight multimodal call.
+MENU_IMPORT_COST = 20
 
 
 def _ensure_menu_description(
@@ -367,3 +369,137 @@ def end_dish_assistant(
     """End a dish-creation chat and free its server-side context. Idempotent and
     free; called once the dish has been created or the manager abandons it."""
     dish_sessions.end_session(payload.session_id)
+
+
+# ---- Create whole menu from photos / backup / restore ----
+
+
+def _structure_counts(
+    tags: list[str], categories: list[dict], backup_path: str | None
+) -> schemas.MenuImportResponse:
+    """Headline counts of what a (tags, categories) structure will create."""
+    subcats = [sub for cat in categories for sub in cat.get("subcategories", [])]
+    items = [item for sub in subcats for item in sub.get("items", [])]
+    return schemas.MenuImportResponse(
+        categories=len(categories),
+        subcategories=len(subcats),
+        items=len(items),
+        tags=len(tags),
+        toppings=sum(len(i.get("toppings", [])) for i in items),
+        variants=sum(len(i.get("variants", [])) for i in items),
+        backup_path=backup_path,
+    )
+
+
+@router.post("/create-menu-from-photo", response_model=schemas.MenuImportResponse)
+def create_menu_from_photo(
+    payload: schemas.MenuImportRequest,
+    db: Session = Depends(get_db),
+    tenant: models.TenantRightsAndInformation = Depends(
+        require_ai_credits(MENU_IMPORT_COST)
+    ),
+    _claims: dict[str, Any] = Depends(require_manager),
+):
+    """Build the entire menu from photos of a physical menu card.
+
+    Reads the uploaded photos plus optional instructions, asks Gemini for the
+    full structured menu (categories -> subcategories -> items with variants,
+    toppings and a <=20 tag vocabulary including "budget friendly" and "most
+    ordered"), then populates the menu tables from it. Costs 20 AI credits.
+
+    If a menu already exists this first backs it up to app/menu_backups (keeping
+    only that one backup) and then wipes every menu table before rebuilding. The
+    replace is refused with 409 unless ``confirm_overwrite`` is set, and with 400
+    if existing orders/carts still reference menu items.
+    """
+    images = gemini.load_images(payload.photo_paths)
+    if not images:
+        raise HTTPException(
+            status_code=400, detail="None of the given menu photos could be read"
+        )
+
+    menu_exists = crud.menu_has_content(db)
+    if menu_exists:
+        if crud.orders_reference_menu(db):
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    "Cannot replace the menu while existing orders or carts "
+                    "reference menu items."
+                ),
+            )
+        if not payload.confirm_overwrite:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=(
+                    "A menu already exists. Confirm to back it up and replace it "
+                    "with the one read from these photos."
+                ),
+            )
+
+    photo_menu = gemini.extract_menu_from_photos(images, payload.instructions)
+    tags, categories = gemini.photo_menu_to_structure(photo_menu)
+
+    backup_path: str | None = None
+    if menu_exists:
+        backup_path = menu_backups.save_backup(
+            crud.snapshot_full_menu(db), evict_photos=True
+        )
+        crud.clear_menu(db)
+
+    crud.rebuild_menu_from_structure(db, tags, categories)
+
+    tenant.credits_used += MENU_IMPORT_COST
+    db.commit()
+
+    return _structure_counts(tags, categories, backup_path)
+
+
+@router.get("/get-menu-backups", response_model=list[schemas.MenuBackupInfo])
+def get_menu_backups(
+    _claims: dict[str, Any] = Depends(require_manager),
+):
+    """List the stored menu backups (normally at most one), each with its
+    timestamp and headline counts, for the restore picker. Free."""
+    return [schemas.MenuBackupInfo(**info) for info in menu_backups.list_backups_info()]
+
+
+@router.post("/restore-menu-from-backup", response_model=schemas.MenuImportResponse)
+def restore_menu_from_backup(
+    payload: schemas.RestoreBackupRequest,
+    db: Session = Depends(get_db),
+    _claims: dict[str, Any] = Depends(require_manager),
+):
+    """Restore a previously backed-up menu. Free (no LLM call).
+
+    Backs up the current live menu, wipes the menu tables, then rebuilds from the
+    chosen backup. The backup that was applied is replaced by the snapshot of the
+    menu it displaced, so at most one backup is ever kept and the manager can
+    flip back. Refused with 400 if existing orders/carts reference menu items.
+    """
+    try:
+        snapshot = menu_backups.read_backup(payload.backup_path)
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail="Backup not found")
+
+    if crud.menu_has_content(db) and crud.orders_reference_menu(db):
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                "Cannot replace the menu while existing orders or carts "
+                "reference menu items."
+            ),
+        )
+
+    current = crud.snapshot_full_menu(db)
+    crud.clear_menu(db)
+
+    tags = snapshot.get("tags", [])
+    categories = snapshot.get("categories", [])
+    crud.rebuild_menu_from_structure(db, tags, categories)
+
+    # The restored menu's images are live again, so keep them; the displaced
+    # menu becomes the new (only) backup.
+    new_backup = menu_backups.save_backup(current, evict_photos=False)
+
+    return _structure_counts(tags, categories, new_backup)

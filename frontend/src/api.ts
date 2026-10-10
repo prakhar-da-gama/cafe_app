@@ -670,6 +670,72 @@ export function endDishAssistant(sessionId: string): Promise<void> {
   }).then((r) => handle<void>(r))
 }
 
+// ---- Create whole menu from photos / backup / restore ----
+
+export interface MenuImportResponse {
+  categories: number
+  subcategories: number
+  items: number
+  tags: number
+  toppings: number
+  variants: number
+  backup_path: string | null
+}
+
+export interface MenuBackupInfo {
+  path: string
+  created_at: string | null
+  categories: number
+  items: number
+}
+
+// Manager: build the entire menu from photos of a physical menu. Pass the
+// uploaded photo paths plus optional instructions. Costs 20 AI credits.
+//
+// When a menu already exists the server replies 409 the first time; this
+// resolves to `{ status: 'confirm_required' }` so the caller can show the
+// warning and call again with confirmOverwrite=true. Any other failure (e.g.
+// existing orders block the wipe) rejects with an error as usual.
+export async function createMenuFromPhoto(
+  photoPaths: string[],
+  instructions: string | null,
+  confirmOverwrite: boolean,
+): Promise<
+  { status: 'created'; result: MenuImportResponse } | { status: 'confirm_required' }
+> {
+  const res = await fetch('/api/ai/menu/create-menu-from-photo', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body: JSON.stringify({
+      photo_paths: photoPaths,
+      instructions,
+      confirm_overwrite: confirmOverwrite,
+    }),
+  })
+  if (res.status === 409) return { status: 'confirm_required' }
+  const result = await handle<MenuImportResponse>(res)
+  return { status: 'created', result }
+}
+
+// Manager: the stored menu backups (at most one) for the restore picker.
+export function getMenuBackups(): Promise<MenuBackupInfo[]> {
+  return fetch('/api/ai/menu/get-menu-backups', { headers: authHeaders() }).then(
+    (r) => handle<MenuBackupInfo[]>(r),
+  )
+}
+
+// Manager: restore a backed-up menu. Backs up and wipes the current menu, then
+// rebuilds from the backup. Free (no LLM call).
+export function restoreMenuFromBackup(
+  backupPath: string,
+): Promise<MenuImportResponse> {
+  return fetch('/api/ai/menu/restore-menu-from-backup', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body: JSON.stringify({ backup_path: backupPath }),
+  }).then((r) => handle<MenuImportResponse>(r))
+}
+
 // Manager: add a topping to the shared pool, returning it with its new id so
 // it can be linked to a dish. Requires a manager token.
 export function createTopping(input: ToppingCreate): Promise<Topping> {

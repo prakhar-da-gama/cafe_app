@@ -6,7 +6,12 @@ public functions and structured-output schemas so callers keep using
 shared client and low-level completion helpers live in :mod:`client`.
 """
 from .category import CategorySuggestion, improve_category
-from .client import generate_structured, generate_text, get_client
+from .client import (
+    generate_structured,
+    generate_structured_multimodal,
+    generate_text,
+    get_client,
+)
 from .dish_assistant import (
     DishAssistantReply,
     DishFormProposal,
@@ -17,6 +22,12 @@ from .dish_assistant import (
 )
 from .grammar import fix_grammar
 from .menu_description import generate_menu_description
+from .menu_from_photo import (
+    PhotoMenu,
+    extract_menu_from_photos,
+    load_images,
+    photo_menu_to_structure,
+)
 from .subcategory import SubcategorySuggestion, improve_subcategory
 
 __all__ = [
@@ -35,4 +46,9 @@ __all__ = [
     "get_client",
     "generate_text",
     "generate_structured",
+    "generate_structured_multimodal",
+    "PhotoMenu",
+    "extract_menu_from_photos",
+    "load_images",
+    "photo_menu_to_structure",
 ]

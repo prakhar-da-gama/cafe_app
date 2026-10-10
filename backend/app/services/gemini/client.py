@@ -97,3 +97,37 @@ def generate_structured(prompt: str, schema: type[BaseModel]) -> BaseModel:
                 detail="Gemini returned an unparseable response",
             ) from exc
     return parsed
+
+
+def generate_structured_multimodal(contents: list, schema: type[BaseModel]) -> BaseModel:
+    """Like ``generate_structured`` but for a multimodal prompt: ``contents`` is a
+    list mixing ``types.Part`` image parts and plain strings. Used to read one or
+    more menu photos and return a single parsed ``schema`` instance."""
+    from google.genai import types
+
+    client = get_client()
+    try:
+        response = client.models.generate_content(
+            model=settings.gemini_model,
+            contents=contents,
+            config=types.GenerateContentConfig(
+                response_mime_type="application/json",
+                response_schema=schema,
+            ),
+        )
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"Gemini request failed: {exc}",
+        ) from exc
+
+    parsed = response.parsed
+    if not isinstance(parsed, schema):
+        try:
+            parsed = schema.model_validate_json(response.text or "")
+        except Exception as exc:
+            raise HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                detail="Gemini returned an unparseable response",
+            ) from exc
+    return parsed

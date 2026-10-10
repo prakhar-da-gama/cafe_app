@@ -38,7 +38,7 @@ export default function AdminApp() {
   const [dummyTitle, setDummyTitle] = useState('')
 
   return (
-    <div className="app">
+    <div className="app dashboard">
       {screen === 'login' && (
         <Login
           adminMode

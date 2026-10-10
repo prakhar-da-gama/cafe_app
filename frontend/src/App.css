@@ -2533,3 +2533,51 @@
 }
 /* The first tile (manager dashboard) spans the full width to stand out. */
 .admin-tile:first-child { grid-column: 1 / -1; min-height: 96px; }
+
+/* ============================================================
+   Responsive dashboards (Manager + Admin)
+   The customer app keeps its phone frame (`.app`). The manager and admin
+   areas add the `dashboard` modifier: still phone-friendly on mobile, but
+   they shed the centred phone strip and use the full screen on tablets and
+   desktops. These rules come last so they win over the `.app` frame above.
+   ============================================================ */
+@media (min-width: 500px) {
+  .app.dashboard {
+    /* Override the phone-frame cap + device shadow from the `.app` rule. */
+    max-width: 760px;
+    box-shadow: none;
+  }
+}
+@media (min-width: 1024px) {
+  .app.dashboard {
+    max-width: 1140px;
+    padding: 0 24px;
+  }
+}
+
+/* The menu browser is shared with the customer app. Only the manager/admin
+   copy (inside `.app.dashboard`) spreads into a denser dish grid as the screen
+   grows; the customer menu keeps its two-column phone layout untouched. */
+@media (min-width: 760px) {
+  .app.dashboard .dish-grid { grid-template-columns: repeat(3, 1fr); }
+}
+@media (min-width: 1100px) {
+  .app.dashboard .dish-grid { grid-template-columns: repeat(4, 1fr); }
+}
+
+/* Order and out-of-stock lists flow into columns once there's room. Cards keep
+   their phone-width design in each cell; `align-items: start` stops an expanded
+   order card from stretching its row-mates. */
+@media (min-width: 760px) {
+  .app.dashboard .order-list,
+  .app.dashboard .oos-list {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    align-items: start;
+    gap: 14px;
+  }
+}
+@media (min-width: 1100px) {
+  .app.dashboard .order-list { grid-template-columns: repeat(3, 1fr); }
+  .app.dashboard .admin-tiles { grid-template-columns: repeat(3, 1fr); }
+}

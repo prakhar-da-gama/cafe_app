@@ -33,7 +33,7 @@ export default function ManagerApp() {
   const [email, setEmail] = useState('')
 
   return (
-    <div className="app">
+    <div className="app dashboard">
       {screen === 'login' && (
         <Login
           managerMode

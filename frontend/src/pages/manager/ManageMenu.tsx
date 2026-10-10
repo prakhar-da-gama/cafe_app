@@ -695,81 +695,106 @@ function DishAiPage({
   onSend: () => void
   onDone: () => void
 }) {
+  // The item preview opens in its own popup rather than sitting beside the chat.
+  const [previewOpen, setPreviewOpen] = useState(false)
+
   return (
     <div className="ai-page" role="region" aria-label="Create a dish with AI">
       <div className="ai-page-head">
-        <h3 className="ai-pop-title">Create a dish with AI</h3>
-        <button type="button" className="candy-btn btn-mint sm" onClick={onDone}>
+        <h3 className="ai-page-title">Create a dish with AI</h3>
+        <button type="button" className="mono-btn mono-ghost" onClick={onDone}>
           Done
         </button>
       </div>
 
-      <div className="ai-page-body">
-        {/* Top half: the chat interface. */}
-        <div className="ai-chat ai-page-chat">
-          <div className="ai-chat-log">
-            {messages.length === 0 && (
-              <p className="muted ai-chat-hint">
-                Describe the dish you want to add — e.g. “a large iced caramel
-                latte, veg, around ₹220”. Starting costs 5 credits; each reply
-                after that costs 1.
-              </p>
-            )}
-            {messages.map((m, i) => (
-              <div key={i} className={`ai-msg ai-msg-${m.role}`}>
-                {m.text}
-              </div>
-            ))}
-            {busy && (
-              <div className="ai-msg ai-msg-assistant muted">Thinking…</div>
-            )}
-            {ready && !busy && (
-              <p className="form-ok ai-chat-hint">
-                Looks ready — press Done to review the form, then Add dish.
-              </p>
-            )}
-            {error && <p className="form-error ai-chat-hint">{error}</p>}
+      <div className="ai-chat-log">
+        {messages.length === 0 && (
+          <p className="ai-chat-hint ai-mono-hint">
+            Describe the dish you want to add — e.g. “a large iced caramel latte,
+            veg, around ₹220”. Starting costs 5 credits; each reply after that
+            costs 1.
+          </p>
+        )}
+        {messages.map((m, i) => (
+          <div key={i} className={`ai-msg ai-msg-${m.role}`}>
+            {m.text}
           </div>
+        ))}
+        {busy && <div className="ai-msg ai-msg-assistant ai-msg-typing">Thinking…</div>}
+        {ready && !busy && (
+          <p className="ai-chat-hint ai-ready-hint">
+            Looks ready — press Done to review the form, then Add dish.
+          </p>
+        )}
+        {error && <p className="ai-chat-hint ai-error-hint">{error}</p>}
+      </div>
 
-          <div className="ai-chat-input">
-            <textarea
-              className="text-input"
-              rows={2}
-              value={input}
-              onChange={(e) => onInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault()
-                  onSend()
-                }
-              }}
-              placeholder={
-                started ? 'Reply to the assistant…' : 'Describe the dish…'
-              }
-            />
-            <button
-              type="button"
-              className="candy-btn btn-mint"
-              onClick={onSend}
-              disabled={busy || !input.trim()}
-            >
-              {started ? 'Send (1 credit)' : 'Start (5 credits)'}
-            </button>
-          </div>
+      <div className="ai-compose">
+        <div className="ai-compose-bar">
+          <button
+            type="button"
+            className="mono-btn mono-ghost ai-preview-btn"
+            onClick={() => setPreviewOpen(true)}
+          >
+            Item preview
+          </button>
         </div>
-
-        {/* Bottom half: the raw proposal the LLM returned, pretty-printed. */}
-        <div className="ai-page-json">
-          <span className="field-label">AI output</span>
-          {formJson ? (
-            <pre className="ai-json">{JSON.stringify(formJson, null, 2)}</pre>
-          ) : (
-            <p className="muted ai-chat-hint">
-              The dish details the assistant extracts will appear here as JSON.
-            </p>
-          )}
+        <div className="ai-chat-input">
+          <textarea
+            className="mono-input"
+            rows={2}
+            value={input}
+            onChange={(e) => onInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault()
+                onSend()
+              }
+            }}
+            placeholder={
+              started ? 'Reply to the assistant…' : 'Describe the dish…'
+            }
+          />
+          <button
+            type="button"
+            className="mono-btn mono-solid"
+            onClick={onSend}
+            disabled={busy || !input.trim()}
+          >
+            {started ? 'Send (1 credit)' : 'Start (5 credits)'}
+          </button>
         </div>
       </div>
+
+      {previewOpen && (
+        <div className="sheet-overlay" onClick={() => setPreviewOpen(false)}>
+          <div
+            className="card ai-preview-pop"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Item preview"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="ai-preview-head">
+              <h3 className="ai-page-title">Item preview</h3>
+              <button
+                type="button"
+                className="mono-btn mono-ghost"
+                onClick={() => setPreviewOpen(false)}
+              >
+                Close
+              </button>
+            </div>
+            {formJson ? (
+              <pre className="ai-json">{JSON.stringify(formJson, null, 2)}</pre>
+            ) : (
+              <p className="ai-chat-hint ai-mono-hint">
+                The dish details the assistant extracts will appear here as JSON.
+              </p>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

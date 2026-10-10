@@ -213,7 +213,10 @@ export default function MenuItemSheet({
   }, [onClose])
 
   return (
-    <div className="sheet-overlay" onClick={onClose}>
+    <div
+      className={'sheet-overlay' + (managerMode ? ' sheet-plain' : '')}
+      onClick={onClose}
+    >
       <div
         className="sheet"
         role="dialog"

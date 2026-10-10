@@ -1216,6 +1216,26 @@
   from { transform: translateY(100%); }
   to { transform: translateY(0); }
 }
+
+/* Manager/admin menu pop-up: no animations, and sizes/add-ons stacked one
+   per row in plain tabular order rather than wrapped chips. */
+.sheet-plain,
+.sheet-plain .sheet,
+.sheet-plain .sheet-add,
+.sheet-plain .sheet-scroll-hint {
+  animation: none;
+}
+.sheet-plain .opt-chips {
+  flex-direction: column;
+  flex-wrap: nowrap;
+  align-items: stretch;
+  gap: 6px;
+}
+.sheet-plain .opt-chip {
+  width: 100%;
+  justify-content: space-between;
+  border-radius: 8px;
+}
 .sheet-close {
   position: absolute;
   top: 12px;

@@ -416,7 +416,7 @@ export default function MenuBrowser({
                               : restockItem(item.id)
                           }
                         >
-                          {item.is_available ? 'Out of stock' : 'Restock'}
+                          {item.is_available ? 'Mark out of stock' : 'Restock'}
                         </button>
                       ) : (
                         item.is_available && (

@@ -1,5 +1,7 @@
 """JWT authentication and password hashing helpers."""
 from datetime import datetime, timedelta, timezone
+
+from sqlalchemy import select
 from typing import Any
 
 import bcrypt
@@ -94,6 +96,34 @@ def require_admin(claims: dict[str, Any] = Depends(require_jwt)) -> dict[str, An
             detail="Admin access required",
         )
     return claims
+
+
+def require_ai_access(db: Session = Depends(get_db)) -> models.TenantRights:
+    """Gate paid AI features: allow the request only while this cafe's AI
+    entitlement is still active.
+
+    Reads the single tenant_rights row (this is a one-cafe install) and checks
+    that ai_access_expiry is set and still in the future. Returns the row so the
+    caller can read/spend credits against it. Raises 403 if AI isn't active.
+
+    The DATETIME column is stored naive (UTC), so compare against a naive UTC
+    'now' to avoid aware/naive comparison errors.
+    """
+    tenant = db.execute(
+        select(models.TenantRights).order_by(models.TenantRights.id)
+    ).scalars().first()
+
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    if (
+        tenant is None
+        or tenant.ai_access_expiry is None
+        or tenant.ai_access_expiry <= now
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="AI features are not active for this cafe",
+        )
+    return tenant
 
 
 def get_current_user(

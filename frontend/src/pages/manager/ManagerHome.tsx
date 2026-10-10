@@ -90,30 +90,21 @@ export default function ManagerHome({
             </button>
           </div>
         </div>
-        <div className="hdr-actions">
+        {/* All dashboard actions on one row under the cafe name, with the
+            service rating anchored to the end. */}
+        <div className="hdr-actions mgr-dash-actions-row">
           <button type="button" className="menu-btn" onClick={onManageMenu}>
             Add to menu
           </button>
           <button type="button" className="menu-btn" onClick={onViewMenu}>
             Manage stocks
           </button>
-        </div>
-        {/* Out-of-stock shortcuts, on their own row under the action buttons. */}
-        <div className="mgr-nav mgr-dash-nav-row">
-          <button type="button" className="orders-link" onClick={onViewOosItems}>
+          <button type="button" className="menu-btn" onClick={onViewOosItems}>
             Out of Stock items
           </button>
-          <button
-            type="button"
-            className="orders-link"
-            onClick={onViewOosToppings}
-          >
+          <button type="button" className="menu-btn" onClick={onViewOosToppings}>
             Out of stock toppings
           </button>
-        </div>
-        {/* A second header row: the service rating, tappable through to the
-            full reviews page. */}
-        <div className="mgr-dash-service-row">
           <button
             type="button"
             className="service-rating-badge mgr-dash-service"

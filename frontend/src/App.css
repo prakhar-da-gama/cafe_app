@@ -2308,10 +2308,14 @@
 /* Let the header's action buttons wrap under the brand instead of pushing the
    layout wider than the phone screen. */
 .mgr-dash-header { flex-wrap: wrap; row-gap: 10px; }
-.mgr-dash-header .hdr-actions { flex-wrap: wrap; justify-content: flex-end; }
-/* Out-of-stock shortcuts sit on their own full-width row in the header,
-   below the action buttons and above the service-rating row. */
-.mgr-dash-nav-row { flex-basis: 100%; justify-content: flex-start; }
+/* The cafe name sits alone on the first line; every action button plus the
+   service rating share one row below it, the rating anchored to the right. */
+.mgr-dash-header .mgr-dash-actions-row {
+  flex-basis: 100%;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+}
+.mgr-dash-header .mgr-dash-actions-row .mgr-dash-service { margin-left: auto; }
 
 /* Centre the "Orders" title and keep the two out-of-stock links on one row. */
 .mgr-dash-head {

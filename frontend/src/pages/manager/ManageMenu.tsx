@@ -667,10 +667,12 @@ interface ChatMsg {
   text: string
 }
 
-/** The dish-assistant chat panel: a transcript, a hint when it's ready, and a
- *  message box. Rendered over the shared .sheet-overlay backdrop, sized like
- *  the dish form. Purely presentational — all state lives in AddItemForm. */
-function DishAiChat({
+/** The dish-assistant full-page view: the top half is the chat interface
+ *  (transcript + message box), the bottom half shows the latest proposal the
+ *  LLM returned as pretty-printed JSON, and a Done button returns to the dish
+ *  form with every field already filled in. Purely presentational — all state
+ *  lives in AddItemForm. */
+function DishAiPage({
   messages,
   input,
   onInput,
@@ -678,8 +680,9 @@ function DishAiChat({
   error,
   ready,
   started,
+  formJson,
   onSend,
-  onMinimise,
+  onDone,
 }: {
   messages: ChatMsg[]
   input: string
@@ -688,75 +691,83 @@ function DishAiChat({
   error: string | null
   ready: boolean
   started: boolean
+  formJson: DishAssistantForm | null
   onSend: () => void
-  onMinimise: () => void
+  onDone: () => void
 }) {
   return (
-    <div className="sheet-overlay" onClick={onMinimise}>
-      <div
-        className="card ai-chat"
-        role="dialog"
-        aria-modal="true"
-        aria-label="Create a dish with AI"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="ai-chat-head">
-          <h3 className="ai-pop-title">Create a dish with AI</h3>
-          <button
-            type="button"
-            className="ghost-btn sm"
-            onClick={onMinimise}
-          >
-            Minimise
-          </button>
-        </div>
+    <div className="ai-page" role="region" aria-label="Create a dish with AI">
+      <div className="ai-page-head">
+        <h3 className="ai-pop-title">Create a dish with AI</h3>
+        <button type="button" className="candy-btn btn-mint sm" onClick={onDone}>
+          Done
+        </button>
+      </div>
 
-        <div className="ai-chat-log">
-          {messages.length === 0 && (
-            <p className="muted ai-chat-hint">
-              Describe the dish you want to add — e.g. “a large iced caramel
-              latte, veg, around ₹220”. Starting costs 5 credits; each reply
-              after that costs 1.
-            </p>
-          )}
-          {messages.map((m, i) => (
-            <div key={i} className={`ai-msg ai-msg-${m.role}`}>
-              {m.text}
-            </div>
-          ))}
-          {busy && <div className="ai-msg ai-msg-assistant muted">Thinking…</div>}
-          {ready && !busy && (
-            <p className="form-ok ai-chat-hint">
-              Looks ready — minimise and review the form, then press Add dish.
-            </p>
-          )}
-          {error && <p className="form-error ai-chat-hint">{error}</p>}
-        </div>
+      <div className="ai-page-body">
+        {/* Top half: the chat interface. */}
+        <div className="ai-chat ai-page-chat">
+          <div className="ai-chat-log">
+            {messages.length === 0 && (
+              <p className="muted ai-chat-hint">
+                Describe the dish you want to add — e.g. “a large iced caramel
+                latte, veg, around ₹220”. Starting costs 5 credits; each reply
+                after that costs 1.
+              </p>
+            )}
+            {messages.map((m, i) => (
+              <div key={i} className={`ai-msg ai-msg-${m.role}`}>
+                {m.text}
+              </div>
+            ))}
+            {busy && (
+              <div className="ai-msg ai-msg-assistant muted">Thinking…</div>
+            )}
+            {ready && !busy && (
+              <p className="form-ok ai-chat-hint">
+                Looks ready — press Done to review the form, then Add dish.
+              </p>
+            )}
+            {error && <p className="form-error ai-chat-hint">{error}</p>}
+          </div>
 
-        <div className="ai-chat-input">
-          <textarea
-            className="text-input"
-            rows={2}
-            value={input}
-            onChange={(e) => onInput(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault()
-                onSend()
+          <div className="ai-chat-input">
+            <textarea
+              className="text-input"
+              rows={2}
+              value={input}
+              onChange={(e) => onInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault()
+                  onSend()
+                }
+              }}
+              placeholder={
+                started ? 'Reply to the assistant…' : 'Describe the dish…'
               }
-            }}
-            placeholder={
-              started ? 'Reply to the assistant…' : 'Describe the dish…'
-            }
-          />
-          <button
-            type="button"
-            className="candy-btn btn-mint"
-            onClick={onSend}
-            disabled={busy || !input.trim()}
-          >
-            {started ? 'Send (1 credit)' : 'Start (5 credits)'}
-          </button>
+            />
+            <button
+              type="button"
+              className="candy-btn btn-mint"
+              onClick={onSend}
+              disabled={busy || !input.trim()}
+            >
+              {started ? 'Send (1 credit)' : 'Start (5 credits)'}
+            </button>
+          </div>
+        </div>
+
+        {/* Bottom half: the raw proposal the LLM returned, pretty-printed. */}
+        <div className="ai-page-json">
+          <span className="field-label">AI output</span>
+          {formJson ? (
+            <pre className="ai-json">{JSON.stringify(formJson, null, 2)}</pre>
+          ) : (
+            <p className="muted ai-chat-hint">
+              The dish details the assistant extracts will appear here as JSON.
+            </p>
+          )}
         </div>
       </div>
     </div>
@@ -808,6 +819,8 @@ function AddItemForm({
   const [chatBusy, setChatBusy] = useState(false)
   const [chatError, setChatError] = useState<string | null>(null)
   const [ready, setReady] = useState(false)
+  // The latest proposal the assistant returned, shown as JSON on the AI page.
+  const [lastForm, setLastForm] = useState<DishAssistantForm | null>(null)
 
   const subcategories =
     categories.find((c) => String(c.id) === categoryId)?.subcategories ?? []
@@ -855,6 +868,7 @@ function AddItemForm({
       setSessionId(newSession)
       setMessages((m) => [...m, { role: 'assistant', text: reply.message }])
       setReady(reply.ready)
+      setLastForm(reply.form)
       applyAiForm(reply.form)
     } catch (err) {
       const msg = (err as Error).message
@@ -876,6 +890,7 @@ function AddItemForm({
     setChatInput('')
     setReady(false)
     setChatError(null)
+    setLastForm(null)
     setChatOpen(false)
   }
 
@@ -995,6 +1010,26 @@ function AddItemForm({
     } finally {
       setBusy(false)
     }
+  }
+
+  // The AI assistant opens as its own full-page view (chat on top, the LLM's
+  // JSON proposal below). Returning early keeps AddItemForm mounted so the form
+  // state the assistant fills in survives until the manager presses Done.
+  if (chatOpen) {
+    return (
+      <DishAiPage
+        messages={messages}
+        input={chatInput}
+        onInput={setChatInput}
+        busy={chatBusy}
+        error={chatError}
+        ready={ready}
+        started={sessionId !== null}
+        formJson={lastForm}
+        onSend={sendChat}
+        onDone={() => setChatOpen(false)}
+      />
+    )
   }
 
   return (
@@ -1231,20 +1266,6 @@ function AddItemForm({
       >
         {busy ? 'Adding…' : 'Add dish'}
       </button>
-
-      {chatOpen && (
-        <DishAiChat
-          messages={messages}
-          input={chatInput}
-          onInput={setChatInput}
-          busy={chatBusy}
-          error={chatError}
-          ready={ready}
-          started={sessionId !== null}
-          onSend={sendChat}
-          onMinimise={() => setChatOpen(false)}
-        />
-      )}
     </form>
   )
 }

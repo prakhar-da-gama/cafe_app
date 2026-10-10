@@ -2452,6 +2452,16 @@
 }
 .service-rating-badge:hover { filter: brightness(0.98); }
 .service-rating-num { font-weight: 800; }
+.service-rating-label { color: var(--ink-soft); font-weight: 600; }
+
+/* Second header row: the service rating sits on its own full-width line beneath
+   the brand + action buttons. */
+.mgr-dash-service-row {
+  flex-basis: 100%;
+  display: flex;
+  justify-content: flex-start;
+}
+.mgr-dash-service { width: fit-content; }
 .service-reviews-sheet { display: flex; flex-direction: column; max-height: 86dvh; }
 .service-reviews-head {
   padding: 18px 18px 12px;
@@ -2796,6 +2806,16 @@
   font-weight: 600;
 }
 .app.dashboard.theme-pro .orders-link:hover { border-color: var(--pro-blue); color: var(--pro-blue); }
+
+/* Service rating badge rides on the navy header bar as a translucent chip. */
+.app.dashboard.theme-pro .mgr-dash-service {
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  color: #fff;
+}
+.app.dashboard.theme-pro .mgr-dash-service:hover { background: rgba(255, 255, 255, 0.24); filter: none; }
+.app.dashboard.theme-pro .mgr-dash-service .service-rating-num,
+.app.dashboard.theme-pro .mgr-dash-service .service-rating-label { color: #fff; }
 
 /* Menu browser accents (manager menu / stock pages). */
 .app.dashboard.theme-pro .cat-section-title {

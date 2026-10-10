@@ -7,7 +7,6 @@ import {
   type User,
 } from '../../api'
 import ManagerOrders from './ManagerOrders'
-import ServiceReviewsPanel from '../../components/ServiceReviewsPanel'
 import StarRating from '../../components/StarRating'
 
 interface Props {
@@ -16,6 +15,7 @@ interface Props {
   onManageMenu: () => void
   onViewOosItems: () => void
   onViewOosToppings: () => void
+  onViewServiceReviews: () => void
 }
 
 /** The manager dashboard shell: confirms the session belongs to a manager
@@ -27,12 +27,12 @@ export default function ManagerHome({
   onManageMenu,
   onViewOosItems,
   onViewOosToppings,
+  onViewServiceReviews,
 }: Props) {
   const [user, setUser] = useState<User | null>(null)
   const [serviceRating, setServiceRating] = useState<ServiceRatingSummary | null>(
     null,
   )
-  const [reviewsOpen, setReviewsOpen] = useState(false)
 
   useEffect(() => {
     getServiceRatingSummary()
@@ -98,15 +98,13 @@ export default function ManagerHome({
             View full menu
           </button>
         </div>
-      </header>
-
-      <div className="menu-head mgr-dash-head">
-        <h1 className="menu-title">Orders</h1>
-        <div className="mgr-nav">
+        {/* A second header row: the service rating, tappable through to the
+            full reviews page. */}
+        <div className="mgr-dash-service-row">
           <button
             type="button"
-            className="service-rating-badge"
-            onClick={() => setReviewsOpen(true)}
+            className="service-rating-badge mgr-dash-service"
+            onClick={onViewServiceReviews}
             title="View service reviews"
           >
             <StarRating
@@ -119,28 +117,30 @@ export default function ManagerHome({
                 ? serviceRating.average_rating.toFixed(1)
                 : '—'}
             </span>
-            <span className="muted">
+            <span className="service-rating-label">
               Service ({serviceRating?.rating_count ?? 0})
             </span>
           </button>
+        </div>
+      </header>
+
+      <div className="menu-head mgr-dash-head">
+        <div className="mgr-nav">
           <button type="button" className="orders-link" onClick={onViewOosItems}>
-            Out-of-stock items
+            View out-of-stock items
           </button>
           <button
             type="button"
             className="orders-link"
             onClick={onViewOosToppings}
           >
-            Out-of-stock add-ons
+            View out-of-stock add-ons
           </button>
         </div>
+        <h1 className="menu-title">Orders</h1>
       </div>
 
       <ManagerOrders />
-
-      {reviewsOpen && (
-        <ServiceReviewsPanel onClose={() => setReviewsOpen(false)} />
-      )}
     </div>
   )
 }

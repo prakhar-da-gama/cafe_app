@@ -11,6 +11,7 @@ import ManagerMenu from './pages/manager/ManagerMenu'
 import ManageMenu from './pages/manager/ManageMenu'
 import OutOfStockItems from './pages/manager/OutOfStockItems'
 import OutOfStockToppings from './pages/manager/OutOfStockToppings'
+import ServiceReviews from './pages/manager/ServiceReviews'
 
 type Screen =
   | 'login'
@@ -22,6 +23,7 @@ type Screen =
   | 'manage-menu'
   | 'oos-items'
   | 'oos-toppings'
+  | 'service-reviews'
 
 /** The admin area (served at /app/admin). Login-only — the same login + OTP
  *  screens as the customer app, gated on does-admin-exist so only provisioned
@@ -80,6 +82,7 @@ export default function AdminApp() {
           onManageMenu={() => navigate('manage-menu')}
           onViewOosItems={() => navigate('oos-items')}
           onViewOosToppings={() => navigate('oos-toppings')}
+          onViewServiceReviews={() => navigate('service-reviews')}
         />
       )}
 
@@ -90,6 +93,8 @@ export default function AdminApp() {
       {screen === 'oos-items' && <OutOfStockItems onBack={goBack} />}
 
       {screen === 'oos-toppings' && <OutOfStockToppings onBack={goBack} />}
+
+      {screen === 'service-reviews' && <ServiceReviews onBack={goBack} />}
     </div>
   )
 }

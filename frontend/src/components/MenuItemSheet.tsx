@@ -358,14 +358,20 @@ export default function MenuItemSheet({
           {item.variants.length > 0 && (
             <div className="opt-block">
               <span className="opt-label">Sizes</span>
-              <div className="opt-chips">
-                {item.variants.map((v) =>
-                  managerMode ? (
-                    <span key={v.id} className="opt-chip">
-                      {v.name}
-                      <em>{signedMoney(v.price_delta)}</em>
-                    </span>
-                  ) : (
+              {managerMode ? (
+                <div className="stock-rows">
+                  {item.variants.map((v) => (
+                    <div key={v.id} className="stock-row is-static">
+                      <span className="stock-row-name">{v.name}</span>
+                      <span className="stock-row-price">
+                        {signedMoney(v.price_delta)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="opt-chips">
+                  {item.variants.map((v) => (
                     <button
                       key={v.id}
                       type="button"
@@ -380,40 +386,53 @@ export default function MenuItemSheet({
                       {v.name}
                       <em>{signedMoney(v.price_delta)}</em>
                     </button>
-                  ),
-                )}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
           {item.toppings.length > 0 && (
             <div className="opt-block">
               <span className="opt-label">
-                {managerMode ? 'Add-ons · tap to toggle stock' : 'Add-ons'}
+                {managerMode ? 'Add-ons — toggle to set stock' : 'Add-ons'}
               </span>
-              <div className="opt-chips">
-                {item.toppings.map((t) =>
-                  managerMode ? (
-                    <button
+              {managerMode ? (
+                <div className="stock-rows">
+                  {item.toppings.map((t) => (
+                    <div
                       key={t.id}
-                      type="button"
-                      className={
-                        'opt-chip opt-topping' +
-                        (t.is_available ? '' : ' chip-oos')
-                      }
-                      onClick={() => toggleToppingStock(t)}
-                      disabled={toppingBusy === t.id}
-                      title={
-                        t.is_available
-                          ? 'Mark this topping out of stock'
-                          : 'Restock this topping'
-                      }
+                      className={'stock-row' + (t.is_available ? '' : ' is-off')}
                     >
-                      {t.name}
-                      <em>{signedMoney(t.price)}</em>
-                      {!t.is_available && <span className="chip-flag">out</span>}
-                    </button>
-                  ) : (
+                      <span className="stock-row-name">
+                        {t.name} ({signedMoney(t.price)})
+                      </span>
+                      <button
+                        type="button"
+                        role="switch"
+                        aria-checked={t.is_available}
+                        aria-label={`${t.name}: ${
+                          t.is_available ? 'in stock' : 'out of stock'
+                        }`}
+                        className={
+                          'stock-toggle' + (t.is_available ? ' on' : '')
+                        }
+                        onClick={() => toggleToppingStock(t)}
+                        disabled={toppingBusy === t.id}
+                        title={
+                          t.is_available
+                            ? 'In stock — tap to mark out of stock'
+                            : 'Out of stock — tap to restock'
+                        }
+                      >
+                        <span className="stock-toggle-knob" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="opt-chips">
+                  {item.toppings.map((t) => (
                     <button
                       key={t.id}
                       type="button"
@@ -427,9 +446,9 @@ export default function MenuItemSheet({
                       {t.name}
                       <em>{signedMoney(t.price)}</em>
                     </button>
-                  ),
-                )}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 

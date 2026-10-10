@@ -95,7 +95,7 @@ export default function ManagerHome({
             Add to menu
           </button>
           <button type="button" className="menu-btn" onClick={onViewMenu}>
-            View full menu
+            Manage stocks
           </button>
         </div>
         {/* A second header row: the service rating, tappable through to the
@@ -122,14 +122,14 @@ export default function ManagerHome({
       <div className="menu-head mgr-dash-head">
         <div className="mgr-nav">
           <button type="button" className="orders-link" onClick={onViewOosItems}>
-            View out-of-stock items
+            Out of Stock items
           </button>
           <button
             type="button"
             className="orders-link"
             onClick={onViewOosToppings}
           >
-            View out-of-stock add-ons
+            Out of stock toppings
           </button>
         </div>
         <h1 className="menu-title">Orders</h1>

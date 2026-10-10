@@ -3,42 +3,43 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#FFF1F7" />
+    <meta name="theme-color" content="#f7f3ec" />
     <meta
       name="description"
-      content="Coffee Trading Co — a candy-bright cafe in Sarnath, Varanasi. Single-origin coffee, playful plates, and a riverside story since 1987."
+      content="Seoulmate Cafe (서울메이트 카페) — a little corner of Seoul in Sarnath, Varanasi. Dalgona coffee, snowy bingsu, warm hotteok and sizzling tteokbokki, two minutes from the Dhamek Stupa."
     />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;600;700;800&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Noto+Sans+KR:wght@400;500;700;800&display=swap"
       rel="stylesheet"
     />
-    <title>Coffee Trading Co · Sarnath, Varanasi</title>
+    <title>Seoulmate Cafe · 서울메이트 · Sarnath, Varanasi</title>
     <style>
       :root {
-        /* ---- Candy palette (shared with the app) ---- */
-        --cream: #fff4ec;
-        --cream-2: #fff9f4;
+        /* ---- Hanji / celadon / persimmon / indigo palette ---- */
+        --paper: #f7f3ec;      /* warm hanji cream */
+        --paper-2: #fdfbf7;
         --surface: #ffffff;
-        --ink: #3a2b4a;
-        --ink-soft: #7c6a8e;
-        --line: #f3e3d8;
+        --ink: #2b2622;        /* hanok charcoal-brown */
+        --ink-soft: #7a7067;
+        --line: #ece3d6;
 
-        --candy-1: #ff6fb5; /* bubblegum */
-        --candy-2: #ff9f45; /* tangerine */
-        --candy-3: #ffd23f; /* lemon */
-        --candy-4: #42d6a4; /* mint */
-        --candy-5: #4dccf0; /* sky */
-        --candy-6: #b06bf5; /* grape */
-        --candy-7: #ff6b6b; /* coral */
-        --candy-8: #9ae65c; /* lime */
+        --celadon: #6fae99;        /* 청자 celadon green */
+        --celadon-deep: #4b8a74;
+        --persimmon: #e0734f;      /* 감 persimmon */
+        --persimmon-deep: #c85637;
+        --indigo: #3f5b8c;         /* 쪽빛 indigo */
+        --indigo-deep: #2f4670;
+        --gold: #d9a441;           /* hanbok gold */
+        --gold-deep: #b9872a;
+        --hanbok-red: #c6453f;     /* dancheong red */
 
-        --danger: #e24a6e;
+        --danger: #c6453f;
         --radius: 22px;
         --radius-sm: 14px;
 
-        font-family: 'Nunito', 'Segoe UI', system-ui, sans-serif;
+        font-family: 'Noto Sans KR', 'Segoe UI', system-ui, sans-serif;
         color: var(--ink);
         -webkit-font-smoothing: antialiased;
         text-rendering: optimizeLegibility;
@@ -61,16 +62,16 @@
       body {
         min-height: 100dvh;
         background:
-          radial-gradient(95% 55% at 50% 0%, var(--cream-2), transparent 70%),
-          var(--cream);
+          radial-gradient(95% 55% at 50% 0%, var(--paper-2), transparent 70%),
+          var(--paper);
         overflow-x: hidden;
       }
 
       h1,
       h2,
       h3 {
-        font-family: 'Fredoka', 'Nunito', sans-serif;
-        font-weight: 600;
+        font-family: 'Gowun Batang', 'Noto Sans KR', serif;
+        font-weight: 700;
         letter-spacing: -0.01em;
         margin: 0;
       }
@@ -85,8 +86,13 @@
       }
 
       ::selection {
-        background: var(--candy-1);
+        background: var(--persimmon);
         color: #fff;
+      }
+
+      .kr {
+        font-family: 'Noto Sans KR', sans-serif;
+        font-weight: 500;
       }
 
       .wrap {
@@ -103,9 +109,9 @@
         position: sticky;
         top: 0;
         z-index: 40;
-        background: linear-gradient(var(--cream), rgba(255, 241, 247, 0.72));
+        background: linear-gradient(var(--paper), rgba(247, 243, 236, 0.74));
         backdrop-filter: blur(10px);
-        border-bottom: 1px solid rgba(243, 227, 216, 0.8);
+        border-bottom: 1px solid rgba(236, 227, 214, 0.9);
       }
       .site-header .wrap {
         display: flex;
@@ -118,44 +124,43 @@
       .brand {
         display: flex;
         align-items: center;
-        gap: 11px;
+        gap: 12px;
         text-decoration: none;
       }
-      .brand-bean {
-        width: 44px;
-        height: 44px;
+      .brand-mark {
+        width: 46px;
+        height: 46px;
         flex-shrink: 0;
-        border-radius: 15px;
+        border-radius: 14px;
         display: grid;
         place-items: center;
-        font-size: 1.35rem;
-        background: linear-gradient(145deg, var(--candy-1), var(--candy-6));
-        box-shadow: 0 8px 16px rgba(176, 107, 245, 0.38);
-        animation: bob 3.6s ease-in-out infinite;
-      }
-      @keyframes bob {
-        0%, 100% { transform: translateY(0) rotate(-3deg); }
-        50% { transform: translateY(-6px) rotate(3deg); }
+        font-family: 'Gowun Batang', serif;
+        font-weight: 700;
+        font-size: 1.5rem;
+        color: #fff;
+        background: linear-gradient(150deg, var(--celadon), var(--indigo));
+        box-shadow: 0 8px 16px rgba(63, 91, 140, 0.32);
       }
       .brand-name {
-        font-family: 'Fredoka', sans-serif;
-        font-weight: 600;
-        font-size: 1.22rem;
+        font-family: 'Gowun Batang', serif;
+        font-weight: 700;
+        font-size: 1.24rem;
         line-height: 1.05;
         color: var(--ink);
       }
       .brand-name em {
         font-style: normal;
-        color: var(--candy-1);
+        color: var(--persimmon);
       }
       .brand-sub {
         display: block;
-        font-family: 'Nunito', sans-serif;
+        font-family: 'Noto Sans KR', sans-serif;
         font-weight: 800;
-        font-size: 0.64rem;
-        letter-spacing: 0.14em;
+        font-size: 0.62rem;
+        letter-spacing: 0.16em;
         text-transform: uppercase;
         color: var(--ink-soft);
+        margin-top: 2px;
       }
       .nav-links {
         display: flex;
@@ -163,24 +168,24 @@
         gap: 26px;
       }
       .nav-links a {
-        font-weight: 800;
+        font-weight: 700;
         font-size: 0.92rem;
         color: var(--ink-soft);
         text-decoration: none;
         transition: color 0.15s;
       }
       .nav-links a:hover {
-        color: var(--candy-6);
+        color: var(--indigo);
       }
 
-      /* ---- Candy button (3D pressable), from the app ---- */
-      .candy-btn {
-        --btn-a: #52e0b0;
-        --btn-b: #14b98a;
-        --btn-edge: #0e9b72;
-        --btn-glow: 20, 185, 138;
+      /* ---- Pressable button ---- */
+      .btn {
+        --btn-a: var(--celadon);
+        --btn-b: var(--celadon-deep);
+        --btn-edge: #3a7360;
+        --btn-glow: 75, 138, 116;
         position: relative;
-        font-family: 'Nunito', sans-serif;
+        font-family: 'Noto Sans KR', sans-serif;
         font-size: 0.95rem;
         font-weight: 800;
         color: #fff;
@@ -190,27 +195,23 @@
         cursor: pointer;
         text-decoration: none;
         background: linear-gradient(135deg, var(--btn-a), var(--btn-b));
-        box-shadow: 0 6px 0 var(--btn-edge), 0 12px 22px rgba(var(--btn-glow), 0.38);
+        box-shadow: 0 6px 0 var(--btn-edge), 0 12px 22px rgba(var(--btn-glow), 0.34);
         display: inline-flex;
         align-items: center;
         justify-content: center;
         gap: 8px;
         transition: transform 0.1s ease, box-shadow 0.1s ease, filter 0.15s;
       }
-      .candy-btn:hover {
+      .btn:hover {
         filter: brightness(1.05);
       }
-      .candy-btn:active {
+      .btn:active {
         transform: translateY(5px);
-        box-shadow: 0 1px 0 var(--btn-edge), 0 4px 10px rgba(var(--btn-glow), 0.34);
+        box-shadow: 0 1px 0 var(--btn-edge), 0 4px 10px rgba(var(--btn-glow), 0.3);
       }
-      .btn-grape { --btn-a: #c084fc; --btn-b: #7d4fe0; --btn-edge: #6338b0; --btn-glow: 125, 79, 224; }
-      .btn-sky { --btn-a: #53d0f5; --btn-b: #4a86ff; --btn-edge: #2f6fc9; --btn-glow: 74, 134, 255; }
-      .btn-pink { --btn-a: #ff9ecd; --btn-b: #ff6fb5; --btn-edge: #d94f93; --btn-glow: 255, 111, 181; }
-      .btn-sun {
-        --btn-a: #ffd84d; --btn-b: #ff9f2e; --btn-edge: #e07c15; --btn-glow: 255, 159, 46;
-        color: var(--ink);
-      }
+      .btn-persimmon { --btn-a: #ec8a6b; --btn-b: var(--persimmon); --btn-edge: var(--persimmon-deep); --btn-glow: 224, 115, 79; }
+      .btn-indigo    { --btn-a: #5473ad; --btn-b: var(--indigo); --btn-edge: var(--indigo-deep); --btn-glow: 63, 91, 140; }
+      .btn-gold      { --btn-a: #e7bb63; --btn-b: var(--gold); --btn-edge: var(--gold-deep); --btn-glow: 217, 164, 65; color: var(--ink); }
       .btn-sm { padding: 10px 18px; font-size: 0.88rem; }
 
       .header-cta {
@@ -218,6 +219,10 @@
         align-items: center;
         gap: 18px;
       }
+
+      /* ---- Inline SVG icon sizing ---- */
+      .ic svg,
+      .badge-ic svg { width: 22px; height: 22px; }
 
       /* ============================================================
          Hero
@@ -239,30 +244,33 @@
         gap: 8px;
         font-weight: 800;
         font-size: 0.78rem;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-        color: var(--candy-6);
-        background: color-mix(in srgb, var(--candy-6) 12%, #fff);
-        border: 1.5px solid color-mix(in srgb, var(--candy-6) 26%, #fff);
+        letter-spacing: 0.06em;
+        color: var(--indigo);
+        background: color-mix(in srgb, var(--indigo) 10%, #fff);
+        border: 1.5px solid color-mix(in srgb, var(--indigo) 24%, #fff);
         padding: 7px 14px;
         border-radius: 999px;
         margin-bottom: 20px;
       }
+      .eyebrow .dot {
+        width: 8px; height: 8px; border-radius: 50%;
+        background: var(--persimmon);
+      }
       .hero h1 {
         font-size: clamp(2.6rem, 5.4vw, 4rem);
-        line-height: 1.02;
+        line-height: 1.04;
         color: var(--ink);
       }
       .hero h1 em {
         font-style: normal;
-        background: linear-gradient(120deg, var(--candy-1), var(--candy-6));
+        background: linear-gradient(120deg, var(--persimmon), var(--indigo));
         -webkit-background-clip: text;
         background-clip: text;
         color: transparent;
       }
       .hero p.lead {
         font-size: 1.12rem;
-        line-height: 1.6;
+        line-height: 1.68;
         color: var(--ink-soft);
         max-width: 46ch;
         margin: 20px 0 30px;
@@ -279,17 +287,17 @@
         margin-top: 42px;
       }
       .hero-stats .num {
-        font-family: 'Fredoka', sans-serif;
-        font-weight: 600;
+        font-family: 'Gowun Batang', serif;
+        font-weight: 700;
         font-size: 1.9rem;
         line-height: 1;
-        color: var(--candy-1);
+        color: var(--persimmon);
       }
       .hero-stats .lbl {
         font-size: 0.82rem;
         font-weight: 700;
         color: var(--ink-soft);
-        margin-top: 4px;
+        margin-top: 6px;
       }
 
       /* Stacked, tilted hero photos */
@@ -297,11 +305,23 @@
         position: relative;
         min-height: 440px;
       }
+      .hero-hangul {
+        position: absolute;
+        top: -26px;
+        left: -8px;
+        font-family: 'Gowun Batang', serif;
+        font-weight: 700;
+        font-size: 6.5rem;
+        line-height: 1;
+        color: color-mix(in srgb, var(--indigo) 12%, transparent);
+        z-index: 0;
+        user-select: none;
+      }
       .hero-photo {
         position: absolute;
         border-radius: 26px;
         overflow: hidden;
-        box-shadow: 0 26px 60px rgba(58, 43, 74, 0.26);
+        box-shadow: 0 26px 60px rgba(43, 38, 34, 0.24);
         border: 5px solid #fff;
       }
       .hero-photo img {
@@ -333,11 +353,11 @@
         height: 320px;
         border-radius: 50%;
         filter: blur(10px);
-        opacity: 0.5;
+        opacity: 0.4;
         z-index: 1;
         top: -30px;
         right: -40px;
-        background: radial-gradient(circle at 30% 30%, var(--candy-3), var(--candy-1));
+        background: radial-gradient(circle at 30% 30%, var(--gold), var(--persimmon));
         animation: float-a 9s ease-in-out infinite;
       }
       .hero-badge {
@@ -348,22 +368,22 @@
         background: #fff;
         border-radius: 18px;
         padding: 12px 16px;
-        box-shadow: 0 16px 34px rgba(58, 43, 74, 0.2);
+        box-shadow: 0 16px 34px rgba(43, 38, 34, 0.2);
         display: flex;
         align-items: center;
         gap: 10px;
         animation: float-b 5.5s ease-in-out infinite;
       }
-      .hero-badge .emoji {
+      .hero-badge .badge-ic {
         width: 40px;
         height: 40px;
         border-radius: 12px;
         display: grid;
         place-items: center;
-        font-size: 1.2rem;
-        background: linear-gradient(145deg, var(--candy-4), var(--candy-5));
+        color: #fff;
+        background: linear-gradient(145deg, var(--celadon), var(--indigo));
       }
-      .hero-badge .t { font-family: 'Fredoka', sans-serif; font-size: 0.95rem; }
+      .hero-badge .t { font-family: 'Gowun Batang', serif; font-size: 0.95rem; }
       .hero-badge .s { font-size: 0.74rem; color: var(--ink-soft); font-weight: 700; }
 
       @keyframes float-a {
@@ -388,20 +408,21 @@
       }
       .kicker {
         font-weight: 800;
-        font-size: 0.8rem;
-        letter-spacing: 0.12em;
+        font-size: 0.82rem;
+        letter-spacing: 0.1em;
         text-transform: uppercase;
-        color: var(--candy-1);
+        color: var(--persimmon);
         margin-bottom: 12px;
       }
+      .kicker .kr { color: var(--indigo); letter-spacing: 0; }
       .section-head h2 {
         font-size: clamp(1.9rem, 3.6vw, 2.7rem);
-        line-height: 1.1;
+        line-height: 1.12;
         color: var(--ink);
       }
       .section-head p {
         font-size: 1.05rem;
-        line-height: 1.6;
+        line-height: 1.68;
         color: var(--ink-soft);
         margin: 14px 0 0;
       }
@@ -411,8 +432,8 @@
          ============================================================ */
       .history {
         background:
-          radial-gradient(60% 60% at 15% 0%, color-mix(in srgb, var(--candy-3) 16%, transparent), transparent 70%),
-          var(--cream-2);
+          radial-gradient(60% 60% at 15% 0%, color-mix(in srgb, var(--celadon) 16%, transparent), transparent 70%),
+          var(--paper-2);
       }
       .history-grid {
         display: grid;
@@ -424,7 +445,7 @@
         border-radius: 26px;
         overflow: hidden;
         border: 5px solid #fff;
-        box-shadow: 0 24px 54px rgba(58, 43, 74, 0.22);
+        box-shadow: 0 24px 54px rgba(43, 38, 34, 0.2);
         transform: rotate(-2deg);
       }
       .history-photo img { width: 100%; aspect-ratio: 4 / 5; object-fit: cover; }
@@ -435,7 +456,7 @@
       }
       .history-copy p {
         font-size: 1.04rem;
-        line-height: 1.68;
+        line-height: 1.72;
         color: var(--ink-soft);
         margin: 0 0 16px;
       }
@@ -452,7 +473,7 @@
         border: 1.5px solid #fff;
         border-radius: 18px;
         padding: 20px 18px;
-        box-shadow: 0 12px 28px rgba(58, 43, 74, 0.08);
+        box-shadow: 0 12px 28px rgba(43, 38, 34, 0.07);
         position: relative;
         overflow: hidden;
       }
@@ -461,15 +482,15 @@
         position: absolute;
         top: 0; left: 0; right: 0;
         height: 5px;
-        background: var(--c, var(--candy-1));
+        background: var(--c, var(--celadon));
       }
       .tl-year {
-        font-family: 'Fredoka', sans-serif;
-        font-weight: 600;
+        font-family: 'Gowun Batang', serif;
+        font-weight: 700;
         font-size: 1.5rem;
-        color: var(--c, var(--candy-1));
+        color: var(--c, var(--celadon));
       }
-      .tl-card h4 { font-family: 'Fredoka', sans-serif; font-size: 1.02rem; margin: 6px 0 6px; color: var(--ink); }
+      .tl-card h4 { font-family: 'Gowun Batang', serif; font-size: 1.04rem; margin: 6px 0 6px; color: var(--ink); }
       .tl-card p { font-size: 0.88rem; line-height: 1.5; color: var(--ink-soft); margin: 0; }
 
       /* ============================================================
@@ -485,7 +506,7 @@
         position: relative;
         border-radius: 20px;
         overflow: hidden;
-        box-shadow: 0 14px 30px rgba(58, 43, 74, 0.12);
+        box-shadow: 0 14px 30px rgba(43, 38, 34, 0.12);
         cursor: pointer;
       }
       .g-item img {
@@ -500,13 +521,14 @@
         left: 0; right: 0; bottom: 0;
         padding: 26px 16px 14px;
         color: #fff;
-        font-family: 'Fredoka', sans-serif;
+        font-family: 'Gowun Batang', serif;
         font-size: 1.02rem;
-        background: linear-gradient(to top, rgba(26, 16, 34, 0.82), transparent);
+        background: linear-gradient(to top, rgba(26, 22, 18, 0.84), transparent);
         opacity: 0;
         transform: translateY(8px);
         transition: opacity 0.25s, transform 0.25s;
       }
+      .g-item .cap .kr { display: block; font-size: 0.82rem; font-weight: 500; opacity: 0.85; }
       .g-item:hover .cap { opacity: 1; transform: translateY(0); }
       .g-tall { grid-row: span 2; }
       .g-wide { grid-column: span 2; }
@@ -516,8 +538,8 @@
          ============================================================ */
       .menu {
         background:
-          radial-gradient(55% 55% at 85% 10%, color-mix(in srgb, var(--candy-5) 14%, transparent), transparent 70%),
-          var(--cream-2);
+          radial-gradient(55% 55% at 85% 10%, color-mix(in srgb, var(--indigo) 12%, transparent), transparent 70%),
+          var(--paper-2);
       }
       .menu-cards {
         display: grid;
@@ -529,14 +551,14 @@
         border: 1.5px solid #fff;
         border-radius: 22px;
         overflow: hidden;
-        box-shadow: 0 16px 34px rgba(58, 43, 74, 0.1);
+        box-shadow: 0 16px 34px rgba(43, 38, 34, 0.09);
         display: flex;
         flex-direction: column;
         transition: transform 0.16s ease, box-shadow 0.16s ease;
       }
       .m-card:hover {
         transform: translateY(-6px);
-        box-shadow: 0 26px 48px rgba(58, 43, 74, 0.16);
+        box-shadow: 0 26px 48px rgba(43, 38, 34, 0.15);
       }
       .m-photo { position: relative; aspect-ratio: 16 / 11; overflow: hidden; }
       .m-photo img { width: 100%; height: 100%; object-fit: cover; }
@@ -548,21 +570,22 @@
         letter-spacing: 0.05em;
         text-transform: uppercase;
         color: #fff;
-        background: var(--c, var(--candy-1));
+        background: var(--c, var(--celadon));
         padding: 5px 11px;
         border-radius: 999px;
       }
       .m-body { padding: 16px 18px 20px; display: flex; flex-direction: column; gap: 7px; flex: 1; }
       .m-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
-      .m-name { font-family: 'Fredoka', sans-serif; font-size: 1.14rem; color: var(--ink); line-height: 1.15; }
+      .m-name { font-family: 'Gowun Batang', serif; font-size: 1.14rem; color: var(--ink); line-height: 1.18; }
+      .m-name .kr { display: block; font-size: 0.78rem; font-weight: 500; color: var(--ink-soft); margin-top: 2px; }
       .m-price {
-        font-family: 'Fredoka', sans-serif;
-        font-weight: 600;
+        font-family: 'Gowun Batang', serif;
+        font-weight: 700;
         font-size: 1.14rem;
-        color: var(--candy-6);
+        color: var(--indigo);
         white-space: nowrap;
       }
-      .m-desc { font-size: 0.9rem; line-height: 1.5; color: var(--ink-soft); margin: 0; }
+      .m-desc { font-size: 0.9rem; line-height: 1.55; color: var(--ink-soft); margin: 0; }
       .veg-dot {
         width: 15px; height: 15px; border-radius: 4px;
         display: inline-block; border: 2px solid; position: relative; flex-shrink: 0; margin-top: 3px;
@@ -570,8 +593,8 @@
       .veg-dot::after { content: ''; position: absolute; inset: 2.5px; border-radius: 50%; }
       .veg-dot.veg { border-color: #2bb673; }
       .veg-dot.veg::after { background: #2bb673; }
-      .veg-dot.nonveg { border-color: #e24a6e; }
-      .veg-dot.nonveg::after { background: #e24a6e; }
+      .veg-dot.nonveg { border-color: var(--hanbok-red); }
+      .veg-dot.nonveg::after { background: var(--hanbok-red); }
       .m-name-row { display: flex; gap: 8px; align-items: flex-start; }
       .menu-foot { text-align: center; margin-top: 42px; }
 
@@ -589,7 +612,7 @@
         border-radius: 28px;
         overflow: hidden;
         border: 5px solid #fff;
-        box-shadow: 0 24px 54px rgba(58, 43, 74, 0.22);
+        box-shadow: 0 24px 54px rgba(43, 38, 34, 0.2);
       }
       .chef-photo img { width: 100%; aspect-ratio: 4 / 5; object-fit: cover; }
       .chef-chip {
@@ -599,30 +622,30 @@
         backdrop-filter: blur(4px);
         border-radius: 16px;
         padding: 12px 16px;
-        box-shadow: 0 10px 24px rgba(58, 43, 74, 0.16);
+        box-shadow: 0 10px 24px rgba(43, 38, 34, 0.15);
       }
-      .chef-chip .n { font-family: 'Fredoka', sans-serif; font-size: 1.08rem; color: var(--ink); }
-      .chef-chip .r { font-size: 0.8rem; font-weight: 700; color: var(--candy-6); }
+      .chef-chip .n { font-family: 'Gowun Batang', serif; font-size: 1.08rem; color: var(--ink); }
+      .chef-chip .r { font-size: 0.8rem; font-weight: 700; color: var(--indigo); }
       .chef-copy h2 { font-size: clamp(1.9rem, 3.6vw, 2.7rem); margin-bottom: 18px; }
-      .chef-copy p { font-size: 1.04rem; line-height: 1.68; color: var(--ink-soft); margin: 0 0 16px; }
+      .chef-copy p { font-size: 1.04rem; line-height: 1.72; color: var(--ink-soft); margin: 0 0 16px; }
       .quote {
-        font-family: 'Fredoka', sans-serif;
+        font-family: 'Gowun Batang', serif;
         font-size: 1.3rem;
-        line-height: 1.45;
+        line-height: 1.5;
         color: var(--ink);
-        border-left: 4px solid var(--candy-1);
+        border-left: 4px solid var(--persimmon);
         padding-left: 18px;
         margin: 24px 0;
       }
-      .chef-sign { font-family: 'Fredoka', sans-serif; color: var(--ink-soft); font-size: 0.95rem; }
+      .chef-sign { font-family: 'Gowun Batang', serif; color: var(--ink-soft); font-size: 0.95rem; }
 
       /* ============================================================
          Reservation
          ============================================================ */
       .reserve {
         background:
-          radial-gradient(60% 70% at 50% 0%, color-mix(in srgb, var(--candy-1) 14%, transparent), transparent 70%),
-          var(--cream-2);
+          radial-gradient(60% 70% at 50% 0%, color-mix(in srgb, var(--persimmon) 12%, transparent), transparent 70%),
+          var(--paper-2);
       }
       .reserve-grid {
         display: grid;
@@ -631,7 +654,7 @@
         align-items: stretch;
       }
       .reserve-aside {
-        background: linear-gradient(160deg, #241630, #3a2b4a);
+        background: linear-gradient(160deg, #233046, var(--indigo));
         color: #fff;
         border-radius: 26px;
         padding: 38px 34px;
@@ -647,18 +670,18 @@
         width: 260px; height: 260px;
         border-radius: 50%;
         right: -90px; bottom: -90px;
-        background: radial-gradient(circle at 30% 30%, var(--candy-1), var(--candy-6));
+        background: radial-gradient(circle at 30% 30%, var(--gold), var(--persimmon));
         opacity: 0.5;
         filter: blur(6px);
       }
       .reserve-aside h3 { font-size: 1.7rem; margin-bottom: 14px; position: relative; }
-      .reserve-aside p { line-height: 1.6; color: #e9dff3; position: relative; margin: 0 0 24px; }
+      .reserve-aside p { line-height: 1.64; color: #dfe6f2; position: relative; margin: 0 0 24px; }
       .reserve-aside ul { list-style: none; padding: 0; margin: 0; display: grid; gap: 14px; position: relative; }
-      .reserve-aside li { display: flex; gap: 12px; align-items: center; font-weight: 700; }
+      .reserve-aside li { display: flex; gap: 12px; align-items: center; font-weight: 600; }
       .reserve-aside li .ic {
         width: 36px; height: 36px; border-radius: 11px; flex-shrink: 0;
-        display: grid; place-items: center; font-size: 1.05rem;
-        background: rgba(255, 255, 255, 0.12);
+        display: grid; place-items: center; color: #fff;
+        background: rgba(255, 255, 255, 0.14);
       }
 
       .reserve-card {
@@ -666,7 +689,7 @@
         border: 1.5px solid #fff;
         border-radius: 26px;
         padding: 34px;
-        box-shadow: 0 20px 44px rgba(58, 43, 74, 0.12);
+        box-shadow: 0 20px 44px rgba(43, 38, 34, 0.11);
       }
       .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
       .field { display: flex; flex-direction: column; gap: 7px; }
@@ -682,16 +705,16 @@
         padding: 13px 15px;
         border: 2px solid var(--line);
         border-radius: var(--radius-sm);
-        background: #fffafc;
+        background: #fdfaf5;
         transition: border-color 0.15s, box-shadow 0.15s;
         width: 100%;
       }
       select.text-input { appearance: none; cursor: pointer; }
-      .text-input::placeholder { color: #c9b6cf; }
+      .text-input::placeholder { color: #c3b7a6; }
       .text-input:focus {
         outline: none;
-        border-color: var(--candy-1);
-        box-shadow: 0 0 0 4px rgba(255, 111, 181, 0.18);
+        border-color: var(--celadon);
+        box-shadow: 0 0 0 4px rgba(111, 174, 153, 0.22);
       }
       .reserve-submit { width: 100%; margin-top: 4px; padding: 15px; font-size: 1.05rem; }
       .reserve-note { font-size: 0.82rem; color: var(--ink-soft); text-align: center; margin: 14px 0 0; }
@@ -700,9 +723,9 @@
         margin-top: 16px;
         padding: 14px 16px;
         border-radius: 14px;
-        background: rgba(66, 214, 164, 0.15);
-        border: 1.5px solid rgba(66, 214, 164, 0.5);
-        color: #178a63;
+        background: rgba(111, 174, 153, 0.16);
+        border: 1.5px solid rgba(111, 174, 153, 0.5);
+        color: var(--celadon-deep);
         font-weight: 700;
         font-size: 0.92rem;
         text-align: center;
@@ -727,24 +750,24 @@
         border: 1.5px solid #fff;
         border-radius: 20px;
         padding: 20px 22px;
-        box-shadow: 0 12px 28px rgba(58, 43, 74, 0.08);
+        box-shadow: 0 12px 28px rgba(43, 38, 34, 0.07);
         display: flex;
         gap: 14px;
         align-items: flex-start;
       }
       .loc-card .ic {
         width: 44px; height: 44px; flex-shrink: 0;
-        border-radius: 13px; display: grid; place-items: center; font-size: 1.2rem;
+        border-radius: 13px; display: grid; place-items: center;
         color: #fff;
-        background: linear-gradient(145deg, var(--c1, var(--candy-1)), var(--c2, var(--candy-6)));
+        background: linear-gradient(145deg, var(--c1, var(--celadon)), var(--c2, var(--indigo)));
       }
-      .loc-card h4 { font-family: 'Fredoka', sans-serif; font-size: 1.05rem; margin: 0 0 4px; color: var(--ink); }
-      .loc-card p { margin: 0; font-size: 0.92rem; line-height: 1.5; color: var(--ink-soft); }
+      .loc-card h4 { font-family: 'Gowun Batang', serif; font-size: 1.05rem; margin: 0 0 4px; color: var(--ink); }
+      .loc-card p { margin: 0; font-size: 0.92rem; line-height: 1.55; color: var(--ink-soft); }
       .map-frame {
         border-radius: 26px;
         overflow: hidden;
         border: 5px solid #fff;
-        box-shadow: 0 22px 48px rgba(58, 43, 74, 0.2);
+        box-shadow: 0 22px 48px rgba(43, 38, 34, 0.18);
         min-height: 420px;
       }
       .map-frame iframe { width: 100%; height: 100%; min-height: 420px; border: 0; display: block; }
@@ -753,8 +776,8 @@
          Footer
          ============================================================ */
       .site-footer {
-        background: #241630;
-        color: #d9cce6;
+        background: #221d19;
+        color: #d9cfc4;
         padding: 56px 0 30px;
       }
       .footer-grid {
@@ -763,16 +786,16 @@
         gap: 40px;
       }
       .footer-grid h4 {
-        font-family: 'Fredoka', sans-serif;
+        font-family: 'Gowun Batang', serif;
         color: #fff;
         font-size: 1.05rem;
         margin: 0 0 16px;
       }
-      .footer-grid p, .footer-grid a { font-size: 0.92rem; line-height: 1.7; color: #bdaccf; text-decoration: none; }
+      .footer-grid p, .footer-grid a { font-size: 0.92rem; line-height: 1.7; color: #b9ac9f; text-decoration: none; }
       .footer-grid a:hover { color: #fff; }
       .footer-links { display: flex; flex-direction: column; gap: 8px; }
       .footer-brand .brand-name { color: #fff; }
-      .footer-brand .brand-name em { color: var(--candy-1); }
+      .footer-brand .brand-name em { color: var(--persimmon); }
       .footer-brand p { margin: 16px 0 0; max-width: 34ch; }
       .footer-bottom {
         margin-top: 44px;
@@ -783,7 +806,7 @@
         flex-wrap: wrap;
         gap: 12px;
         font-size: 0.84rem;
-        color: #9683ab;
+        color: #8f8275;
       }
 
       /* ============================================================
@@ -838,11 +861,11 @@
     <!-- ===================== Header ===================== -->
     <header class="site-header">
       <div class="wrap">
-        <a class="brand" href="#top" aria-label="Coffee Trading Co home">
-          <span class="brand-bean" aria-hidden="true">☕</span>
+        <a class="brand" href="#top" aria-label="Seoulmate Cafe home">
+          <span class="brand-mark" aria-hidden="true">서</span>
           <span>
-            <span class="brand-name">Coffee <em>Trading</em> Co</span>
-            <span class="brand-sub">Sarnath · Varanasi</span>
+            <span class="brand-name">Seoul<em>mate</em> Cafe</span>
+            <span class="brand-sub">서울메이트 · Sarnath, Varanasi</span>
           </span>
         </a>
         <nav class="nav-links" aria-label="Primary">
@@ -852,7 +875,7 @@
           <a href="#visit">Visit</a>
         </nav>
         <div class="header-cta">
-          <a class="candy-btn btn-grape" href="https://ordersbuddy.in/app/">Order Food 🍽️</a>
+          <a class="btn btn-indigo" href="https://ordersbuddy.in/app/">Order Food</a>
         </div>
       </div>
     </header>
@@ -862,54 +885,58 @@
       <section class="hero">
         <div class="wrap hero-grid">
           <div class="hero-copy reveal">
-            <span class="eyebrow">● Brewing joy since 1987</span>
-            <h1>Where the <em>Ganges breeze</em><br />meets a candy-bright cup.</h1>
+            <span class="eyebrow"><span class="dot" aria-hidden="true"></span> 안녕하세요 — Hello from Sarnath</span>
+            <h1>Where <em>Seoul</em><br />meets the Ganges.</h1>
             <p class="lead">
-              Tucked beside the Dhamek Stupa in Sarnath, Coffee Trading Co roasts
-              single-origin beans from the Araku Valley and plates playful,
-              colourful food that tastes as good as it looks.
+              Seoulmate Cafe is a little corner of Seoul tucked beside the Dhamek
+              Stupa in Sarnath. Whipped dalgona coffee, mountains of snowy bingsu,
+              griddle-warm hotteok and sizzling tteokbokki — Korean cafe comfort,
+              made fresh on the banks of the Ganges.
             </p>
             <div class="hero-actions">
-              <a class="candy-btn btn-pink" href="https://ordersbuddy.in/app/">Order Food 🍽️</a>
-              <a class="candy-btn btn-sun" href="#visit">Reserve a Table</a>
+              <a class="btn btn-persimmon" href="https://ordersbuddy.in/app/">Order Food</a>
+              <a class="btn btn-gold" href="#visit">Reserve a Table</a>
             </div>
             <div class="hero-stats">
               <div>
-                <div class="num">38</div>
-                <div class="lbl">Years by the stupa</div>
+                <div class="num">2016</div>
+                <div class="lbl">Serving Seoul in Sarnath</div>
               </div>
               <div>
-                <div class="num">14</div>
-                <div class="lbl">House-roasted origins</div>
+                <div class="num">40+</div>
+                <div class="lbl">Korean dishes &amp; drinks</div>
               </div>
               <div>
                 <div class="num">4.9★</div>
-                <div class="lbl">Loved by 6k+ guests</div>
+                <div class="lbl">Loved by 8k+ guests</div>
               </div>
             </div>
           </div>
 
           <div class="hero-art reveal">
+            <span class="hero-hangul" aria-hidden="true">서울</span>
             <span class="hero-blob" aria-hidden="true"></span>
             <div class="hero-photo p1">
               <img
-                src="https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=800&q=80"
-                alt="A latte with delicate rosetta art on a wooden table"
+                src="https://images.unsplash.com/photo-1461023058943-07fcbe16d735?auto=format&fit=crop&w=800&q=80"
+                alt="A tall, frothy dalgona-style coffee in a glass"
                 loading="lazy"
               />
             </div>
             <div class="hero-photo p2">
               <img
-                src="https://images.unsplash.com/photo-1529042410759-befb1204b468?auto=format&fit=crop&w=700&q=80"
-                alt="Colourful brunch spread with fresh fruit and pastries"
+                src="https://images.unsplash.com/photo-1563805042-7684c019e1cb?auto=format&fit=crop&w=700&q=80"
+                alt="A bowl of shaved-ice bingsu topped with fruit"
                 loading="lazy"
               />
             </div>
             <div class="hero-badge" aria-hidden="true">
-              <span class="emoji">🌿</span>
+              <span class="badge-ic">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h16a8 8 0 0 1-16 0Z"/><path d="M3 12h18"/><path d="M9 7c0-1.2 1-1.4 1-2.5M13 7c0-1.2 1-1.4 1-2.5"/></svg>
+              </span>
               <span>
-                <span class="t">Araku Valley</span><br />
-                <span class="s">single-origin beans</span>
+                <span class="t">Freshly whipped</span><br />
+                <span class="s">dalgona, every cup</span>
               </span>
             </div>
           </div>
@@ -923,50 +950,50 @@
             <div class="history-photo reveal">
               <img
                 src="https://images.unsplash.com/photo-1442512595331-e89e73853f31?auto=format&fit=crop&w=700&q=80"
-                alt="Vintage café interior with warm light and wooden counters"
+                alt="A warm, cosy Korean-style cafe interior with wooden counters"
                 loading="lazy"
               />
             </div>
             <div class="history-copy reveal">
-              <p class="kicker">Our Story</p>
-              <h2>A trading post for beans, stories &amp; afternoons.</h2>
+              <p class="kicker">Our Story <span class="kr">· 우리 이야기</span></p>
+              <h2>Homesick for Seoul, two steps from the stupa.</h2>
               <p>
-                In 1987, Devraj Malviya came home to Sarnath after a decade of
-                buying and selling green coffee across the ports of Kochi and
-                Chennai. He rented a crumbling two-room house a short walk from
-                the Dhamek Stupa, hauled in a cast-iron roaster, and hung a
-                hand-painted sign: <strong>Coffee Trading Co.</strong>
+                In 2016, Ananya Rai came home to Sarnath after six years of
+                student winters in Seoul — nights spent in the little cafes of
+                Ikseon-dong and Hongdae, nursing a hot yuja-cha while the snow
+                fell. She missed the warmth of those rooms more than she expected.
               </p>
               <p>
-                Pilgrims, students from the nearby monasteries, and wandering
-                scholars began lingering over his cups for hours. What started
-                as a trader's counter slowly became Sarnath's living room —
-                three generations later, still roasting on the same corner,
-                still pouring for anyone who wanders in off the dusty lane.
+                So she rented a quiet two-room house a short walk from the Dhamek
+                Stupa, hung a hand-painted sign reading <strong>Seoulmate Cafe</strong>
+                (서울메이트), and set out to recreate that feeling: dalgona whisked
+                by hand, hotteok pressed on a hot griddle, bingsu shaved to order.
+                Pilgrims, students and curious neighbours wandered in — and Sarnath
+                quietly fell in love with Seoul.
               </p>
             </div>
           </div>
 
           <div class="timeline">
-            <div class="tl-card reveal" style="--c: var(--candy-1)">
-              <div class="tl-year">1987</div>
-              <h4>The first roast</h4>
-              <p>Devraj lights the cast-iron roaster in a two-room house near the stupa.</p>
+            <div class="tl-card reveal" style="--c: var(--persimmon)">
+              <div class="tl-year">2016</div>
+              <h4>The first cup</h4>
+              <p>Ananya opens a two-room cafe near the stupa and hand-whisks Sarnath's first dalgona.</p>
             </div>
-            <div class="tl-card reveal" style="--c: var(--candy-4)">
-              <div class="tl-year">1996</div>
-              <h4>The courtyard opens</h4>
-              <p>A neem-shaded courtyard is added, and the café's famous filter kaapi is born.</p>
+            <div class="tl-card reveal" style="--c: var(--celadon)">
+              <div class="tl-year">2018</div>
+              <h4>The bingsu bar</h4>
+              <p>A shaved-ice counter arrives; injeolmi and mango bingsu become summer legends.</p>
             </div>
-            <div class="tl-card reveal" style="--c: var(--candy-5)">
-              <div class="tl-year">2011</div>
-              <h4>Second generation</h4>
-              <p>Daughter Meera returns from culinary school and reimagines the kitchen.</p>
+            <div class="tl-card reveal" style="--c: var(--indigo)">
+              <div class="tl-year">2021</div>
+              <h4>The street-food griddle</h4>
+              <p>Hotteok, tteokbokki and Korean corn dogs join the menu, sizzling by the window.</p>
             </div>
-            <div class="tl-card reveal" style="--c: var(--candy-6)">
+            <div class="tl-card reveal" style="--c: var(--gold)">
               <div class="tl-year">2024</div>
-              <h4>A candy-bright revival</h4>
-              <p>A playful new look &amp; menu — same corner, same beans, brighter than ever.</p>
+              <h4>A hanok-warm revival</h4>
+              <p>A calm new look in celadon &amp; hanji tones — same corner, more of Seoul than ever.</p>
             </div>
           </div>
         </div>
@@ -976,58 +1003,58 @@
       <section id="gallery">
         <div class="wrap">
           <div class="section-head reveal">
-            <p class="kicker">Straight From Our Kitchen</p>
-            <h2>Food made to be photographed — then devoured.</h2>
-            <p>Every plate leaves our pass glowing with colour. Here's a peek at what's steaming, dripping and sizzling today.</p>
+            <p class="kicker">Straight From Our Griddle <span class="kr">· 맛있어요</span></p>
+            <h2>Seoul street food, plated to be photographed.</h2>
+            <p>Snowy mountains, glossy red sauce, molten cheese pulls. Here's a peek at what's steaming, shaving and sizzling today.</p>
           </div>
           <div class="gallery-grid reveal">
             <div class="g-item g-tall g-wide">
               <img
-                src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=900&q=80"
-                alt="A vibrant plated dish with fresh herbs"
+                src="https://images.unsplash.com/photo-1563805042-7684c019e1cb?auto=format&fit=crop&w=900&q=80"
+                alt="A generous bowl of shaved-ice bingsu with toppings"
                 loading="lazy"
               />
-              <span class="cap">Garden Harvest Bowl</span>
+              <span class="cap">Injeolmi Snow Bingsu<span class="kr">인절미 빙수</span></span>
             </div>
             <div class="g-item">
               <img
-                src="https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?auto=format&fit=crop&w=500&q=80"
-                alt="Stack of fluffy pancakes with syrup"
+                src="https://images.unsplash.com/photo-1635963662200-45e5e2b2a08a?auto=format&fit=crop&w=500&q=80"
+                alt="Spicy Korean rice cakes in red sauce"
                 loading="lazy"
               />
-              <span class="cap">Jaggery Pancakes</span>
+              <span class="cap">Tteokbokki<span class="kr">떡볶이</span></span>
             </div>
             <div class="g-item">
               <img
-                src="https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&fit=crop&w=500&q=80"
-                alt="Fresh margherita pizza"
+                src="https://images.unsplash.com/photo-1626074353765-517a681e40be?auto=format&fit=crop&w=500&q=80"
+                alt="Crispy Korean fried chicken glazed in sauce"
                 loading="lazy"
               />
-              <span class="cap">Neem-Wood Pizza</span>
+              <span class="cap">Yangnyeom Chicken<span class="kr">양념치킨</span></span>
             </div>
             <div class="g-item g-tall">
               <img
-                src="https://images.unsplash.com/photo-1551024601-bec78aea704b?auto=format&fit=crop&w=500&q=80"
-                alt="Colourful dessert with berries"
+                src="https://images.unsplash.com/photo-1461023058943-07fcbe16d735?auto=format&fit=crop&w=500&q=80"
+                alt="A frothy whipped dalgona coffee"
                 loading="lazy"
               />
-              <span class="cap">Rose &amp; Pistachio Cake</span>
+              <span class="cap">Dalgona Coffee<span class="kr">달고나 커피</span></span>
             </div>
             <div class="g-item">
               <img
-                src="https://images.unsplash.com/photo-1484723091739-30a097e8f929?auto=format&fit=crop&w=500&q=80"
-                alt="Avocado toast with egg"
+                src="https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=500&q=80"
+                alt="Sweet griddled Korean pancakes"
                 loading="lazy"
               />
-              <span class="cap">Masala Avocado Toast</span>
+              <span class="cap">Hotteok<span class="kr">호떡</span></span>
             </div>
             <div class="g-item g-wide">
               <img
-                src="https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=900&q=80"
-                alt="Pizza being served on a rustic table"
+                src="https://images.unsplash.com/photo-1498654896293-37aacf113fd9?auto=format&fit=crop&w=900&q=80"
+                alt="Rolls of Korean seaweed rice gimbap"
                 loading="lazy"
               />
-              <span class="cap">Shareable Stupa Platter</span>
+              <span class="cap">Fresh-Rolled Gimbap<span class="kr">김밥</span></span>
             </div>
           </div>
         </div>
@@ -1037,117 +1064,117 @@
       <section class="menu" id="menu">
         <div class="wrap">
           <div class="section-head reveal">
-            <p class="kicker">Menu Preview</p>
+            <p class="kicker">Menu Preview <span class="kr">· 메뉴</span></p>
             <h2>A little taste of what's on the counter.</h2>
-            <p>Signature pours and plates from the Coffee Trading Co kitchen. Tap “Order Food” to open the full candy-coloured menu.</p>
+            <p>Signature pours and plates from the Seoulmate kitchen. Tap “Order Food” to open the full menu.</p>
           </div>
 
           <div class="menu-cards">
             <article class="m-card reveal">
               <div class="m-photo">
-                <img src="https://images.unsplash.com/photo-1572442388796-11668a67e53d?auto=format&fit=crop&w=600&q=80" alt="Filter coffee in a traditional tumbler" loading="lazy" />
-                <span class="m-tag" style="--c: var(--candy-2)">House Favourite</span>
+                <img src="https://images.unsplash.com/photo-1461023058943-07fcbe16d735?auto=format&fit=crop&w=600&q=80" alt="Whipped dalgona coffee" loading="lazy" />
+                <span class="m-tag" style="--c: var(--persimmon)">House Favourite</span>
               </div>
               <div class="m-body">
                 <div class="m-top">
                   <div class="m-name-row">
                     <span class="veg-dot veg" aria-label="Vegetarian"></span>
-                    <span class="m-name">Sarnath Filter Kaapi</span>
+                    <span class="m-name">Dalgona Coffee<span class="kr">달고나 커피</span></span>
                   </div>
-                  <span class="m-price">₹120</span>
+                  <span class="m-price">₹180</span>
                 </div>
-                <p class="m-desc">Araku beans, slow-dripped and frothed with jaggery milk in a steel tumbler.</p>
+                <p class="m-desc">Coffee whipped by hand into a cloud of caramel foam over chilled milk.</p>
               </div>
             </article>
 
             <article class="m-card reveal">
               <div class="m-photo">
-                <img src="https://images.unsplash.com/photo-1484723091739-30a097e8f929?auto=format&fit=crop&w=600&q=80" alt="Masala avocado toast" loading="lazy" />
-                <span class="m-tag" style="--c: var(--candy-4)">Fresh</span>
+                <img src="https://images.unsplash.com/photo-1563805042-7684c019e1cb?auto=format&fit=crop&w=600&q=80" alt="Injeolmi bingsu shaved ice" loading="lazy" />
+                <span class="m-tag" style="--c: var(--celadon)">Chilled</span>
               </div>
               <div class="m-body">
                 <div class="m-top">
                   <div class="m-name-row">
                     <span class="veg-dot veg" aria-label="Vegetarian"></span>
-                    <span class="m-name">Masala Avocado Toast</span>
+                    <span class="m-name">Injeolmi Bingsu<span class="kr">인절미 빙수</span></span>
                   </div>
-                  <span class="m-price">₹280</span>
+                  <span class="m-price">₹320</span>
                 </div>
-                <p class="m-desc">Sourdough, smashed avocado, chaat masala, pomegranate &amp; a soft egg.</p>
+                <p class="m-desc">Snowy milk ice piled with roasted soybean powder, mochi &amp; condensed milk.</p>
               </div>
             </article>
 
             <article class="m-card reveal">
               <div class="m-photo">
-                <img src="https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&fit=crop&w=600&q=80" alt="Wood-fired pizza" loading="lazy" />
-                <span class="m-tag" style="--c: var(--candy-7)">Wood-Fired</span>
+                <img src="https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=600&q=80" alt="Sweet Korean hotteok pancakes" loading="lazy" />
+                <span class="m-tag" style="--c: var(--gold)">Griddle-Warm</span>
               </div>
               <div class="m-body">
                 <div class="m-top">
                   <div class="m-name-row">
                     <span class="veg-dot veg" aria-label="Vegetarian"></span>
-                    <span class="m-name">Neem-Wood Margherita</span>
+                    <span class="m-name">Hotteok<span class="kr">호떡</span></span>
                   </div>
-                  <span class="m-price">₹340</span>
+                  <span class="m-price">₹140</span>
                 </div>
-                <p class="m-desc">Blistered crust, San Marzano sauce, buffalo mozzarella &amp; basil from our pots.</p>
+                <p class="m-desc">Crisp griddled pancakes oozing molten brown sugar, cinnamon &amp; crushed nuts.</p>
               </div>
             </article>
 
             <article class="m-card reveal">
               <div class="m-photo">
-                <img src="https://images.unsplash.com/photo-1551024601-bec78aea704b?auto=format&fit=crop&w=600&q=80" alt="Rose pistachio cake slice" loading="lazy" />
-                <span class="m-tag" style="--c: var(--candy-1)">Sweet</span>
+                <img src="https://images.unsplash.com/photo-1635963662200-45e5e2b2a08a?auto=format&fit=crop&w=600&q=80" alt="Spicy tteokbokki rice cakes" loading="lazy" />
+                <span class="m-tag" style="--c: var(--hanbok-red)">Spicy</span>
               </div>
               <div class="m-body">
                 <div class="m-top">
                   <div class="m-name-row">
                     <span class="veg-dot veg" aria-label="Vegetarian"></span>
-                    <span class="m-name">Rose &amp; Pistachio Cake</span>
+                    <span class="m-name">Tteokbokki<span class="kr">떡볶이</span></span>
                   </div>
-                  <span class="m-price">₹190</span>
+                  <span class="m-price">₹260</span>
                 </div>
-                <p class="m-desc">Feather-light sponge soaked in rose syrup, crushed pista &amp; dried petals.</p>
+                <p class="m-desc">Chewy rice cakes simmered in a glossy sweet-and-spicy gochujang sauce.</p>
               </div>
             </article>
 
             <article class="m-card reveal">
               <div class="m-photo">
-                <img src="https://images.unsplash.com/photo-1600891964599-f61ba0e24092?auto=format&fit=crop&w=600&q=80" alt="Hearty breakfast platter" loading="lazy" />
-                <span class="m-tag" style="--c: var(--candy-6)">All Day</span>
+                <img src="https://images.unsplash.com/photo-1626074353765-517a681e40be?auto=format&fit=crop&w=600&q=80" alt="Korean fried chicken" loading="lazy" />
+                <span class="m-tag" style="--c: var(--indigo)">Crowd Pleaser</span>
               </div>
               <div class="m-body">
                 <div class="m-top">
                   <div class="m-name-row">
                     <span class="veg-dot nonveg" aria-label="Non-vegetarian"></span>
-                    <span class="m-name">Ganges Big Breakfast</span>
+                    <span class="m-name">Yangnyeom Chicken<span class="kr">양념치킨</span></span>
                   </div>
                   <span class="m-price">₹420</span>
                 </div>
-                <p class="m-desc">Eggs your way, chicken sausage, hash, grilled tomato &amp; buttered toast.</p>
+                <p class="m-desc">Double-fried chicken lacquered in sticky sweet-garlic-chilli glaze &amp; sesame.</p>
               </div>
             </article>
 
             <article class="m-card reveal">
               <div class="m-photo">
-                <img src="https://images.unsplash.com/photo-1461023058943-07fcbe16d735?auto=format&fit=crop&w=600&q=80" alt="Iced coffee with cream" loading="lazy" />
-                <span class="m-tag" style="--c: var(--candy-5)">Chilled</span>
+                <img src="https://images.unsplash.com/photo-1600891964599-f61ba0e24092?auto=format&fit=crop&w=600&q=80" alt="Citron yuja tea" loading="lazy" />
+                <span class="m-tag" style="--c: var(--celadon)">Soothing</span>
               </div>
               <div class="m-body">
                 <div class="m-top">
                   <div class="m-name-row">
                     <span class="veg-dot veg" aria-label="Vegetarian"></span>
-                    <span class="m-name">Stupa Cold Brew Float</span>
+                    <span class="m-name">Yuja Honey Tea<span class="kr">유자차</span></span>
                   </div>
-                  <span class="m-price">₹240</span>
+                  <span class="m-price">₹160</span>
                 </div>
-                <p class="m-desc">18-hour cold brew topped with a scoop of tender-coconut ice cream.</p>
+                <p class="m-desc">Fragrant Korean citron marmalade stirred into hot honeyed water — Seoul in a cup.</p>
               </div>
             </article>
           </div>
 
           <div class="menu-foot reveal">
-            <a class="candy-btn btn-grape" href="https://ordersbuddy.in/app/">Order Food — See Full Menu 🍽️</a>
+            <a class="btn btn-indigo" href="https://ordersbuddy.in/app/">Order Food — See Full Menu</a>
           </div>
         </div>
       </section>
@@ -1159,34 +1186,34 @@
             <div class="chef-photo reveal">
               <img
                 src="https://images.unsplash.com/photo-1577219491135-ce391730fb2c?auto=format&fit=crop&w=700&q=80"
-                alt="Chef smiling in a warm kitchen"
+                alt="Founder and chef smiling in a warm kitchen"
                 loading="lazy"
               />
               <div class="chef-chip">
-                <div class="n">Meera Malviya</div>
-                <div class="r">Head Chef &amp; Second-Generation Roaster</div>
+                <div class="n">Ananya Rai <span class="kr">· 아난야</span></div>
+                <div class="r">Founder &amp; Head Chef · Seoul-trained</div>
               </div>
             </div>
             <div class="chef-copy reveal">
-              <p class="kicker">Meet the Chef</p>
-              <h2>Grandfather's beans, Meera's imagination.</h2>
+              <p class="kicker">Meet the Chef <span class="kr">· 셰프 소개</span></p>
+              <h2>Seoul taught her; Sarnath grounds her.</h2>
               <p>
-                Meera grew up asleep on flour sacks behind the roaster, waking to
-                the crackle of beans and the clatter of the courtyard. She trained
-                in Lyon and cooked across Goa and Lisbon before the lane near the
-                stupa pulled her home.
+                Ananya learned to cook in the back kitchens of Hongdae and the
+                market stalls of Gwangjang, where an ajumma taught her to press
+                hotteok until the sugar sang. She came home carrying recipes,
+                a gochujang obsession, and a longing to share it all.
               </p>
               <blockquote class="quote">
-                “My grandfather traded coffee in sacks. I trade it in moments — a
-                cup, a plate, an afternoon you don't want to end.”
+                “Seoul felt like a soulmate the moment I arrived. This cafe is my
+                way of introducing the two cities I love — one cup, one plate,
+                one afternoon at a time.”
               </blockquote>
               <p>
-                Her kitchen marries the spices of the Ganges plains with the
-                technique she gathered abroad: rose in the sponge, chaat masala on
-                the toast, tender coconut over the cold brew. Everything bright,
-                everything playful, everything rooted in Sarnath.
+                Her kitchen keeps it honest: gochujang simmered slow, soybean
+                powder roasted in-house, citron steeped for weeks. Everything made
+                the Seoul way — warm, generous, and rooted here by the Ganges.
               </p>
-              <p class="chef-sign">— with love, from our corner to your table</p>
+              <p class="chef-sign">— 정성을 담아, from our corner to your table</p>
             </div>
           </div>
         </div>
@@ -1196,9 +1223,9 @@
       <section class="reserve" id="reserve">
         <div class="wrap">
           <div class="section-head reveal">
-            <p class="kicker">Reservations</p>
-            <h2>Save your spot in the courtyard.</h2>
-            <p>Sunset seats under the neem tree go fast. Tell us when you're coming and we'll keep a table warm.</p>
+            <p class="kicker">Reservations <span class="kr">· 예약</span></p>
+            <h2>Save your spot by the window.</h2>
+            <p>Floor-seat corners and sunset window tables go fast. Tell us when you're coming and we'll keep a table warm.</p>
           </div>
 
           <div class="reserve-grid">
@@ -1206,10 +1233,22 @@
               <h3>Good to know</h3>
               <p>We hold reservations for 15 minutes past your time. Walk-ins are always welcome at the counter.</p>
               <ul>
-                <li><span class="ic">🕗</span> Open daily · 7:00 AM – 10:30 PM</li>
-                <li><span class="ic">👥</span> Groups up to 12 — call ahead</li>
-                <li><span class="ic">🌅</span> Best light: 5–7 PM in the courtyard</li>
-                <li><span class="ic">🎉</span> We host readings &amp; cuppings on weekends</li>
+                <li>
+                  <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span>
+                  Open daily · 8:00 AM – 11:00 PM
+                </li>
+                <li>
+                  <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3"/><path d="M3 20a6 6 0 0 1 12 0"/><path d="M16 5a3 3 0 0 1 0 6"/><path d="M20.5 20a6 6 0 0 0-3-5"/></svg></span>
+                  Groups up to 12 — call ahead
+                </li>
+                <li>
+                  <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5 19 19M19 5l-1.5 1.5M6.5 17.5 5 19"/></svg></span>
+                  Best light: 5–7 PM by the window
+                </li>
+                <li>
+                  <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3Z"/></svg></span>
+                  Weekend K-pop nights &amp; coffee cuppings
+                </li>
               </ul>
             </aside>
 
@@ -1246,20 +1285,20 @@
                   <div class="field">
                     <label class="field-label" for="r-seat">Seating</label>
                     <select class="text-input" id="r-seat">
-                      <option selected>Courtyard (neem shade)</option>
-                      <option>Indoor (AC)</option>
+                      <option selected>Window table</option>
+                      <option>Floor seating (low table)</option>
                       <option>Counter / bar</option>
-                      <option>Rooftop</option>
+                      <option>Courtyard</option>
                     </select>
                   </div>
                   <div class="field full">
                     <label class="field-label" for="r-note">Anything special?</label>
-                    <input class="text-input" id="r-note" type="text" placeholder="Birthday, allergies, window seat..." />
+                    <input class="text-input" id="r-note" type="text" placeholder="Birthday, allergies, spice level..." />
                   </div>
                 </div>
-                <button class="candy-btn btn-pink reserve-submit" type="submit">Request a Table 🌸</button>
+                <button class="btn btn-persimmon reserve-submit" type="submit">Request a Table</button>
                 <p class="reserve-note">No payment needed — we'll text you a confirmation.</p>
-                <div class="reserve-ok" id="reserve-ok">🎉 Thank you! Your table request is in — we'll confirm by text shortly.</div>
+                <div class="reserve-ok" id="reserve-ok">감사합니다! Your table request is in — we'll confirm by text shortly.</div>
               </form>
             </div>
           </div>
@@ -1270,40 +1309,40 @@
       <section id="visit">
         <div class="wrap">
           <div class="section-head reveal">
-            <p class="kicker">Find Us</p>
+            <p class="kicker">Find Us <span class="kr">· 오시는 길</span></p>
             <h2>A two-minute walk from the Dhamek Stupa.</h2>
-            <p>Follow the smell of roasting beans down the lane — we're the bright corner with the neem tree out front.</p>
+            <p>Follow the smell of griddled hotteok down the lane — we're the calm celadon-green corner with the paper lanterns out front.</p>
           </div>
 
           <div class="loc-grid">
             <div class="loc-info reveal">
-              <div class="loc-card" style="--c1: var(--candy-1); --c2: var(--candy-6)">
-                <span class="ic">📍</span>
+              <div class="loc-card" style="--c1: var(--celadon); --c2: var(--indigo)">
+                <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-5.5-7-11a7 7 0 0 1 14 0c0 5.5-7 11-7 11Z"/><circle cx="12" cy="10" r="2.5"/></svg></span>
                 <div>
                   <h4>Address</h4>
                   <p>Dharmapala Road, near Dhamek Stupa,<br />Sarnath, Varanasi, Uttar Pradesh 221007</p>
                 </div>
               </div>
-              <div class="loc-card" style="--c1: var(--candy-4); --c2: var(--candy-5)">
-                <span class="ic">🕗</span>
+              <div class="loc-card" style="--c1: var(--gold); --c2: var(--persimmon)">
+                <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span>
                 <div>
                   <h4>Hours</h4>
-                  <p>Open every day<br />7:00 AM – 10:30 PM</p>
+                  <p>Open every day<br />8:00 AM – 11:00 PM</p>
                 </div>
               </div>
-              <div class="loc-card" style="--c1: var(--candy-2); --c2: var(--candy-7)">
-                <span class="ic">📞</span>
+              <div class="loc-card" style="--c1: var(--indigo); --c2: var(--hanbok-red)">
+                <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 3h3l1.5 4-2 1.5a12 12 0 0 0 5 5l1.5-2 4 1.5v3c0 1.1-.9 2-2 2A16 16 0 0 1 4.5 5c0-1.1.9-2 2-2Z"/></svg></span>
                 <div>
                   <h4>Reach us</h4>
-                  <p>+91 98765 43210<br />hello@coffeetradingco.in</p>
+                  <p>+91 98765 43210<br />annyeong@seoulmatecafe.in</p>
                 </div>
               </div>
-              <a class="candy-btn btn-sky btn-sm" href="https://www.google.com/maps/search/?api=1&query=Dhamek+Stupa+Sarnath+Varanasi" target="_blank" rel="noopener">Get Directions →</a>
+              <a class="btn btn-indigo btn-sm" href="https://www.google.com/maps/search/?api=1&query=Dhamek+Stupa+Sarnath+Varanasi" target="_blank" rel="noopener">Get Directions →</a>
             </div>
 
             <div class="map-frame reveal">
               <iframe
-                title="Map to Coffee Trading Co, Sarnath"
+                title="Map to Seoulmate Cafe, Sarnath"
                 src="https://www.google.com/maps?q=Dhamek%20Stupa%20Sarnath%20Varanasi&output=embed"
                 loading="lazy"
                 referrerpolicy="no-referrer-when-downgrade"
@@ -1321,10 +1360,10 @@
         <div class="footer-grid">
           <div class="footer-brand">
             <a class="brand" href="#top">
-              <span class="brand-bean" aria-hidden="true">☕</span>
-              <span class="brand-name">Coffee <em>Trading</em> Co</span>
+              <span class="brand-mark" aria-hidden="true">서</span>
+              <span class="brand-name">Seoul<em>mate</em> Cafe</span>
             </a>
-            <p>Roasting joy on the same Sarnath corner since 1987. Single-origin coffee, playful plates, and afternoons that linger.</p>
+            <p>A little corner of Seoul in Sarnath since 2016. Dalgona, bingsu, hotteok and warm afternoons that linger by the Ganges.</p>
           </div>
           <div>
             <h4>Explore</h4>
@@ -1341,13 +1380,13 @@
               <a href="#visit">Dharmapala Road, Sarnath</a>
               <a href="#visit">Varanasi, UP 221007</a>
               <a href="tel:+919876543210">+91 98765 43210</a>
-              <a href="mailto:hello@coffeetradingco.in">hello@coffeetradingco.in</a>
+              <a href="mailto:annyeong@seoulmatecafe.in">annyeong@seoulmatecafe.in</a>
             </div>
           </div>
         </div>
         <div class="footer-bottom">
-          <span>© 1987–2026 Coffee Trading Co. All rights reserved.</span>
-          <span>Made with ☕ &amp; a little candy in Sarnath, Varanasi.</span>
+          <span>© 2016–2026 Seoulmate Cafe · 서울메이트. All rights reserved.</span>
+          <span>Made with 정 (jeong) in Sarnath, Varanasi.</span>
         </div>
       </div>
     </footer>
@@ -1388,7 +1427,7 @@
             return;
           }
           ok.style.display = 'block';
-          form.querySelector('button[type="submit"]').textContent = 'Table Requested ✓';
+          form.querySelector('button[type="submit"]').textContent = 'Table Requested';
           ok.scrollIntoView({ behavior: 'smooth', block: 'center' });
         });
       })();

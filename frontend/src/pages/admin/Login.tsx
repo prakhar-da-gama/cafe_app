@@ -33,7 +33,7 @@ export default function Login({ onSent }: Props) {
 
   return (
     <div className="screen screen-center">
-      <h1 className="hero-title">Coffee Trading Co</h1>
+      <h1 className="hero-title">Seoulmate Cafe</h1>
       <p className="hero-sub">Admin login</p>
 
       <div className="card auth-card">

@@ -26,7 +26,7 @@ export default function ManagerHeader({ onBack }: Props) {
           </button>
         )}
         <div className="brand-stack">
-          <span className="brand-name">Coffee Trading Co</span>
+          <span className="brand-name">Seoulmate Cafe</span>
         </div>
       </div>
       <div className="hdr-actions">

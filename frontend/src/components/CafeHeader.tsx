@@ -37,7 +37,7 @@ export default function CafeHeader({ onViewMenu, menuActive, onBack, onPlay }: P
           </button>
         )}
         <div className="brand-stack">
-          <span className="brand-name">Coffee Trading Co</span>
+          <span className="brand-name">Seoulmate Cafe</span>
           <button type="button" className="hdr-logout" onClick={handleLogout}>
             Log out
           </button>

@@ -1,4 +1,4 @@
-// API client for the Coffee Trading Co customer app.
+// API client for the Seoulmate Cafe customer app.
 // The JWT is kept in localStorage and attached to protected calls.
 
 const TOKEN_KEY = 'ctc.token'

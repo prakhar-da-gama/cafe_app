@@ -7,13 +7,9 @@ from sqlalchemy.orm import Session
 from .. import crud, schemas
 from ..auth import create_access_token
 from ..database import get_db
-from ..services.email import send_otp_email
+from ..services.otp_send import send_otp_email
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
-
-# TEMPORARY dev bypass: this code verifies any email without a real OTP.
-# Remove before anything that isn't local development.
-DEV_DUMMY_OTP = "123456"
 
 
 @router.get("/does-manager-exist", response_model=schemas.ExistsResponse)
@@ -59,19 +55,6 @@ def send_otp(payload: schemas.SendOtpRequest, db: Session = Depends(get_db)):
 def verify_otp(payload: schemas.VerifyOtpRequest, db: Session = Depends(get_db)):
     email = payload.email.lower()
     now = datetime.utcnow()
-
-    # TEMPORARY dev bypass: the dummy code verifies any email, no OTP needed.
-    if payload.otp == DEV_DUMMY_OTP:
-        crud.delete_otps(db, crud.get_otps_for_email(db, email))
-        user = crud.get_user_by_email(db, email) or crud.create_otp_user(db, email)
-        # Ensure the user has an open cart; abort the whole verify if this fails.
-        crud.get_or_create_cart(db, user.id)
-        token = create_access_token(user)
-        return schemas.VerifyOtpResponse(
-            message="otp verified",
-            access_token=token,
-            name_required=user.name is None,
-        )
 
     rows = crud.get_otps_for_email(db, email)
     unexpired = [o for o in rows if o.expiry_at > now]

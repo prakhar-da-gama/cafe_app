@@ -84,7 +84,7 @@ export default function ManagerHome({
       <header className="cafe-header mgr-dash-header">
         <div className="brand">
           <div className="brand-stack">
-            <span className="brand-name">Coffee Trading Co</span>
+            <span className="brand-name">Seoulmate Cafe</span>
             <button type="button" className="hdr-logout" onClick={logout}>
               Log out
             </button>
@@ -112,13 +112,8 @@ export default function ManagerHome({
               size={16}
               label="Average service rating"
             />
-            <span className="service-rating-num">
-              {serviceRating?.average_rating != null
-                ? serviceRating.average_rating.toFixed(1)
-                : '—'}
-            </span>
             <span className="service-rating-label">
-              Service ({serviceRating?.rating_count ?? 0})
+              ({serviceRating?.rating_count ?? 0})
             </span>
           </button>
         </div>

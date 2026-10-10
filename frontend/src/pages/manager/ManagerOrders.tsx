@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   listAllOrders,
   money,
@@ -18,6 +18,11 @@ const STATUSES: OrderStatus[] = [
 ]
 const PAGE_SIZE = 10
 
+// Looping chime played while there are new, unopened pending orders.
+const NEW_ORDER_SOUND = '/new-order.mp3'
+// How often to check for newly-arrived pending orders.
+const POLL_MS = 8000
+
 const drinkCount = (o: Order) =>
   o.order_items.reduce((s, l) => s + l.quantity, 0)
 const orderTotal = (o: Order) =>
@@ -36,6 +41,23 @@ export default function ManagerOrders() {
   const [busyId, setBusyId] = useState<number | null>(null)
   // Which line items the manager has ticked "prepared", per order (session only).
   const [prepared, setPrepared] = useState<Record<number, Set<number>>>({})
+
+  // --- New-order alarm (pending only) --------------------------------------
+  // Pending order IDs that arrived this session but the manager hasn't opened
+  // yet. The chime loops while this set is non-empty and stops once every new
+  // order has been opened at least once.
+  const [unacked, setUnacked] = useState<Set<number>>(new Set())
+  // Pending IDs already noticed, so a poll only alarms genuinely new arrivals
+  // (not the orders already on screen when the dashboard opened).
+  const seenRef = useRef<Set<number>>(new Set())
+  // Orders opened (expanded) at least once — these never alarm again.
+  const openedRef = useRef<Set<number>>(new Set())
+  const baselineRef = useRef(false)
+  // Exactly one <audio> element drives the alarm (never overlapping streams).
+  const audioRef = useRef<HTMLAudioElement | null>(null)
+  // Latest selected status, read inside the background poll without resubscribing.
+  const statusRef = useRef(status)
+  statusRef.current = status
 
   const load = useCallback(async (which: OrderStatus, next: number) => {
     setLoading(true)
@@ -60,8 +82,148 @@ export default function ManagerOrders() {
     load(status, 1)
   }, [status, load])
 
+  // A single looping <audio> element drives the alarm. Keeping exactly one
+  // element (and only ever toggling play/pause) guarantees the sound never
+  // stacks into overlapping playbacks when several orders arrive at once.
+  useEffect(() => {
+    const audio = new Audio(NEW_ORDER_SOUND)
+    audio.loop = true
+    audio.preload = 'auto'
+    audioRef.current = audio
+
+    // Browsers block timer-triggered playback until the user interacts with the
+    // page. Prime (muted) on the first interaction so later alarms can play
+    // even if the manager landed straight on the dashboard via a saved token.
+    const unlock = () => {
+      audio.muted = true
+      audio
+        .play()
+        .then(() => {
+          audio.pause()
+          audio.currentTime = 0
+          audio.muted = false
+        })
+        .catch(() => {
+          audio.muted = false
+        })
+      window.removeEventListener('pointerdown', unlock)
+      window.removeEventListener('keydown', unlock)
+    }
+    window.addEventListener('pointerdown', unlock)
+    window.addEventListener('keydown', unlock)
+
+    return () => {
+      window.removeEventListener('pointerdown', unlock)
+      window.removeEventListener('keydown', unlock)
+      audio.pause()
+      audioRef.current = null
+    }
+  }, [])
+
+  // Start/stop the single alarm stream as the unacknowledged set changes.
+  useEffect(() => {
+    const audio = audioRef.current
+    if (!audio) return
+    if (unacked.size > 0) {
+      // Only (re)start if it isn't already looping — never stack playbacks.
+      if (audio.paused) {
+        audio.currentTime = 0
+        audio.play().catch(() => {
+          /* autoplay still blocked; retried when the set next changes */
+        })
+      }
+    } else if (!audio.paused) {
+      audio.pause()
+      audio.currentTime = 0
+    }
+  }, [unacked])
+
+  // Poll pending orders in the background (independent of the selected tab) so
+  // a new order rings even while the manager is viewing another status. One
+  // request at a time — `inFlight` stops overlapping polls from piling up.
+  useEffect(() => {
+    let alive = true
+    let inFlight = false
+
+    const tick = async () => {
+      if (inFlight) return
+      inFlight = true
+      try {
+        const res = await listAllOrders('pending', 1, PAGE_SIZE)
+        if (!alive) return
+        const pendingIds = new Set(res.items.map((o) => o.id))
+
+        if (!baselineRef.current) {
+          // First poll: remember what's already there without alarming.
+          res.items.forEach((o) => seenRef.current.add(o.id))
+          baselineRef.current = true
+        } else {
+          const fresh = res.items.filter((o) => !seenRef.current.has(o.id))
+          fresh.forEach((o) => seenRef.current.add(o.id))
+          const toAlert = fresh.filter((o) => !openedRef.current.has(o.id))
+          if (toAlert.length > 0) {
+            setUnacked((prev) => {
+              const next = new Set(prev)
+              toAlert.forEach((o) => next.add(o.id))
+              return next
+            })
+            // If the manager is on the pending tab, surface the new orders at
+            // the top of the list so they can be opened to silence the alarm.
+            if (statusRef.current === 'pending') {
+              setOrders((prev) => {
+                const have = new Set(prev.map((o) => o.id))
+                const add = fresh.filter((o) => !have.has(o.id))
+                return add.length > 0 ? [...add, ...prev] : prev
+              })
+            }
+          }
+        }
+
+        // Drop anything no longer pending (advanced or cancelled elsewhere) so
+        // the alarm can't get stuck on an order that left the queue.
+        setUnacked((prev) => {
+          if (prev.size === 0) return prev
+          let changed = false
+          const next = new Set<number>()
+          prev.forEach((id) => {
+            if (pendingIds.has(id)) next.add(id)
+            else changed = true
+          })
+          return changed ? next : prev
+        })
+      } catch {
+        /* transient network error; try again on the next tick */
+      } finally {
+        inFlight = false
+      }
+    }
+
+    tick()
+    const handle = window.setInterval(tick, POLL_MS)
+    return () => {
+      alive = false
+      window.clearInterval(handle)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Opening a pending order silences its share of the alarm.
+  const acknowledge = (id: number) => {
+    openedRef.current.add(id)
+    setUnacked((prev) => {
+      if (!prev.has(id)) return prev
+      const next = new Set(prev)
+      next.delete(id)
+      return next
+    })
+  }
+
   const toggleExpand = (id: number) =>
-    setExpandedId((cur) => (cur === id ? null : id))
+    setExpandedId((cur) => {
+      const opening = cur !== id
+      if (opening) acknowledge(id)
+      return opening ? id : null
+    })
 
   // Apply a manager action. `remove` drops the order from the current list
   // (its status moved out of the active filter); otherwise it's updated in place.

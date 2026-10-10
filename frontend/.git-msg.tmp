@@ -1,0 +1,10 @@
+feat(ai): light full-screen chat page for dish AI assistant
+
+Portal the dish-creation AI view to body so it truly covers the viewport
+instead of being trapped in a transformed ancestor (looked like a popup).
+Restyle as a light ChatGPT/Claude-style thread: white background, the
+person's text in a black box, the assistant reply as plain flowing text.
+Add Back (left) and Done (right) nav buttons and keep the Item preview
+button above the input, centered for phone and desktop. Frontend only.
+
+Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>

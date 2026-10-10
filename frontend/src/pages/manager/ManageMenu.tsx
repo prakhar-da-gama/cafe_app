@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import {
   createCategory,
   createItem,
@@ -698,71 +699,91 @@ function DishAiPage({
   // The item preview opens in its own popup rather than sitting beside the chat.
   const [previewOpen, setPreviewOpen] = useState(false)
 
-  return (
-    <div className="ai-page" role="region" aria-label="Create a dish with AI">
-      <div className="ai-page-head">
+  // Portaled to <body> so the page truly covers the viewport instead of being
+  // trapped inside a transformed/overflow ancestor (which made it look like a
+  // popup floating in the middle of the screen).
+  return createPortal(
+    <div className="ai-page" role="dialog" aria-modal="true" aria-label="Create a dish with AI">
+      <header className="ai-page-head">
+        <button
+          type="button"
+          className="mono-btn mono-ghost ai-nav-btn"
+          onClick={onDone}
+        >
+          <span aria-hidden>←</span> Back
+        </button>
         <h3 className="ai-page-title">Create a dish with AI</h3>
-        <button type="button" className="mono-btn mono-ghost" onClick={onDone}>
+        <button
+          type="button"
+          className="mono-btn mono-solid ai-nav-btn"
+          onClick={onDone}
+        >
           Done
         </button>
-      </div>
+      </header>
 
-      <div className="ai-chat-log">
-        {messages.length === 0 && (
-          <p className="ai-chat-hint ai-mono-hint">
-            Describe the dish you want to add — e.g. “a large iced caramel latte,
-            veg, around ₹220”. Starting costs 5 credits; each reply after that
-            costs 1.
-          </p>
-        )}
-        {messages.map((m, i) => (
-          <div key={i} className={`ai-msg ai-msg-${m.role}`}>
-            {m.text}
-          </div>
-        ))}
-        {busy && <div className="ai-msg ai-msg-assistant ai-msg-typing">Thinking…</div>}
-        {ready && !busy && (
-          <p className="ai-chat-hint ai-ready-hint">
-            Looks ready — press Done to review the form, then Add dish.
-          </p>
-        )}
-        {error && <p className="ai-chat-hint ai-error-hint">{error}</p>}
+      <div className="ai-chat-scroll">
+        <div className="ai-chat-log">
+          {messages.length === 0 && (
+            <p className="ai-chat-hint ai-mono-hint">
+              Describe the dish you want to add — e.g. “a large iced caramel
+              latte, veg, around ₹220”. Starting costs 5 credits; each reply
+              after that costs 1.
+            </p>
+          )}
+          {messages.map((m, i) => (
+            <div key={i} className={`ai-msg ai-msg-${m.role}`}>
+              {m.text}
+            </div>
+          ))}
+          {busy && (
+            <div className="ai-msg ai-msg-assistant ai-msg-typing">Thinking…</div>
+          )}
+          {ready && !busy && (
+            <p className="ai-chat-hint ai-ready-hint">
+              Looks ready — press Done to review the form, then Add dish.
+            </p>
+          )}
+          {error && <p className="ai-chat-hint ai-error-hint">{error}</p>}
+        </div>
       </div>
 
       <div className="ai-compose">
-        <div className="ai-compose-bar">
-          <button
-            type="button"
-            className="mono-btn mono-ghost ai-preview-btn"
-            onClick={() => setPreviewOpen(true)}
-          >
-            Item preview
-          </button>
-        </div>
-        <div className="ai-chat-input">
-          <textarea
-            className="mono-input"
-            rows={2}
-            value={input}
-            onChange={(e) => onInput(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault()
-                onSend()
+        <div className="ai-compose-inner">
+          <div className="ai-compose-bar">
+            <button
+              type="button"
+              className="mono-btn mono-ghost ai-preview-btn"
+              onClick={() => setPreviewOpen(true)}
+            >
+              Item preview
+            </button>
+          </div>
+          <div className="ai-chat-input">
+            <textarea
+              className="mono-input"
+              rows={2}
+              value={input}
+              onChange={(e) => onInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault()
+                  onSend()
+                }
+              }}
+              placeholder={
+                started ? 'Reply to the assistant…' : 'Describe the dish…'
               }
-            }}
-            placeholder={
-              started ? 'Reply to the assistant…' : 'Describe the dish…'
-            }
-          />
-          <button
-            type="button"
-            className="mono-btn mono-solid"
-            onClick={onSend}
-            disabled={busy || !input.trim()}
-          >
-            {started ? 'Send (1 credit)' : 'Start (5 credits)'}
-          </button>
+            />
+            <button
+              type="button"
+              className="mono-btn mono-solid"
+              onClick={onSend}
+              disabled={busy || !input.trim()}
+            >
+              {started ? 'Send (1 credit)' : 'Start (5 credits)'}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -795,7 +816,8 @@ function DishAiPage({
           </div>
         </div>
       )}
-    </div>
+    </div>,
+    document.body,
   )
 }
 

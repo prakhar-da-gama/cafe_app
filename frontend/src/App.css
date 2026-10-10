@@ -1789,6 +1789,16 @@
 .mono-input::placeholder { color: #a0a0a0; }
 .mono-input:focus { outline: none; border-color: #111; background: #fff; }
 .ai-page .ai-chat-input .mono-btn { flex: 0 0 auto; }
+/* Send button: a round icon button holding the up-arrow. */
+.ai-send-btn {
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.ai-send-btn svg { display: block; }
 
 /* Item-preview popup: the JSON proposal shown over the dimmed page. */
 .ai-preview-pop {

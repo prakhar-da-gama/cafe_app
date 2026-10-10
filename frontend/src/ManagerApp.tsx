@@ -32,8 +32,12 @@ export default function ManagerApp() {
   )
   const [email, setEmail] = useState('')
 
+  // The serious blue/white dashboard theme applies everywhere except the
+  // login + OTP screens, which keep the shared candy auth look.
+  const authScreen = screen === 'login' || screen === 'otp'
+
   return (
-    <div className="app dashboard">
+    <div className={authScreen ? 'app dashboard' : 'app dashboard theme-pro'}>
       {screen === 'login' && (
         <Login
           onSent={(e) => {

@@ -2581,3 +2581,254 @@
   .app.dashboard .order-list { grid-template-columns: repeat(3, 1fr); }
   .app.dashboard .admin-tiles { grid-template-columns: repeat(3, 1fr); }
 }
+
+/* ============================================================
+   Serious dashboard theme — "theme-pro" (Manager + Admin)
+   A crisp blue/white, boxy, booking.com-style reskin applied to every
+   manager/admin screen EXCEPT the login + OTP flow (those keep the shared
+   candy look). The wrapper gets `theme-pro` only on non-auth screens, so the
+   customer app (`.app`, no `dashboard`/`theme-pro`) is never touched.
+
+   Strategy: redefine the shared design tokens inside this scope so most
+   components re-skin for free, then override the few elements that hard-code
+   the candy palette (header, buttons, pills, tiles, status badges).
+   These rules come last so they win on source order; the triple-class scope
+   (.app.dashboard.theme-pro) also out-specifies the earlier candy rules.
+   ============================================================ */
+.app.dashboard.theme-pro {
+  /* Blue/white palette */
+  --pro-navy: #003b95;
+  --pro-blue: #0a66d6;
+  --pro-blue-strong: #0852b0;
+  --pro-bg: #f1f4f8;
+
+  /* Retune the shared tokens: crisp ink, hairline borders, boxy radii */
+  --ink: #16181d;
+  --ink-soft: #5a6472;
+  --line: #dfe3e8;
+  --surface: #ffffff;
+  --cream: #f1f4f8;
+  --cream-2: #ffffff;
+  --candy-1: #0a66d6; /* accents (focus rings, chevrons) → blue */
+  --candy-6: #0a66d6; /* former "grape" prices/links → blue */
+  --danger: #c23934;
+  --radius: 8px;
+  --radius-sm: 6px;
+
+  background: var(--pro-bg);
+  color: var(--ink);
+  font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+
+/* Crisp type: drop the rounded Fredoka display face everywhere in scope. */
+.app.dashboard.theme-pro h1,
+.app.dashboard.theme-pro h2,
+.app.dashboard.theme-pro h3 {
+  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.app.dashboard.theme-pro :is(
+  .brand-name, .menu-title, .menu-price, .dish-price, .cat-pill,
+  .cat-section-title, .order-line-qty, .order-line-price, .cart-total,
+  .orders-link, .mgr-tag, .admin-badge, .form-section-title, .section-chevron,
+  .prep-btn, .oos-price, .service-rating-badge, .admin-tile-title, .link-btn,
+  .sheet-price, .order-summary, .subcat-name, .cart-count
+) {
+  font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+}
+
+/* ---- Top app bar: edge-to-edge navy with a blue keyline (signature) ---- */
+.app.dashboard.theme-pro .cafe-header {
+  background: var(--pro-navy);
+  color: #fff;
+  margin: 0 -18px 12px;
+  padding: 14px 18px;
+  border-bottom: 2px solid var(--pro-blue);
+  backdrop-filter: none;
+}
+.app.dashboard.theme-pro .brand-name { color: #fff; font-weight: 700; }
+.app.dashboard.theme-pro .hdr-logout { color: #cfe0ff; font-weight: 600; }
+.app.dashboard.theme-pro .hdr-logout:hover { color: #fff; }
+.app.dashboard.theme-pro .hdr-back {
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
+  box-shadow: none;
+}
+.app.dashboard.theme-pro .hdr-back:hover { background: rgba(255, 255, 255, 0.26); }
+
+/* Header "Manager"/"Admin" tags and action buttons sit on the navy bar. */
+.app.dashboard.theme-pro .mgr-tag,
+.app.dashboard.theme-pro .admin-badge {
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+.app.dashboard.theme-pro .menu-btn {
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: var(--radius-sm);
+  box-shadow: none;
+  font-weight: 600;
+  font-size: 0.82rem;
+  padding: 9px 14px;
+}
+.app.dashboard.theme-pro .menu-btn:hover { background: rgba(255, 255, 255, 0.24); filter: none; }
+.app.dashboard.theme-pro .menu-btn:active,
+.app.dashboard.theme-pro .menu-btn-active {
+  transform: translateY(1px);
+  box-shadow: none;
+}
+
+@media (min-width: 1024px) {
+  /* Match the wider page padding so the bar stays edge-to-edge. */
+  .app.dashboard.theme-pro .cafe-header { margin-left: -24px; margin-right: -24px; padding-left: 24px; padding-right: 24px; }
+}
+
+/* ---- Page heading: left-aligned with a blue accent rail ---- */
+.app.dashboard.theme-pro .mgr-dash-head { align-items: flex-start; text-align: left; }
+.app.dashboard.theme-pro .mgr-dash-head .mgr-nav { flex-wrap: wrap; justify-content: flex-start; }
+.app.dashboard.theme-pro .menu-title {
+  color: var(--ink);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  padding-left: 12px;
+  border-left: 4px solid var(--pro-blue);
+}
+
+/* ---- Buttons: flat, solid, boxy (no candy gradient or 3D edge) ---- */
+.app.dashboard.theme-pro .candy-btn {
+  background: var(--pro-blue);
+  color: #fff;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  box-shadow: none;
+  font-weight: 700;
+  font-size: 0.95rem;
+  padding: 12px 18px;
+}
+.app.dashboard.theme-pro .candy-btn:hover:not(:disabled) { background: var(--pro-blue-strong); filter: none; }
+.app.dashboard.theme-pro .candy-btn:active:not(:disabled) { transform: translateY(1px); box-shadow: none; }
+.app.dashboard.theme-pro .candy-btn:disabled { opacity: 0.5; box-shadow: none; }
+.app.dashboard.theme-pro .candy-btn.btn-grape,
+.app.dashboard.theme-pro .candy-btn.btn-sky,
+.app.dashboard.theme-pro .candy-btn.btn-sun { background: var(--pro-blue); color: #fff; }
+.app.dashboard.theme-pro .candy-btn.btn-grape:hover:not(:disabled),
+.app.dashboard.theme-pro .candy-btn.btn-sky:hover:not(:disabled),
+.app.dashboard.theme-pro .candy-btn.btn-sun:hover:not(:disabled) { background: var(--pro-blue-strong); }
+.app.dashboard.theme-pro .candy-btn.btn-mint { background: #157347; }
+.app.dashboard.theme-pro .candy-btn.btn-mint:hover:not(:disabled) { background: #115c39; }
+.app.dashboard.theme-pro .candy-btn.btn-danger { background: #c23934; }
+.app.dashboard.theme-pro .candy-btn.btn-danger:hover:not(:disabled) { background: #a52d29; }
+.app.dashboard.theme-pro .mgr-cancel { border-radius: var(--radius-sm); }
+
+/* ---- Filter / category pills: boxy, blue when active ---- */
+.app.dashboard.theme-pro .cat-pill {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: #fff;
+  color: var(--ink);
+  font-weight: 600;
+  box-shadow: none;
+}
+.app.dashboard.theme-pro .cat-pill:hover { border-color: var(--pro-blue); }
+.app.dashboard.theme-pro .cat-pill.cat-on {
+  background: var(--pro-blue);
+  color: #fff;
+  border-color: var(--pro-blue);
+  box-shadow: none;
+}
+
+/* ---- Status badges: subtle tinted boxes instead of bright solids ---- */
+.app.dashboard.theme-pro .status-badge { border-radius: 4px; font-weight: 700; }
+.app.dashboard.theme-pro .status-pending { background: #fff3e0; color: #9a5a00; }
+.app.dashboard.theme-pro .status-preparing { background: #e4efff; color: #0a4fb0; }
+.app.dashboard.theme-pro .status-ready { background: #e3f6ec; color: #156c3b; }
+.app.dashboard.theme-pro .status-completed { background: #eceef2; color: #4a5160; }
+.app.dashboard.theme-pro .status-cancelled { background: #fdecec; color: #b02a24; }
+
+/* ---- Boxy cards: hairline border, no coloured shadow ---- */
+.app.dashboard.theme-pro .order-card,
+.app.dashboard.theme-pro .oos-row,
+.app.dashboard.theme-pro .prep-row,
+.app.dashboard.theme-pro .order-line,
+.app.dashboard.theme-pro .card,
+.app.dashboard.theme-pro .section-card,
+.app.dashboard.theme-pro .confirm-card,
+.app.dashboard.theme-pro .menu-card,
+.app.dashboard.theme-pro .dish-card {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: none;
+}
+.app.dashboard.theme-pro .order-card:hover,
+.app.dashboard.theme-pro .oos-row:hover,
+.app.dashboard.theme-pro .dish-card:hover {
+  box-shadow: 0 2px 10px rgba(16, 24, 40, 0.09);
+}
+.app.dashboard.theme-pro .text-input,
+.app.dashboard.theme-pro .review-textarea { background: #fff; }
+
+/* Prices read as crisp dark figures, not a coloured accent. */
+.app.dashboard.theme-pro .menu-price,
+.app.dashboard.theme-pro .dish-price,
+.app.dashboard.theme-pro .order-line-price,
+.app.dashboard.theme-pro .oos-price,
+.app.dashboard.theme-pro .cart-total,
+.app.dashboard.theme-pro .sheet-price { color: var(--ink); font-weight: 800; }
+
+/* Prepared toggle + its "done" row in the kitchen green. */
+.app.dashboard.theme-pro .prep-btn { border-radius: var(--radius-sm); border: 1px solid var(--line); }
+.app.dashboard.theme-pro .prep-on { background: #157347; border-color: #157347; }
+
+/* Canvas chips below the bar (reviews, out-of-stock links). */
+.app.dashboard.theme-pro .orders-link,
+.app.dashboard.theme-pro .service-rating-badge {
+  background: #fff;
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+}
+.app.dashboard.theme-pro .orders-link:hover { border-color: var(--pro-blue); color: var(--pro-blue); }
+
+/* Menu browser accents (manager menu / stock pages). */
+.app.dashboard.theme-pro .cat-section-title {
+  color: var(--ink);
+  font-weight: 800;
+  border-bottom: 2px solid var(--pro-blue);
+}
+.app.dashboard.theme-pro .subcat-name::before { background: var(--pro-blue); border-radius: 3px; }
+
+/* ---- Admin portal tiles: white boxy cards, blue titling ---- */
+.app.dashboard.theme-pro .admin-tile {
+  background: #fff;
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: none;
+}
+.app.dashboard.theme-pro .admin-tile:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 14px rgba(16, 24, 40, 0.1);
+  filter: none;
+}
+.app.dashboard.theme-pro .admin-tile:active { transform: translateY(0); box-shadow: 0 2px 6px rgba(16, 24, 40, 0.12); }
+.app.dashboard.theme-pro .admin-tile-title { color: var(--pro-navy); text-shadow: none; font-weight: 800; }
+.app.dashboard.theme-pro .admin-tile-blurb { color: var(--ink-soft); opacity: 1; }
+.app.dashboard.theme-pro .admin-tile-soon {
+  background: #eef1f5;
+  color: #5a6472;
+  border: 1px solid var(--line);
+}
+/* The primary tile (manager dashboard) carries a blue top edge to lead. */
+.app.dashboard.theme-pro .admin-tile:first-child { border-top: 3px solid var(--pro-blue); }
+
+/* ComingSoon / loading screens inside the theme read crisp, not candy. */
+.app.dashboard.theme-pro .hero-title { color: var(--ink); font-weight: 800; letter-spacing: -0.02em; }
+.app.dashboard.theme-pro .hero-sub { color: var(--ink-soft); }

@@ -2309,6 +2309,9 @@
    layout wider than the phone screen. */
 .mgr-dash-header { flex-wrap: wrap; row-gap: 10px; }
 .mgr-dash-header .hdr-actions { flex-wrap: wrap; justify-content: flex-end; }
+/* Out-of-stock shortcuts sit on their own full-width row in the header,
+   below the action buttons and above the service-rating row. */
+.mgr-dash-nav-row { flex-basis: 100%; justify-content: flex-start; }
 
 /* Centre the "Orders" title and keep the two out-of-stock links on one row. */
 .mgr-dash-head {

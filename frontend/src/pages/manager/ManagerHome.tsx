@@ -98,6 +98,19 @@ export default function ManagerHome({
             Manage stocks
           </button>
         </div>
+        {/* Out-of-stock shortcuts, on their own row under the action buttons. */}
+        <div className="mgr-nav mgr-dash-nav-row">
+          <button type="button" className="orders-link" onClick={onViewOosItems}>
+            Out of Stock items
+          </button>
+          <button
+            type="button"
+            className="orders-link"
+            onClick={onViewOosToppings}
+          >
+            Out of stock toppings
+          </button>
+        </div>
         {/* A second header row: the service rating, tappable through to the
             full reviews page. */}
         <div className="mgr-dash-service-row">
@@ -120,18 +133,6 @@ export default function ManagerHome({
       </header>
 
       <div className="menu-head mgr-dash-head">
-        <div className="mgr-nav">
-          <button type="button" className="orders-link" onClick={onViewOosItems}>
-            Out of Stock items
-          </button>
-          <button
-            type="button"
-            className="orders-link"
-            onClick={onViewOosToppings}
-          >
-            Out of stock toppings
-          </button>
-        </div>
         <h1 className="menu-title">Orders</h1>
       </div>
 

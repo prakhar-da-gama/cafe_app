@@ -477,3 +477,61 @@ class PaginatedOverallStats(BaseModel):
     page: int
     page_size: int
     has_more: bool
+
+
+# ---- AI menu assistant ----
+
+
+class FormatCategoryRequest(BaseModel):
+    """Manager-supplied category to polish with the AI menu assistant."""
+
+    name: str = Field(..., min_length=1, max_length=120)
+    description: str | None = None
+
+
+class FormatCategoryResponse(BaseModel):
+    """The manager's original category alongside two AI-suggested rewrites of
+    both its name and its description."""
+
+    original_name: str
+    original_description: str | None = None
+    recommended_name_1: str
+    recommended_name_2: str
+    recommended_description_1: str
+    recommended_description_2: str
+
+
+class FormatSubcategoryRequest(BaseModel):
+    """Manager-supplied subcategory to polish. ``category_id`` is the category
+    the manager currently intends to file it under."""
+
+    name: str = Field(..., min_length=1, max_length=120)
+    description: str | None = None
+    category_id: int
+
+
+class FormatSubcategoryResponse(BaseModel):
+    original_name: str
+    original_description: str | None = None
+    recommended_name_1: str
+    recommended_name_2: str
+    recommended_description_1: str
+    recommended_description_2: str
+    # If the assistant thinks the subcategory fits an *existing* category better
+    # than the selected one, that category is named here (null otherwise).
+    recommended_existing_category_id: int | None = None
+    recommended_existing_category_name: str | None = None
+    # If the assistant strongly feels a brand-new category should be created for
+    # this subcategory, this is true and the two suggested_new_* fields are set.
+    suggested_create_new_category: bool = False
+    suggested_new_category_name: str | None = None
+    suggested_new_category_description: str | None = None
+
+
+class GrammarFixRequest(BaseModel):
+    text: str = Field(..., min_length=1)
+
+
+class GrammarFixResponse(BaseModel):
+    original_text: str
+    fixed_text: str

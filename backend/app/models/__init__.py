@@ -9,7 +9,7 @@ from .otp import Otp
 from .service_review import ServiceReview
 from .subcategory import Subcategory
 from .tag import Tag
-from .tenant_rights import TenantRights
+from .tenant_rights_and_information import TenantRightsAndInformation
 from .topping import Topping
 from .user import User, UserType
 from .variant import Variant
@@ -27,7 +27,7 @@ __all__ = [
     "OrderStatus",
     "OrderItem",
     "ServiceReview",
-    "TenantRights",
+    "TenantRightsAndInformation",
     "Otp",
     "GameStat",
     "item_toppings",

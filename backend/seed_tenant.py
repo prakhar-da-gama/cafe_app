@@ -22,8 +22,8 @@ def seed() -> None:
     db = SessionLocal()
     try:
         existing = (
-            db.query(models.TenantRights)
-            .filter(models.TenantRights.name == TENANT_NAME)
+            db.query(models.TenantRightsAndInformation)
+            .filter(models.TenantRightsAndInformation.name == TENANT_NAME)
             .first()
         )
         if existing is not None:
@@ -31,7 +31,7 @@ def seed() -> None:
             return
 
         future = datetime.now(timezone.utc).replace(tzinfo=None) + THREE_MONTHS
-        tenant = models.TenantRights(
+        tenant = models.TenantRightsAndInformation(
             name=TENANT_NAME,
             ai_access_expiry=future,
             total_credits=TOTAL_CREDITS,

@@ -9,6 +9,7 @@ from sqlalchemy import inspect, text
 from .config import get_settings
 from .database import Base, engine, ensure_database_exists
 from .routers import (
+    ai_menu_creation,
     auth,
     cart,
     game,
@@ -48,6 +49,25 @@ async def lifespan(app: FastAPI):
             conn.execute(
                 text("CREATE INDEX ix_orders_status_created ON orders (status, created_at)")
             )
+    # Add the AI menu-assistant columns to an older tenant_rights table that
+    # predates them.
+    tenant_columns = {c["name"] for c in inspect(engine).get_columns("tenant_rights")}
+    if "menu_changed" not in tenant_columns:
+        with engine.begin() as conn:
+            conn.execute(
+                text(
+                    "ALTER TABLE tenant_rights "
+                    "ADD COLUMN menu_changed BOOLEAN NOT NULL DEFAULT 0"
+                )
+            )
+    if "current_menu_description" not in tenant_columns:
+        with engine.begin() as conn:
+            conn.execute(
+                text(
+                    "ALTER TABLE tenant_rights "
+                    "ADD COLUMN current_menu_description TEXT NULL"
+                )
+            )
     yield
 
 
@@ -61,6 +81,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(ai_menu_creation.router)
 app.include_router(auth.router)
 app.include_router(cart.router)
 app.include_router(game.router)

@@ -36,6 +36,17 @@ class Settings(BaseSettings):
     smtp_use_tls: bool = True
     smtp_use_ssl: bool = False
 
+    # Gemini via Vertex AI. Billed to this GCP project (so console.google.com
+    # free credits apply). Auth uses Application Default Credentials: either run
+    # `gcloud auth application-default login` or point
+    # GOOGLE_APPLICATION_CREDENTIALS at a service-account key file.
+    gemini_use_vertex: bool = True
+    gcp_project: str = ""
+    gcp_location: str = "us-central1"
+    gemini_model: str = "gemini-2.5-flash"
+    # Only used when gemini_use_vertex is False (Gemini Developer API fallback).
+    gemini_api_key: str = ""
+
     @property
     def database_url(self) -> str:
         return (

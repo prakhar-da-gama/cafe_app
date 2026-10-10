@@ -59,6 +59,23 @@ def _next_display_order(db: Session, column, *conditions) -> int:
     return int(db.execute(stmt).scalar_one()) + 1
 
 
+def _mark_menu_changed(db: Session) -> None:
+    """Flag the tenant's cached menu understanding as stale.
+
+    Called whenever the menu is added to (a new category, subcategory or item)
+    so the AI menu-assistant rebuilds current_menu_description on its next call.
+    Staged on the current transaction; the caller's commit persists it alongside
+    the new row. No-op on installs that have no tenant row yet.
+    """
+    tenant = db.execute(
+        select(models.TenantRightsAndInformation).order_by(
+            models.TenantRightsAndInformation.id
+        )
+    ).scalars().first()
+    if tenant is not None:
+        tenant.menu_changed = True
+
+
 def create_category(db: Session, data: schemas.CategoryCreate) -> models.Category:
     order = data.display_order
     if order is None:
@@ -71,6 +88,7 @@ def create_category(db: Session, data: schemas.CategoryCreate) -> models.Categor
         is_active=data.is_active,
     )
     db.add(category)
+    _mark_menu_changed(db)
     db.commit()
     db.refresh(category)
     return category
@@ -95,6 +113,7 @@ def create_subcategory(
         is_active=data.is_active,
     )
     db.add(subcategory)
+    _mark_menu_changed(db)
     db.commit()
     db.refresh(subcategory)
     return subcategory
@@ -228,6 +247,7 @@ def create_item(db: Session, data: schemas.ItemCreate) -> models.Item:
     item.toppings = _load_toppings(db, topping_ids)
     item.variants = _load_variants(db, variant_ids)
     db.add(item)
+    _mark_menu_changed(db)
     db.commit()
     db.refresh(item)
     return item

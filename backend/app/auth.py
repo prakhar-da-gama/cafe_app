@@ -98,7 +98,9 @@ def require_admin(claims: dict[str, Any] = Depends(require_jwt)) -> dict[str, An
     return claims
 
 
-def require_ai_access(db: Session = Depends(get_db)) -> models.TenantRights:
+def require_ai_access(
+    db: Session = Depends(get_db),
+) -> models.TenantRightsAndInformation:
     """Gate paid AI features: allow the request only while this cafe's AI
     entitlement is still active.
 
@@ -110,7 +112,9 @@ def require_ai_access(db: Session = Depends(get_db)) -> models.TenantRights:
     'now' to avoid aware/naive comparison errors.
     """
     tenant = db.execute(
-        select(models.TenantRights).order_by(models.TenantRights.id)
+        select(models.TenantRightsAndInformation).order_by(
+            models.TenantRightsAndInformation.id
+        )
     ).scalars().first()
 
     now = datetime.now(timezone.utc).replace(tzinfo=None)
@@ -124,6 +128,35 @@ def require_ai_access(db: Session = Depends(get_db)) -> models.TenantRights:
             detail="AI features are not active for this cafe",
         )
     return tenant
+
+
+def require_ai_credits(cost: int):
+    """Build a dependency that gates a paid AI endpoint costing ``cost`` credits.
+
+    On top of the require_ai_access expiry check, it verifies there is enough
+    budget left for this call, i.e. ``total_credits >= credits_used + cost``.
+    Returns the tenant row so the endpoint can spend the credits
+    (``credits_used += cost``) once its work succeeds.
+
+    Raises 403 if AI isn't active and 402 (Payment Required) if the remaining
+    allowance can't cover this call.
+    """
+
+    def dependency(
+        db: Session = Depends(get_db),
+    ) -> models.TenantRightsAndInformation:
+        tenant = require_ai_access(db)
+        if tenant.total_credits < tenant.credits_used + cost:
+            raise HTTPException(
+                status_code=status.HTTP_402_PAYMENT_REQUIRED,
+                detail=(
+                    "Not enough AI credits remaining for this action "
+                    f"(needs {cost})"
+                ),
+            )
+        return tenant
+
+    return dependency
 
 
 def get_current_user(

@@ -53,7 +53,8 @@ export default function ManagerApp() {
         <VerifyOtp
           email={email}
           onBack={goBack}
-          onVerified={() => navigate('home')}
+          // Replace the OTP entry so Back skips the (now-verified) OTP screen.
+          onVerified={() => navigate('home', { replace: true })}
         />
       )}
 

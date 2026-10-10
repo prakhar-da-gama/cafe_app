@@ -58,7 +58,8 @@ export default function AdminApp() {
         <VerifyOtp
           email={email}
           onBack={goBack}
-          onVerified={() => navigate('portal')}
+          // Replace the OTP entry so Back skips the (now-verified) OTP screen.
+          onVerified={() => navigate('portal', { replace: true })}
         />
       )}
 

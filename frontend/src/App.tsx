@@ -59,7 +59,9 @@ function App() {
           email={email}
           onBack={goBack}
           onVerified={(nameRequired) =>
-            navigate(nameRequired ? 'name' : 'dashboard')
+            // Replace the OTP entry so Back skips the (now-verified) OTP screen
+            // and returns to the previous page instead.
+            navigate(nameRequired ? 'name' : 'dashboard', { replace: true })
           }
         />
       )}

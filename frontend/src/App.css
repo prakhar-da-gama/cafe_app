@@ -1685,11 +1685,69 @@
 }
 .ai-page-title {
   margin: 0;
-  flex: 1;
-  text-align: center;
   font-size: 1rem;
   font-weight: 700;
   color: #111;
+}
+/* Centered middle of the header: the title with the live credit badge beside it. */
+.ai-page-heading {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  position: relative;
+}
+.ai-page-heading .ai-page-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Live "credits used this chat" badge; clicking it reveals the pricing rules. */
+.ai-credits { position: relative; display: inline-flex; flex: 0 0 auto; }
+.ai-credits-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: #f0f0f0;
+  color: #333;
+  border: 1px solid #e3e3e3;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.ai-credits-badge:hover { background: #e7e7e7; }
+.ai-credits-dot { color: #138a4a; font-size: 0.72em; line-height: 1; }
+.ai-pop-backdrop { position: fixed; inset: 0; z-index: 10; }
+.ai-credits-pop {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 11;
+  width: max-content;
+  max-width: 250px;
+  padding: 12px 14px;
+  text-align: left;
+  background: #fff;
+  color: #1a1a1a;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.16);
+}
+.ai-credits-used { margin: 0 0 8px; font-weight: 700; font-size: 0.9rem; }
+.ai-credits-rules {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: #555;
 }
 
 /* Monochrome (black & white) buttons for the AI page. */

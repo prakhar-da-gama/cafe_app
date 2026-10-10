@@ -708,6 +708,9 @@ function AddItemForm({
   const [ready, setReady] = useState(false)
   // The latest proposal the assistant returned, shown as JSON on the AI page.
   const [lastForm, setLastForm] = useState<DishAssistantForm | null>(null)
+  // Credits spent in this chat so far (mirrors the backend costs: 5 to start,
+  // 1 per follow-up message). Shown live beside the AI page title.
+  const [creditsUsed, setCreditsUsed] = useState(0)
 
   const subcategories =
     categories.find((c) => String(c.id) === categoryId)?.subcategories ?? []
@@ -742,6 +745,8 @@ function AddItemForm({
     setChatError(null)
     setMessages((m) => [...m, { role: 'user', text }])
     setChatInput('')
+    // Starting a fresh session costs 5 credits; every follow-up costs 1.
+    const isStart = sessionId === null
     try {
       const { reply, newSession } = sessionId
         ? {
@@ -752,6 +757,8 @@ function AddItemForm({
             reply: r.reply,
             newSession: r.session_id,
           }))
+      // Only count a charge once the call actually succeeded.
+      setCreditsUsed((c) => c + (isStart ? 5 : 1))
       setSessionId(newSession)
       setMessages((m) => [...m, { role: 'assistant', text: reply.message }])
       setReady(reply.ready)
@@ -778,6 +785,7 @@ function AddItemForm({
     setReady(false)
     setChatError(null)
     setLastForm(null)
+    setCreditsUsed(0)
     setChatOpen(false)
   }
 
@@ -913,6 +921,7 @@ function AddItemForm({
         ready={ready}
         started={sessionId !== null}
         formJson={lastForm}
+        creditsUsed={creditsUsed}
         onSend={sendChat}
         onDone={() => setChatOpen(false)}
       />

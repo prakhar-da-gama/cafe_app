@@ -25,6 +25,7 @@ export default function DishAiPage({
   ready,
   started,
   formJson,
+  creditsUsed,
   onSend,
   onDone,
 }: {
@@ -36,11 +37,15 @@ export default function DishAiPage({
   ready: boolean
   started: boolean
   formJson: DishAssistantForm | null
+  /** Credits spent in this chat so far (tracked by the caller). */
+  creditsUsed: number
   onSend: () => void
   onDone: () => void
 }) {
   // The item preview opens in its own popup rather than sitting beside the chat.
   const [previewOpen, setPreviewOpen] = useState(false)
+  // The credit badge toggles a small popover explaining how credits are spent.
+  const [rulesOpen, setRulesOpen] = useState(false)
 
   return createPortal(
     <div className="ai-page" role="dialog" aria-modal="true" aria-label="Create a dish with AI">
@@ -52,7 +57,41 @@ export default function DishAiPage({
         >
           <span aria-hidden>←</span> Back
         </button>
-        <h3 className="ai-page-title">Create a dish with AI</h3>
+        <div className="ai-page-heading">
+          <h3 className="ai-page-title">Create a dish with AI</h3>
+          <div className="ai-credits">
+            <button
+              type="button"
+              className="ai-credits-badge"
+              onClick={() => setRulesOpen((o) => !o)}
+              aria-expanded={rulesOpen}
+              aria-label={`${creditsUsed} credits used this chat — tap for pricing`}
+              title="How credits are spent"
+            >
+              <span className="ai-credits-dot" aria-hidden>
+                ◉
+              </span>
+              {creditsUsed}
+            </button>
+            {rulesOpen && (
+              <>
+                <div
+                  className="ai-pop-backdrop"
+                  onClick={() => setRulesOpen(false)}
+                />
+                <div className="ai-credits-pop" role="dialog" aria-label="AI credit pricing">
+                  <p className="ai-credits-used">
+                    {creditsUsed} credits used this chat
+                  </p>
+                  <ul className="ai-credits-rules">
+                    <li>Starting the chat costs 5 credits</li>
+                    <li>Each message costs 1 credit</li>
+                  </ul>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
         <button
           type="button"
           className="mono-btn mono-solid ai-nav-btn"

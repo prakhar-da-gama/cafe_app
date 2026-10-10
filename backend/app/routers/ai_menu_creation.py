@@ -15,13 +15,17 @@ from sqlalchemy.orm import Session
 from .. import crud, models, schemas
 from ..auth import require_ai_credits, require_manager
 from ..database import get_db
-from ..services import gemini
+from ..services import dish_sessions, gemini
 
 router = APIRouter(prefix="/api/ai/menu", tags=["ai-menu"])
 
 # Credit price per call.
 FORMAT_COST = 5
 GRAMMAR_COST = 1
+# The dish-creation chat: starting it (which spends the first LLM turn) costs 5
+# credits; every follow-up message costs 1.
+DISH_START_COST = 5
+DISH_MESSAGE_COST = 1
 
 
 def _ensure_menu_description(
@@ -150,3 +154,216 @@ def generix_fix_grammer(
     db.commit()
 
     return schemas.GrammarFixResponse(original_text=payload.text, fixed_text=fixed)
+
+
+# ---- Dish-creation chat assistant ----
+
+
+def _dish_system_prompt(
+    db: Session, tenant: models.TenantRightsAndInformation
+) -> str:
+    """Build the assistant's system instruction from the cached menu
+    understanding plus the live catalogue of categories, subcategories, tags,
+    toppings and variants it is allowed to choose from."""
+    menu_description = _ensure_menu_description(db, tenant)
+
+    categories = list(
+        db.execute(
+            select(models.Category).order_by(models.Category.display_order)
+        ).scalars().all()
+    )
+    cat_by_id = {c.id: c.name for c in categories}
+    subcategories = list(
+        db.execute(
+            select(models.Subcategory).order_by(models.Subcategory.display_order)
+        ).scalars().all()
+    )
+    tags = list(
+        db.execute(select(models.Tag).order_by(models.Tag.tag)).scalars().all()
+    )
+    toppings = list(db.execute(select(models.Topping)).scalars().all())
+    variants = list(db.execute(select(models.Variant)).scalars().all())
+
+    cat_names = ", ".join(c.name for c in categories) or "(none yet)"
+    sub_lines = (
+        "; ".join(
+            f"{s.name} (under {cat_by_id.get(s.category_id, '?')})"
+            for s in subcategories
+        )
+        or "(none yet)"
+    )
+    tag_names = ", ".join(t.tag for t in tags) or "(none)"
+    topping_lines = (
+        "; ".join(f"{t.name} (₹{t.price})" for t in toppings) or "(none yet)"
+    )
+    variant_lines = (
+        "; ".join(f"{v.name} ({v.price_delta:+})" for v in variants)
+        or "(none yet)"
+    )
+
+    return (
+        "You are a menu assistant helping a cafe manager create exactly ONE new "
+        "dish, through a short chat. Each turn you must reply with the "
+        "structured JSON: a short 'message' to show the manager, a 'ready' flag, "
+        "and the 'form' you have filled in so far.\n\n"
+        f"Understanding of this restaurant:\n{menu_description}\n\n"
+        f"EXISTING CATEGORIES — choose category_name as EXACTLY one of these: "
+        f"{cat_names}\n"
+        f"EXISTING SUBCATEGORIES — choose subcategory_name as EXACTLY one of "
+        f"these, and it must belong to the chosen category: {sub_lines}\n"
+        f"ALLOWED FLAVOUR TAGS — 'tags' must be a subset of these, copied "
+        f"exactly: {tag_names}\n"
+        f"EXISTING TOPPINGS (reference; you may reuse a name or propose a new "
+        f"one): {topping_lines}\n"
+        f"EXISTING VARIANTS (reference): {variant_lines}\n\n"
+        "Rules:\n"
+        "- category_name and subcategory_name MUST be copied verbatim from the "
+        "lists above — never invent new ones; the subcategory must sit under the "
+        "chosen category.\n"
+        "- tags must be copied verbatim from the allowed tags.\n"
+        "- Fill name, price (a plain number in rupees), is_veg and description. "
+        "Variants (e.g. Small/Large with a signed price_delta) and toppings "
+        "(each with a price) are optional — propose them only when they fit.\n"
+        "- In 'message', briefly say what you put in the form and invite the "
+        "manager to minimise the chat and review it. Keep it short and friendly; "
+        "never put JSON or field names in 'message'.\n"
+        "- If you lack enough to proceed, ask ONE concise follow-up question in "
+        "'message' and set ready=false.\n"
+        "- Set ready=true only once the form has at least a name, a price, a "
+        "valid category and a valid subcategory."
+    )
+
+
+def _resolve_dish_form(
+    db: Session, proposal: gemini.DishFormProposal
+) -> schemas.DishAssistantForm:
+    """Map the assistant's by-name proposal onto real rows: category,
+    subcategory and tags are matched case-insensitively against existing values
+    and resolved to ids (left null/empty when they don't match). Variants and
+    toppings are passed straight through — they are only created on final
+    submit."""
+    categories = list(db.execute(select(models.Category)).scalars().all())
+    cat_by_name = {c.name.casefold(): c for c in categories}
+    category = cat_by_name.get((proposal.category_name or "").strip().casefold())
+
+    subcategories = list(db.execute(select(models.Subcategory)).scalars().all())
+    subcategory = None
+    wanted_sub = (proposal.subcategory_name or "").strip().casefold()
+    if wanted_sub:
+        matches = [s for s in subcategories if s.name.casefold() == wanted_sub]
+        if category is not None:
+            in_cat = [s for s in matches if s.category_id == category.id]
+            subcategory = in_cat[0] if in_cat else (matches[0] if matches else None)
+        else:
+            subcategory = matches[0] if matches else None
+    # If only the subcategory matched, backfill its category.
+    if subcategory is not None and category is None:
+        category = db.get(models.Category, subcategory.category_id)
+
+    tags = list(db.execute(select(models.Tag)).scalars().all())
+    tag_by_name = {t.tag.casefold(): t for t in tags}
+    tag_ids: list[int] = []
+    tag_names: list[str] = []
+    for raw in proposal.tags:
+        tag = tag_by_name.get(raw.strip().casefold())
+        if tag is not None and tag.id not in tag_ids:
+            tag_ids.append(tag.id)
+            tag_names.append(tag.tag)
+
+    return schemas.DishAssistantForm(
+        category_id=category.id if category else None,
+        category_name=category.name if category else None,
+        subcategory_id=subcategory.id if subcategory else None,
+        subcategory_name=subcategory.name if subcategory else None,
+        name=proposal.name,
+        price=proposal.price,
+        is_veg=proposal.is_veg,
+        description=proposal.description,
+        tag_ids=tag_ids,
+        tags=tag_names,
+        variants=[
+            schemas.DishAssistantVariant(name=v.name, price_delta=v.price_delta)
+            for v in proposal.variants
+            if v.name.strip()
+        ],
+        toppings=[
+            schemas.DishAssistantTopping(name=t.name, price=t.price)
+            for t in proposal.toppings
+            if t.name.strip()
+        ],
+    )
+
+
+def _reply_out(
+    db: Session, reply: gemini.DishAssistantReply
+) -> schemas.DishAssistantReply:
+    return schemas.DishAssistantReply(
+        message=reply.message,
+        ready=reply.ready,
+        form=_resolve_dish_form(db, reply.form),
+    )
+
+
+@router.post(
+    "/dish-assistant/start", response_model=schemas.DishAssistantStartResponse
+)
+def start_dish_assistant(
+    payload: schemas.DishAssistantStartRequest,
+    db: Session = Depends(get_db),
+    tenant: models.TenantRightsAndInformation = Depends(
+        require_ai_credits(DISH_START_COST)
+    ),
+    _claims: dict[str, Any] = Depends(require_manager),
+):
+    """Open a dish-creation chat: feeds the model the menu understanding and the
+    live catalogue, sends the manager's first message, and returns a session id
+    plus the assistant's reply (chat text + the form filled so far). Costs 5 AI
+    credits."""
+    system_prompt = _dish_system_prompt(db, tenant)
+    chat = gemini.start_dish_chat(system_prompt)
+    reply = gemini.send_dish_message(chat, payload.message)
+    session_id = dish_sessions.create_session(chat)
+
+    tenant.credits_used += DISH_START_COST
+    db.commit()
+
+    return schemas.DishAssistantStartResponse(
+        session_id=session_id, reply=_reply_out(db, reply)
+    )
+
+
+@router.post(
+    "/dish-assistant/message", response_model=schemas.DishAssistantMessageResponse
+)
+def message_dish_assistant(
+    payload: schemas.DishAssistantMessageRequest,
+    db: Session = Depends(get_db),
+    tenant: models.TenantRightsAndInformation = Depends(
+        require_ai_credits(DISH_MESSAGE_COST)
+    ),
+    _claims: dict[str, Any] = Depends(require_manager),
+):
+    """Continue an existing dish-creation chat (persistent context). Costs 1 AI
+    credit. Returns 410 if the session has expired or been closed."""
+    session = dish_sessions.get_session(payload.session_id)
+    if session is None:
+        raise HTTPException(
+            status_code=status.HTTP_410_GONE,
+            detail="This AI session has expired — start a new one.",
+        )
+    reply = gemini.send_dish_message(session.chat, payload.message)
+
+    tenant.credits_used += DISH_MESSAGE_COST
+    db.commit()
+
+    return schemas.DishAssistantMessageResponse(reply=_reply_out(db, reply))
+
+
+@router.post("/dish-assistant/end", status_code=status.HTTP_204_NO_CONTENT)
+def end_dish_assistant(
+    payload: schemas.DishAssistantEndRequest,
+    _claims: dict[str, Any] = Depends(require_manager),
+):
+    """End a dish-creation chat and free its server-side context. Idempotent and
+    free; called once the dish has been created or the manager abandons it."""
+    dish_sessions.end_session(payload.session_id)

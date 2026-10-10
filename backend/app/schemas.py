@@ -531,3 +531,69 @@ class GrammarFixRequest(BaseModel):
 class GrammarFixResponse(BaseModel):
     original_text: str
     fixed_text: str
+
+
+# ---- Dish-creation chat assistant ----
+
+
+class DishAssistantStartRequest(BaseModel):
+    """The manager's opening description of the dish they want to create."""
+
+    message: str = Field(..., min_length=1)
+
+
+class DishAssistantMessageRequest(BaseModel):
+    """A follow-up turn in an existing dish-creation chat."""
+
+    session_id: str = Field(..., min_length=1)
+    message: str = Field(..., min_length=1)
+
+
+class DishAssistantEndRequest(BaseModel):
+    session_id: str = Field(..., min_length=1)
+
+
+class DishAssistantVariant(BaseModel):
+    name: str
+    price_delta: Decimal = Decimal("0")
+
+
+class DishAssistantTopping(BaseModel):
+    name: str
+    price: Decimal = Decimal("0")
+
+
+class DishAssistantForm(BaseModel):
+    """The proposed dish, with category/subcategory/tag names resolved to real
+    ids where they matched existing rows (null/empty where they did not)."""
+
+    category_id: int | None = None
+    category_name: str | None = None
+    subcategory_id: int | None = None
+    subcategory_name: str | None = None
+    name: str | None = None
+    price: Decimal | None = None
+    is_veg: bool | None = None
+    description: str | None = None
+    tag_ids: list[int] = []
+    tags: list[str] = []
+    variants: list[DishAssistantVariant] = []
+    toppings: list[DishAssistantTopping] = []
+
+
+class DishAssistantReply(BaseModel):
+    """One assistant turn returned to the client: the chat message to show, a
+    ready flag, and the current form proposal."""
+
+    message: str
+    ready: bool = False
+    form: DishAssistantForm
+
+
+class DishAssistantStartResponse(BaseModel):
+    session_id: str
+    reply: DishAssistantReply
+
+
+class DishAssistantMessageResponse(BaseModel):
+    reply: DishAssistantReply

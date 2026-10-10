@@ -5,12 +5,16 @@ import {
   createSubcategory,
   createTopping,
   createVariant,
+  endDishAssistant,
   fixGrammar,
   formatCategory,
   formatSubcategory,
   getFullMenu,
   listTags,
+  sendDishAssistantMessage,
+  startDishAssistant,
   uploadImage,
+  type DishAssistantForm,
   type FormatCategoryResponse,
   type FormatSubcategoryResponse,
   type MenuCategory,
@@ -656,6 +660,109 @@ function AddSubcategoryForm({
 
 // ---- Create a new dish ----
 
+/** One line of the ephemeral dish-assistant transcript (kept only in component
+ *  state for the length of the chat; never persisted). */
+interface ChatMsg {
+  role: 'user' | 'assistant'
+  text: string
+}
+
+/** The dish-assistant chat panel: a transcript, a hint when it's ready, and a
+ *  message box. Rendered over the shared .sheet-overlay backdrop, sized like
+ *  the dish form. Purely presentational — all state lives in AddItemForm. */
+function DishAiChat({
+  messages,
+  input,
+  onInput,
+  busy,
+  error,
+  ready,
+  started,
+  onSend,
+  onMinimise,
+}: {
+  messages: ChatMsg[]
+  input: string
+  onInput: (v: string) => void
+  busy: boolean
+  error: string | null
+  ready: boolean
+  started: boolean
+  onSend: () => void
+  onMinimise: () => void
+}) {
+  return (
+    <div className="sheet-overlay" onClick={onMinimise}>
+      <div
+        className="card ai-chat"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Create a dish with AI"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="ai-chat-head">
+          <h3 className="ai-pop-title">Create a dish with AI</h3>
+          <button
+            type="button"
+            className="ghost-btn sm"
+            onClick={onMinimise}
+          >
+            Minimise
+          </button>
+        </div>
+
+        <div className="ai-chat-log">
+          {messages.length === 0 && (
+            <p className="muted ai-chat-hint">
+              Describe the dish you want to add — e.g. “a large iced caramel
+              latte, veg, around ₹220”. Starting costs 5 credits; each reply
+              after that costs 1.
+            </p>
+          )}
+          {messages.map((m, i) => (
+            <div key={i} className={`ai-msg ai-msg-${m.role}`}>
+              {m.text}
+            </div>
+          ))}
+          {busy && <div className="ai-msg ai-msg-assistant muted">Thinking…</div>}
+          {ready && !busy && (
+            <p className="form-ok ai-chat-hint">
+              Looks ready — minimise and review the form, then press Add dish.
+            </p>
+          )}
+          {error && <p className="form-error ai-chat-hint">{error}</p>}
+        </div>
+
+        <div className="ai-chat-input">
+          <textarea
+            className="text-input"
+            rows={2}
+            value={input}
+            onChange={(e) => onInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault()
+                onSend()
+              }
+            }}
+            placeholder={
+              started ? 'Reply to the assistant…' : 'Describe the dish…'
+            }
+          />
+          <button
+            type="button"
+            className="candy-btn btn-mint"
+            onClick={onSend}
+            disabled={busy || !input.trim()}
+          >
+            {started ? 'Send (1 credit)' : 'Start (5 credits)'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // Draft rows for the variants/toppings the manager types inline. Each is posted
 // to its own table on submit, and the resulting id is linked to the new dish.
 interface VariantDraft {
@@ -691,8 +798,86 @@ function AddItemForm({
   const [error, setError] = useState<string | null>(null)
   const [ok, setOk] = useState<string | null>(null)
 
+  // "Create with AI" chat assistant. The session lives server-side (Gemini chat
+  // with persistent context); here we keep only the ephemeral transcript and
+  // the current session id. Each assistant reply fills the form below.
+  const [chatOpen, setChatOpen] = useState(false)
+  const [sessionId, setSessionId] = useState<string | null>(null)
+  const [messages, setMessages] = useState<ChatMsg[]>([])
+  const [chatInput, setChatInput] = useState('')
+  const [chatBusy, setChatBusy] = useState(false)
+  const [chatError, setChatError] = useState<string | null>(null)
+  const [ready, setReady] = useState(false)
+
   const subcategories =
     categories.find((c) => String(c.id) === categoryId)?.subcategories ?? []
+
+  // Fill the form from an assistant proposal. Only fields it actually returned
+  // are applied, so it never wipes something it chose to leave blank.
+  const applyAiForm = (form: DishAssistantForm) => {
+    if (form.category_id != null) setCategoryId(String(form.category_id))
+    if (form.subcategory_id != null) setSubcategoryId(String(form.subcategory_id))
+    if (form.name != null) setName(form.name)
+    if (form.price != null) setPrice(String(form.price))
+    if (form.is_veg != null) setIsVeg(form.is_veg)
+    if (form.description != null) setDescription(form.description)
+    if (form.tag_ids.length) setTagIds(new Set(form.tag_ids))
+    if (form.variants.length)
+      setVariants(
+        form.variants.map((v) => ({
+          name: v.name,
+          priceDelta: String(v.price_delta),
+        })),
+      )
+    if (form.toppings.length)
+      setToppings(
+        form.toppings.map((t) => ({ name: t.name, price: String(t.price) })),
+      )
+  }
+
+  const sendChat = async () => {
+    const text = chatInput.trim()
+    if (!text || chatBusy) return
+    setChatBusy(true)
+    setChatError(null)
+    setMessages((m) => [...m, { role: 'user', text }])
+    setChatInput('')
+    try {
+      const { reply, newSession } = sessionId
+        ? {
+            reply: (await sendDishAssistantMessage(sessionId, text)).reply,
+            newSession: sessionId,
+          }
+        : await startDishAssistant(text).then((r) => ({
+            reply: r.reply,
+            newSession: r.session_id,
+          }))
+      setSessionId(newSession)
+      setMessages((m) => [...m, { role: 'assistant', text: reply.message }])
+      setReady(reply.ready)
+      applyAiForm(reply.form)
+    } catch (err) {
+      const msg = (err as Error).message
+      setChatError(msg)
+      // A 410 means the server session timed out; drop it so the next send
+      // starts a fresh one.
+      if (/expired/i.test(msg)) setSessionId(null)
+    } finally {
+      setChatBusy(false)
+    }
+  }
+
+  // End the server session and clear the chat (after a successful create, or if
+  // the manager wants to drop it).
+  const resetChat = () => {
+    if (sessionId) endDishAssistant(sessionId).catch(() => {})
+    setSessionId(null)
+    setMessages([])
+    setChatInput('')
+    setReady(false)
+    setChatError(null)
+    setChatOpen(false)
+  }
 
   const toggleTag = (id: number) =>
     setTagIds((prev) => {
@@ -802,6 +987,8 @@ function AddItemForm({
       setToppings([])
       setPhoto(null)
       setIsVeg(true)
+      // Creating the dish is the end of the AI flow: close the chat session.
+      resetChat()
       onCreated()
     } catch (err) {
       setError((err as Error).message)
@@ -1030,12 +1217,34 @@ function AddItemForm({
       <Feedback ok={ok} error={error} />
 
       <button
+        type="button"
+        className="candy-btn btn-grape"
+        onClick={() => setChatOpen(true)}
+      >
+        {sessionId ? 'Continue creating with AI' : 'Create with AI (5 credits)'}
+      </button>
+
+      <button
         type="submit"
         className="candy-btn btn-mint"
         disabled={busy || !canSubmit}
       >
         {busy ? 'Adding…' : 'Add dish'}
       </button>
+
+      {chatOpen && (
+        <DishAiChat
+          messages={messages}
+          input={chatInput}
+          onInput={setChatInput}
+          busy={chatBusy}
+          error={chatError}
+          ready={ready}
+          started={sessionId !== null}
+          onSend={sendChat}
+          onMinimise={() => setChatOpen(false)}
+        />
+      )}
     </form>
   )
 }

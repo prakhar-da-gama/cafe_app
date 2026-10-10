@@ -601,6 +601,75 @@ export function fixGrammar(text: string): Promise<GrammarFixResponse> {
   }).then((r) => handle<GrammarFixResponse>(r))
 }
 
+// ---- Dish-creation chat assistant ----
+
+export interface DishAssistantVariant {
+  name: string
+  price_delta: number | string
+}
+
+export interface DishAssistantTopping {
+  name: string
+  price: number | string
+}
+
+// The dish form the assistant proposes. Category/subcategory/tag names are
+// resolved to real ids server-side (null/empty when they didn't match).
+export interface DishAssistantForm {
+  category_id: number | null
+  category_name: string | null
+  subcategory_id: number | null
+  subcategory_name: string | null
+  name: string | null
+  price: number | string | null
+  is_veg: boolean | null
+  description: string | null
+  tag_ids: number[]
+  tags: string[]
+  variants: DishAssistantVariant[]
+  toppings: DishAssistantTopping[]
+}
+
+export interface DishAssistantReply {
+  message: string
+  ready: boolean
+  form: DishAssistantForm
+}
+
+// Manager: open a dish-creation chat with the AI assistant, sending the first
+// message. Costs 5 AI credits. Returns a session id for follow-up turns.
+export function startDishAssistant(
+  message: string,
+): Promise<{ session_id: string; reply: DishAssistantReply }> {
+  return fetch('/api/ai/menu/dish-assistant/start', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body: JSON.stringify({ message }),
+  }).then((r) => handle<{ session_id: string; reply: DishAssistantReply }>(r))
+}
+
+// Manager: continue a dish-creation chat (persistent context). Costs 1 AI
+// credit. Rejects with a 410 message if the session has expired.
+export function sendDishAssistantMessage(
+  sessionId: string,
+  message: string,
+): Promise<{ reply: DishAssistantReply }> {
+  return fetch('/api/ai/menu/dish-assistant/message', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body: JSON.stringify({ session_id: sessionId, message }),
+  }).then((r) => handle<{ reply: DishAssistantReply }>(r))
+}
+
+// Manager: end a dish-creation chat, freeing its server-side context.
+export function endDishAssistant(sessionId: string): Promise<void> {
+  return fetch('/api/ai/menu/dish-assistant/end', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body: JSON.stringify({ session_id: sessionId }),
+  }).then((r) => handle<void>(r))
+}
+
 // Manager: add a topping to the shared pool, returning it with its new id so
 // it can be linked to a dish. Requires a manager token.
 export function createTopping(input: ToppingCreate): Promise<Topping> {

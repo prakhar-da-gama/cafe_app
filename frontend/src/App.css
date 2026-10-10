@@ -1531,6 +1531,14 @@
 .ghost-btn.sm { font-size: 0.78rem; padding: 8px 12px; }
 .center-block { display: block; margin: 12px auto 0; }
 
+/* AI "Format with AI" controls in the category form: the single Format button
+   stretches like the other form buttons; once suggestions arrive the actions
+   sit in a row that wraps on narrow screens. */
+.ai-format { display: flex; flex-direction: column; }
+.ai-format .candy-btn { width: 100%; }
+.ai-btn-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.ai-btn-row > * { flex: 1 1 8rem; }
+
 /* ---- Game lobby popup ---- */
 .game-pop {
   position: relative;

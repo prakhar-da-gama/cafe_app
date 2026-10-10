@@ -514,6 +514,33 @@ export function createCategory(input: CategoryCreate): Promise<MenuCategory> {
   }).then((r) => handle<MenuCategory>(r))
 }
 
+export interface FormatCategoryRequest {
+  name: string
+  description?: string | null
+}
+
+export interface FormatCategoryResponse {
+  original_name: string
+  original_description: string | null
+  recommended_name_1: string
+  recommended_name_2: string
+  recommended_description_1: string
+  recommended_description_2: string
+}
+
+// Manager: ask the AI assistant to polish a category name + description. Returns
+// two suggested rewrites of each. Costs 5 AI credits per call; requires a
+// manager token.
+export function formatCategory(
+  input: FormatCategoryRequest,
+): Promise<FormatCategoryResponse> {
+  return fetch('/api/ai/menu/format-category', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body: JSON.stringify(input),
+  }).then((r) => handle<FormatCategoryResponse>(r))
+}
+
 // Manager: create a subcategory under an existing category. Requires a manager
 // token.
 export function createSubcategory(

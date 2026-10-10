@@ -5,9 +5,11 @@ import {
   createSubcategory,
   createTopping,
   createVariant,
+  formatCategory,
   getFullMenu,
   listTags,
   uploadImage,
+  type FormatCategoryResponse,
   type MenuCategory,
   type Tag,
 } from '../../api'
@@ -106,6 +108,75 @@ function AddCategoryForm({ onCreated }: { onCreated: () => void }) {
   const [error, setError] = useState<string | null>(null)
   const [ok, setOk] = useState<string | null>(null)
 
+  // AI "Format with AI" assistant state. One call returns two suggested
+  // rewrites; `suggestion` holds that response, `original` remembers what the
+  // manager typed so "Use original" can revert, and `stage` drives which set of
+  // buttons shows: 'idle' (not run), 'first' (suggestion 1 applied), 'second'
+  // (suggestion 2 applied). Switching between the two suggestions costs nothing;
+  // only "Format with AI" and "Generate new" call the paid endpoint.
+  const [aiBusy, setAiBusy] = useState(false)
+  const [suggestion, setSuggestion] = useState<FormatCategoryResponse | null>(
+    null,
+  )
+  const [original, setOriginal] = useState<{
+    name: string
+    description: string
+  } | null>(null)
+  const [stage, setStage] = useState<'idle' | 'first' | 'second'>('idle')
+
+  const resetAi = () => {
+    setSuggestion(null)
+    setOriginal(null)
+    setStage('idle')
+  }
+
+  // Calls the paid endpoint (first "Format with AI" run or a later "Generate
+  // new"), then shows its first suggestion. The original fields are captured
+  // only on the first run so "Use original" always reverts to what was typed.
+  const runFormat = async () => {
+    if (name.trim().length < 3) return
+    setAiBusy(true)
+    setError(null)
+    setOk(null)
+    try {
+      const captured = original ?? { name, description }
+      const res = await formatCategory({
+        name: name.trim(),
+        description: description.trim() || null,
+      })
+      setOriginal(captured)
+      setSuggestion(res)
+      setName(res.recommended_name_1)
+      setDescription(res.recommended_description_1)
+      setStage('first')
+    } catch (err) {
+      setError((err as Error).message)
+    } finally {
+      setAiBusy(false)
+    }
+  }
+
+  const useOriginal = () => {
+    if (original) {
+      setName(original.name)
+      setDescription(original.description)
+    }
+    resetAi()
+  }
+
+  const showSuggestion = (which: 1 | 2) => {
+    if (!suggestion) return
+    setName(
+      which === 1 ? suggestion.recommended_name_1 : suggestion.recommended_name_2,
+    )
+    setDescription(
+      which === 1
+        ? suggestion.recommended_description_1
+        : suggestion.recommended_description_2,
+    )
+    setStage(which === 1 ? 'first' : 'second')
+  }
+
   const submit = async (e: React.FormEvent) => {
     e.preventDefault()
     const clean = name.trim()
@@ -121,6 +192,7 @@ function AddCategoryForm({ onCreated }: { onCreated: () => void }) {
       setOk(`Added category “${cat.name}”.`)
       setName('')
       setDescription('')
+      resetAi()
       onCreated()
     } catch (err) {
       setError((err as Error).message)
@@ -156,6 +228,67 @@ function AddCategoryForm({ onCreated }: { onCreated: () => void }) {
       </label>
 
       <Feedback ok={ok} error={error} />
+
+      <div className="ai-format">
+        {stage === 'idle' && (
+          <button
+            type="button"
+            className="candy-btn btn-sky"
+            onClick={runFormat}
+            disabled={aiBusy || name.trim().length < 3}
+          >
+            {aiBusy ? 'Formatting…' : 'Format with AI (5 credits)'}
+          </button>
+        )}
+        {stage === 'first' && (
+          <div className="ai-btn-row">
+            <button
+              type="button"
+              className="ghost-btn"
+              onClick={useOriginal}
+              disabled={aiBusy}
+            >
+              Use original
+            </button>
+            <button
+              type="button"
+              className="candy-btn btn-sky"
+              onClick={() => showSuggestion(2)}
+              disabled={aiBusy}
+            >
+              Try again (0 credits)
+            </button>
+          </div>
+        )}
+        {stage === 'second' && (
+          <div className="ai-btn-row">
+            <button
+              type="button"
+              className="ghost-btn"
+              onClick={useOriginal}
+              disabled={aiBusy}
+            >
+              Use original
+            </button>
+            <button
+              type="button"
+              className="ghost-btn"
+              onClick={() => showSuggestion(1)}
+              disabled={aiBusy}
+            >
+              Use previous
+            </button>
+            <button
+              type="button"
+              className="candy-btn btn-sky"
+              onClick={runFormat}
+              disabled={aiBusy}
+            >
+              {aiBusy ? 'Formatting…' : 'Generate new (5 credits)'}
+            </button>
+          </div>
+        )}
+      </div>
 
       <button
         type="submit"

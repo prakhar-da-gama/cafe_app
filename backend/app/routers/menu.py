@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from .. import crud, schemas
-from ..auth import require_jwt, require_manager
+from ..auth import require_admin, require_jwt, require_manager
 from ..database import get_db
 
 router = APIRouter(prefix="/api/menu", tags=["menu"])
@@ -69,9 +69,9 @@ def out_of_stock_toppings(
 def create_category(
     payload: schemas.CategoryCreate,
     db: Session = Depends(get_db),
-    _claims: dict[str, Any] = Depends(require_manager),
+    _claims: dict[str, Any] = Depends(require_admin),
 ):
-    """Manager: add a new top-level menu category. Requires a manager JWT."""
+    """Admin: add a new top-level menu category. Requires an admin JWT."""
     return crud.create_category(db, payload)
 
 
@@ -83,10 +83,10 @@ def create_category(
 def create_subcategory(
     payload: schemas.SubcategoryCreate,
     db: Session = Depends(get_db),
-    _claims: dict[str, Any] = Depends(require_manager),
+    _claims: dict[str, Any] = Depends(require_admin),
 ):
-    """Manager: add a subcategory under an existing category. Requires a
-    manager JWT."""
+    """Admin: add a subcategory under an existing category. Requires an
+    admin JWT."""
     if crud.get_category(db, payload.category_id) is None:
         raise HTTPException(status_code=404, detail="Category not found")
     return crud.create_subcategory(db, payload)
@@ -100,10 +100,10 @@ def create_subcategory(
 def create_topping_managed(
     payload: schemas.ToppingCreate,
     db: Session = Depends(get_db),
-    _claims: dict[str, Any] = Depends(require_manager),
+    _claims: dict[str, Any] = Depends(require_admin),
 ):
-    """Manager: add a topping to the shared pool, returning it with its new id so
-    the caller can link it to a dish. Requires a manager JWT."""
+    """Admin: add a topping to the shared pool, returning it with its new id so
+    the caller can link it to a dish. Requires an admin JWT."""
     return crud.create_topping(db, payload)
 
 
@@ -115,10 +115,10 @@ def create_topping_managed(
 def create_variant_managed(
     payload: schemas.VariantCreate,
     db: Session = Depends(get_db),
-    _claims: dict[str, Any] = Depends(require_manager),
+    _claims: dict[str, Any] = Depends(require_admin),
 ):
-    """Manager: add a variant to the shared pool, returning it with its new id so
-    the caller can link it to a dish. Requires a manager JWT."""
+    """Admin: add a variant to the shared pool, returning it with its new id so
+    the caller can link it to a dish. Requires an admin JWT."""
     return crud.create_variant(db, payload)
 
 
@@ -130,10 +130,10 @@ def create_variant_managed(
 def create_menu_item_managed(
     payload: schemas.ItemCreate,
     db: Session = Depends(get_db),
-    _claims: dict[str, Any] = Depends(require_manager),
+    _claims: dict[str, Any] = Depends(require_admin),
 ):
-    """Manager: add a new dish under an existing subcategory. Requires a
-    manager JWT."""
+    """Admin: add a new dish under an existing subcategory. Requires an
+    admin JWT."""
     if crud.get_subcategory(db, payload.subcategory_id) is None:
         raise HTTPException(status_code=404, detail="Subcategory not found")
     return crud.create_item(db, payload)

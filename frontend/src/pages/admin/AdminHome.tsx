@@ -4,12 +4,14 @@ import { clearToken, getMe, type User } from '../../api'
 interface Props {
   onSignedOut: () => void
   onManagerDashboard: () => void
+  /** Open the admin-only menu authoring page (add categories, dishes, etc.). */
+  onManageMenu: () => void
   /** Open a dummy placeholder screen for the not-yet-built tools. */
   onDummy: (title: string) => void
 }
 
-// The portal tiles. Only the manager dashboard is wired up; the rest are
-// placeholders for tools that don't exist yet.
+// The portal tiles. The manager dashboard and the admin-only "Add to menu"
+// page are wired up; the rest are placeholders for tools that don't exist yet.
 const TILES: {
   key: string
   title: string
@@ -20,8 +22,15 @@ const TILES: {
   {
     key: 'manager',
     title: "Manager's dashboard",
-    blurb: 'Orders, menu & stock',
+    blurb: 'Orders & stock',
     candy: 1,
+    dummy: false,
+  },
+  {
+    key: 'add-menu',
+    title: 'Add to menu',
+    blurb: 'Categories, dishes & AI import',
+    candy: 2,
     dummy: false,
   },
   {
@@ -59,6 +68,7 @@ const TILES: {
 export default function AdminHome({
   onSignedOut,
   onManagerDashboard,
+  onManageMenu,
   onDummy,
 }: Props) {
   const [user, setUser] = useState<User | null>(null)
@@ -127,7 +137,11 @@ export default function AdminHome({
             type="button"
             className="admin-tile"
             data-candy={t.candy}
-            onClick={() => (t.dummy ? onDummy(t.title) : onManagerDashboard())}
+            onClick={() => {
+              if (t.dummy) onDummy(t.title)
+              else if (t.key === 'add-menu') onManageMenu()
+              else onManagerDashboard()
+            }}
           >
             <span className="admin-tile-title">{t.title}</span>
             <span className="admin-tile-blurb">{t.blurb}</span>

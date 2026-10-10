@@ -6,7 +6,6 @@ import Login from './pages/manager/Login'
 import VerifyOtp from './pages/VerifyOtp'
 import ManagerHome from './pages/manager/ManagerHome'
 import ManagerMenu from './pages/manager/ManagerMenu'
-import ManageMenu from './pages/manager/ManageMenu'
 import OutOfStockItems from './pages/manager/OutOfStockItems'
 import OutOfStockToppings from './pages/manager/OutOfStockToppings'
 import ServiceReviews from './pages/manager/ServiceReviews'
@@ -16,7 +15,6 @@ type Screen =
   | 'otp'
   | 'home'
   | 'menu'
-  | 'manage-menu'
   | 'oos-items'
   | 'oos-toppings'
   | 'service-reviews'
@@ -62,7 +60,6 @@ export default function ManagerApp() {
         <ManagerHome
           onSignedOut={() => navigate('login')}
           onViewMenu={() => navigate('menu')}
-          onManageMenu={() => navigate('manage-menu')}
           onViewOosItems={() => navigate('oos-items')}
           onViewOosToppings={() => navigate('oos-toppings')}
           onViewServiceReviews={() => navigate('service-reviews')}
@@ -70,8 +67,6 @@ export default function ManagerApp() {
       )}
 
       {screen === 'menu' && <ManagerMenu onBack={goBack} />}
-
-      {screen === 'manage-menu' && <ManageMenu onBack={goBack} />}
 
       {screen === 'oos-items' && <OutOfStockItems onBack={goBack} />}
 

@@ -12,7 +12,6 @@ import StarRating from '../../components/StarRating'
 interface Props {
   onSignedOut: () => void
   onViewMenu: () => void
-  onManageMenu: () => void
   onViewOosItems: () => void
   onViewOosToppings: () => void
   onViewServiceReviews: () => void
@@ -24,7 +23,6 @@ interface Props {
 export default function ManagerHome({
   onSignedOut,
   onViewMenu,
-  onManageMenu,
   onViewOosItems,
   onViewOosToppings,
   onViewServiceReviews,
@@ -93,9 +91,6 @@ export default function ManagerHome({
         {/* All dashboard actions on one row under the cafe name, with the
             service rating anchored to the end. */}
         <div className="hdr-actions mgr-dash-actions-row">
-          <button type="button" className="menu-btn" onClick={onManageMenu}>
-            Add to menu
-          </button>
           <button type="button" className="menu-btn" onClick={onViewMenu}>
             Manage stocks
           </button>

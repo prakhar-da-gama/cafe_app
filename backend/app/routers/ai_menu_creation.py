@@ -13,7 +13,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from .. import crud, models, schemas
-from ..auth import require_ai_credits, require_manager
+from ..auth import require_admin, require_ai_credits
 from ..database import get_db
 from ..services import dish_sessions, gemini, menu_backups
 
@@ -58,7 +58,7 @@ def format_category(
     payload: schemas.FormatCategoryRequest,
     db: Session = Depends(get_db),
     tenant: models.TenantRightsAndInformation = Depends(require_ai_credits(FORMAT_COST)),
-    _claims: dict[str, Any] = Depends(require_manager),
+    _claims: dict[str, Any] = Depends(require_admin),
 ):
     """Polish a menu category with the AI assistant: returns five suggested
     names and five suggested descriptions, using a cached understanding of the
@@ -84,7 +84,7 @@ def format_subcategory(
     payload: schemas.FormatSubcategoryRequest,
     db: Session = Depends(get_db),
     tenant: models.TenantRightsAndInformation = Depends(require_ai_credits(FORMAT_COST)),
-    _claims: dict[str, Any] = Depends(require_manager),
+    _claims: dict[str, Any] = Depends(require_admin),
 ):
     """Polish a menu subcategory with the AI assistant. Returns five suggested
     names and descriptions, may recommend an existing category that fits better
@@ -146,7 +146,7 @@ def generix_fix_grammer(
     tenant: models.TenantRightsAndInformation = Depends(
         require_ai_credits(GRAMMAR_COST)
     ),
-    _claims: dict[str, Any] = Depends(require_manager),
+    _claims: dict[str, Any] = Depends(require_admin),
 ):
     """Generic grammar/spelling/capitalisation fixer for arbitrary text. Costs 1
     AI credit."""
@@ -315,7 +315,7 @@ def start_dish_assistant(
     tenant: models.TenantRightsAndInformation = Depends(
         require_ai_credits(DISH_START_COST)
     ),
-    _claims: dict[str, Any] = Depends(require_manager),
+    _claims: dict[str, Any] = Depends(require_admin),
 ):
     """Open a dish-creation chat: feeds the model the menu understanding and the
     live catalogue, sends the manager's first message, and returns a session id
@@ -343,7 +343,7 @@ def message_dish_assistant(
     tenant: models.TenantRightsAndInformation = Depends(
         require_ai_credits(DISH_MESSAGE_COST)
     ),
-    _claims: dict[str, Any] = Depends(require_manager),
+    _claims: dict[str, Any] = Depends(require_admin),
 ):
     """Continue an existing dish-creation chat (persistent context). Costs 1 AI
     credit. Returns 410 if the session has expired or been closed."""
@@ -364,7 +364,7 @@ def message_dish_assistant(
 @router.post("/dish-assistant/end", status_code=status.HTTP_204_NO_CONTENT)
 def end_dish_assistant(
     payload: schemas.DishAssistantEndRequest,
-    _claims: dict[str, Any] = Depends(require_manager),
+    _claims: dict[str, Any] = Depends(require_admin),
 ):
     """End a dish-creation chat and free its server-side context. Idempotent and
     free; called once the dish has been created or the manager abandons it."""
@@ -398,7 +398,7 @@ def create_menu_from_photo(
     tenant: models.TenantRightsAndInformation = Depends(
         require_ai_credits(MENU_IMPORT_COST)
     ),
-    _claims: dict[str, Any] = Depends(require_manager),
+    _claims: dict[str, Any] = Depends(require_admin),
 ):
     """Build the entire menu from photos of a physical menu card.
 
@@ -457,7 +457,7 @@ def create_menu_from_photo(
 
 @router.get("/get-menu-backups", response_model=list[schemas.MenuBackupInfo])
 def get_menu_backups(
-    _claims: dict[str, Any] = Depends(require_manager),
+    _claims: dict[str, Any] = Depends(require_admin),
 ):
     """List the stored menu backups (normally at most one), each with its
     timestamp and headline counts, for the restore picker. Free."""
@@ -468,7 +468,7 @@ def get_menu_backups(
 def restore_menu_from_backup(
     payload: schemas.RestoreBackupRequest,
     db: Session = Depends(get_db),
-    _claims: dict[str, Any] = Depends(require_manager),
+    _claims: dict[str, Any] = Depends(require_admin),
 ):
     """Restore a previously backed-up menu. Free (no LLM call).
 

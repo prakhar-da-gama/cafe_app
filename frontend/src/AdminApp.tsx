@@ -67,6 +67,7 @@ export default function AdminApp() {
         <AdminHome
           onSignedOut={() => navigate('login')}
           onManagerDashboard={() => navigate('manager-home')}
+          onManageMenu={() => navigate('manage-menu')}
           onDummy={(title) => {
             setDummyTitle(title)
             navigate('dummy')
@@ -80,7 +81,6 @@ export default function AdminApp() {
         <ManagerHome
           onSignedOut={() => navigate('login')}
           onViewMenu={() => navigate('menu')}
-          onManageMenu={() => navigate('manage-menu')}
           onViewOosItems={() => navigate('oos-items')}
           onViewOosToppings={() => navigate('oos-toppings')}
           onViewServiceReviews={() => navigate('service-reviews')}

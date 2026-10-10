@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import CafeHeader from '../components/CafeHeader'
+import CafeHeader from '../../components/CafeHeader'
 
 interface Props {
   onBack: () => void

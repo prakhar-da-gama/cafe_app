@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { updateMyName } from '../api'
+import { updateMyName } from '../../api'
 
 interface Props {
   onDone: (name: string) => void

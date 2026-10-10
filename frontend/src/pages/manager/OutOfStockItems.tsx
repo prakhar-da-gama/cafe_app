@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
-import { getOutOfStockItems, money, setItemAvailability, type MenuItem } from '../api'
-import ManagerHeader from '../components/ManagerHeader'
+import { getOutOfStockItems, money, setItemAvailability, type MenuItem } from '../../api'
+import ManagerHeader from '../../components/ManagerHeader'
 
 interface Props {
   onBack: () => void

@@ -4,8 +4,8 @@ import {
   getOverallStats,
   type MyGameStat,
   type OverallGameStat,
-} from '../api'
-import CafeHeader from '../components/CafeHeader'
+} from '../../api'
+import CafeHeader from '../../components/CafeHeader'
 
 interface Props {
   onBack: () => void

@@ -1,7 +1,7 @@
 import { useCallback } from 'react'
-import { getFullMenu } from '../api'
-import CafeHeader from '../components/CafeHeader'
-import MenuBrowser from '../components/MenuBrowser'
+import { getFullMenu } from '../../api'
+import CafeHeader from '../../components/CafeHeader'
+import MenuBrowser from '../../components/MenuBrowser'
 
 interface Props {
   onBack: () => void

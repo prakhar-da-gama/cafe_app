@@ -4,8 +4,8 @@ import {
   setToppingAvailability,
   signedMoney,
   type OutOfStockToppingGroup,
-} from '../api'
-import ManagerHeader from '../components/ManagerHeader'
+} from '../../api'
+import ManagerHeader from '../../components/ManagerHeader'
 
 interface Props {
   onBack: () => void

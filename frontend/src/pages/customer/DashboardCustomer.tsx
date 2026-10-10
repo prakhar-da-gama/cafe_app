@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
-import { listTags, type Tag } from '../api'
-import CafeHeader from '../components/CafeHeader'
-import ChatBar from '../components/ChatBar'
-import TypingText from '../components/TypingText'
+import { listTags, type Tag } from '../../api'
+import CafeHeader from '../../components/CafeHeader'
+import ChatBar from '../../components/ChatBar'
+import TypingText from '../../components/TypingText'
 
 interface Props {
   greetingName: string | null

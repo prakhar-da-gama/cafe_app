@@ -5,10 +5,10 @@ import {
   getServiceRatingSummary,
   type ServiceRatingSummary,
   type User,
-} from '../api'
+} from '../../api'
 import ManagerOrders from './ManagerOrders'
-import ServiceReviewsPanel from '../components/ServiceReviewsPanel'
-import StarRating from '../components/StarRating'
+import ServiceReviewsPanel from '../../components/ServiceReviewsPanel'
+import StarRating from '../../components/StarRating'
 
 interface Props {
   onSignedOut: () => void

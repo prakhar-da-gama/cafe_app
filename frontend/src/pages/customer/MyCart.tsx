@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
-import { listOrders, money, placeOrder, type Order } from '../api'
-import CafeHeader from '../components/CafeHeader'
-import OrderLines from '../components/OrderLines'
+import { listOrders, money, placeOrder, type Order } from '../../api'
+import CafeHeader from '../../components/CafeHeader'
+import OrderLines from '../../components/OrderLines'
 
 interface Props {
   onBack: () => void

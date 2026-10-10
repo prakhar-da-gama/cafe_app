@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { clearToken, getMe, type User } from '../api'
+import { clearToken, getMe, type User } from '../../api'
 
 interface Props {
   onSignedOut: () => void

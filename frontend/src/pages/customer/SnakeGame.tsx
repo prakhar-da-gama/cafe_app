@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { gameSocketUrl } from '../api'
+import { gameSocketUrl } from '../../api'
 
 interface Props {
   onBack: () => void

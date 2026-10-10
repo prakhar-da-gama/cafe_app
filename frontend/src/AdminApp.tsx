@@ -2,15 +2,15 @@ import { useState } from 'react'
 import './App.css'
 import { getToken } from './api'
 import { useScreen } from './useScreen'
-import Login from './pages/Login'
+import Login from './pages/admin/Login'
 import VerifyOtp from './pages/VerifyOtp'
-import AdminHome from './pages/AdminHome'
-import ComingSoon from './pages/ComingSoon'
-import ManagerHome from './pages/ManagerHome'
-import ManagerMenu from './pages/ManagerMenu'
-import ManageMenu from './pages/ManageMenu'
-import OutOfStockItems from './pages/OutOfStockItems'
-import OutOfStockToppings from './pages/OutOfStockToppings'
+import AdminHome from './pages/admin/AdminHome'
+import ComingSoon from './pages/admin/ComingSoon'
+import ManagerHome from './pages/manager/ManagerHome'
+import ManagerMenu from './pages/manager/ManagerMenu'
+import ManageMenu from './pages/manager/ManageMenu'
+import OutOfStockItems from './pages/manager/OutOfStockItems'
+import OutOfStockToppings from './pages/manager/OutOfStockToppings'
 
 type Screen =
   | 'login'
@@ -41,7 +41,6 @@ export default function AdminApp() {
     <div className="app dashboard">
       {screen === 'login' && (
         <Login
-          adminMode
           onSent={(e) => {
             setEmail(e)
             navigate('otp')

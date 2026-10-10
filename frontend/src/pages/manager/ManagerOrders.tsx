@@ -6,8 +6,8 @@ import {
   updateOrder,
   type Order,
   type OrderStatus,
-} from '../api'
-import OrderLines from '../components/OrderLines'
+} from '../../api'
+import OrderLines from '../../components/OrderLines'
 
 const STATUSES: OrderStatus[] = [
   'pending',

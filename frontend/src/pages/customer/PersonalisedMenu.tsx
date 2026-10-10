@@ -1,7 +1,7 @@
 import { useCallback } from 'react'
-import { getPersonalisedMenu, type Tag } from '../api'
-import CafeHeader from '../components/CafeHeader'
-import MenuBrowser from '../components/MenuBrowser'
+import { getPersonalisedMenu, type Tag } from '../../api'
+import CafeHeader from '../../components/CafeHeader'
+import MenuBrowser from '../../components/MenuBrowser'
 
 interface Props {
   selection: Tag[]

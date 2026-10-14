@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session
 
 from .. import models, schemas
 from ..auth import require_jwt
-from ..chatbot.tools import get_current_time, get_weather
+from ..chatbot.tools import get_current_time, get_weather, initiate_my_cart
 from ..database import get_db
 
 router = APIRouter(prefix="/api/chatbot", tags=["chatbot"])
@@ -26,12 +26,19 @@ def initiate_chat(
 ):
     """Start a chat session, or resume the user's existing active one.
 
+    Either way the user's cart is ensured first (an empty one is created if they
+    don't have an open cart yet).
+
     If the user already has an active `chat_contexts` row, its id is returned as
     is. Otherwise a new row is created: `weather` and `time` are filled from the
     chatbot tools, `setup_of_people` and `veg_only` come from the request, and
     the row is marked active. Returns the chat context id either way.
     """
     user_id = int(claims["sub"])
+
+    # Make sure the user has an open cart for this session (reuses the existing
+    # one if there is already a cart, just like POST /api/cart/add-item).
+    initiate_my_cart(db, user_id)
 
     existing = db.execute(
         select(models.ChatContext).where(

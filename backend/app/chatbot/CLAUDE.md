@@ -14,7 +14,8 @@ The session is opened by **`POST /api/chatbot/initiate-chat`**
 (`app/routers/chatbot.py`). This router **initiates a particular chat session**:
 
 1. Authenticates the caller via JWT (`require_jwt`; user id is `claims["sub"]`).
-2. Looks up an existing `chat_contexts` row for that `user_id` with `is_active = true`.
+2. Ensures the user has an open cart (`initiate_my_cart`) — created empty if absent.
+3. Looks up an existing `chat_contexts` row for that `user_id` with `is_active = true`.
    - If one exists, it returns that row's id — the session is resumed, not duplicated.
    - Otherwise it creates a new row: `weather` and `time` are filled from the
      `tools` functions, `setup_of_people` and `veg_only` come from the request body,
@@ -38,6 +39,10 @@ Everything the chatbot does afterwards is scoped to this `chat_context_id`.
   - `get_current_time()` — current local time as an ISO string.
   - `get_weather(db)` — current weather at the cafe's location as a short phrase
     (raises `WeatherUnavailable` when there's no usable location / the API is down).
+  - `initiate_my_cart(db, user_id)` — the id of the user's open cart, creating an
+    empty one if none exists (same `get_or_create_cart` logic as the cart endpoints).
+  - `view_my_cart(db, order_id)` — one order stripped to `total_amount` plus, per
+    line, just `{name, quantity}`. Raises `OrderNotFound` for an unknown id.
 - **`validators/`** — the reverse direction: fuzzy-resolve noisy, model-produced
   free text (e.g. `"EXTRA CHEESE"`) back to a real menu row by name.
 

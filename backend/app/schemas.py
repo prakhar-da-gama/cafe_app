@@ -683,3 +683,12 @@ class InitiateChatResponse(BaseModel):
     """The id of the active chat context to use for the rest of the session."""
 
     chat_context_id: int
+
+
+class ChatMessageRequest(BaseModel):
+    """One customer turn: which session and cart it belongs to, plus the text."""
+
+    chat_context_id: int
+    # The user's open cart / order the chatbot is building (view_my_cart's order_id).
+    cart_id: int
+    message: str = Field(..., min_length=1)

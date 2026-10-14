@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 
 from sqlalchemy import Boolean, DateTime, ForeignKey, Text, func
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ..database import Base
 
@@ -39,4 +39,12 @@ class ChatContext(Base):
     )
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, server_default=func.now(), onupdate=func.now(), nullable=False
+    )
+    # The conversation log for this session, oldest first. Deleted with the
+    # session (DB-side ON DELETE CASCADE handles it, hence passive_deletes).
+    transcripts: Mapped[list["ChatbotTranscript"]] = relationship(
+        "ChatbotTranscript",
+        cascade="all, delete-orphan",
+        order_by="ChatbotTranscript.id",
+        passive_deletes=True,
     )

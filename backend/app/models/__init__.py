@@ -2,6 +2,7 @@
 from .associations import item_toppings, item_variants
 from .category import Category
 from .chat_context import ChatContext
+from .chatbot_transcript import ChatbotTranscript
 from .game_stat import GameStat
 from .item import Item
 from .order import Order, OrderStatus
@@ -19,6 +20,7 @@ from .variant import Variant
 __all__ = [
     "Category",
     "ChatContext",
+    "ChatbotTranscript",
     "Subcategory",
     "Item",
     "Variant",

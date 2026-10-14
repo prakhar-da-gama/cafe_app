@@ -4,15 +4,28 @@
 session is a single `chat_contexts` row holding the ambient facts the chatbot
 reasons with; every later chatbot call is scoped to that row's id.
 """
+import json
 from typing import Any
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from .. import models, schemas
 from ..auth import require_jwt
-from ..chatbot.internal_tools import get_current_time, get_weather, initiate_my_cart
+from ..chatbot.internal_tools import (
+    food_listing_from_llm,
+    get_current_time,
+    get_weather,
+    initiate_my_cart,
+)
+from ..chatbot.llm import generate_chatbot_reply
+from ..chatbot.prompts.prompt_shallow_cart import PROMPT_SHALLOW_CART
+from ..chatbot.pydantic_validators.user_profile import UserProfileFromLLM
+from ..chatbot.support_llms import create_user_profile
+from ..chatbot.tools import get_context, get_full_menu, get_transcript, view_my_cart
+from ..chatbot.tools.fullmenu import ChatContextNotFound
+from ..chatbot.tools.viewmycart import OrderNotFound
 from ..database import get_db
 
 router = APIRouter(prefix="/api/chatbot", tags=["chatbot"])
@@ -69,3 +82,168 @@ def initiate_chat(
     db.commit()
     db.refresh(context)
     return {"chat_context_id": context.id}
+
+
+@router.post("/message")
+def send_message(
+    payload: schemas.ChatMessageRequest,
+    db: Session = Depends(get_db),
+    claims: dict[str, Any] = Depends(require_jwt),
+):
+    """Send one customer message to the chatbot and return its reply.
+
+    Plain request/response — no WebSocket. The turn is logged to
+    ``chatbot_transcripts`` so the conversation has memory: the customer's
+    message is stored first, then the whole transcript so far (via
+    ``get_transcript``) is handed to the model alongside the system prompt, the
+    session context, the full menu and the current cart. The model's reply is
+    stored too.
+
+    The reply is shaped ``{"items_json": ..., "llm response": ...}``:
+
+    * ``items_json`` — the model's suggestions resolved against the real menu
+      (``food_listing_from_llm``), i.e. a ``get-full-menu``-shaped tree ready for
+      the frontend to render. ``null`` when the model suggested nothing.
+    * ``llm response`` — the model's natural-language turn, or ``null``.
+    """
+    try:
+        context = get_context(db, payload.chat_context_id)
+        menu = get_full_menu(db, payload.chat_context_id)
+    except ChatContextNotFound as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)
+        ) from exc
+    try:
+        cart = view_my_cart(db, payload.cart_id)
+    except OrderNotFound as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)
+        ) from exc
+
+    # Log the customer's turn first and flush so it shows up in the transcript we
+    # read back below. Nothing is committed until the reply is in hand, so a
+    # failed LLM call rolls the whole turn back (no dangling user message).
+    db.add(
+        models.ChatbotTranscript(
+            chat_context_id=payload.chat_context_id,
+            role="user",
+            content=payload.message,
+        )
+    )
+    db.flush()
+
+    transcript = get_transcript(db, payload.chat_context_id)
+
+    # Everything the model needs for this turn, as one JSON blob.
+    user_content = json.dumps(
+        {
+            "context": context,
+            "menu": menu,
+            "cart": cart,
+            "transcript_of_conversation": transcript,
+            "customer_message": payload.message,
+        },
+        ensure_ascii=False,
+        default=str,
+    )
+    reply = generate_chatbot_reply(PROMPT_SHALLOW_CART, user_content)
+
+    # Log the assistant's turn (raw suggestions kept as-is for faithful replay).
+    db.add(
+        models.ChatbotTranscript(
+            chat_context_id=payload.chat_context_id,
+            role="assistant",
+            content=reply.llm_response,
+            items_json=reply.items_json.model_dump() if reply.items_json else None,
+        )
+    )
+    db.commit()
+
+    # Resolve the model's noisy item names to real menu rows so the frontend
+    # gets something renderable (and hallucinated items are dropped).
+    items_json = (
+        food_listing_from_llm(db, reply.items_json) if reply.items_json else None
+    )
+    return {"items_json": items_json, "llm response": reply.llm_response}
+
+
+def _save_user_preferences(
+    db: Session, user_id: int, profile: UserProfileFromLLM
+) -> None:
+    """Upsert the distilled profile into ``user_preferences``.
+
+    One row per ``field_name``: new keys are inserted, existing keys have the
+    new values merged in (union, order-preserving) so preferences accumulate
+    across sessions rather than being overwritten.
+    """
+    for entry in profile.preferences:
+        existing = db.execute(
+            select(models.UserPreference).where(
+                models.UserPreference.user_id == user_id,
+                models.UserPreference.field_name == entry.field_name,
+            )
+        ).scalars().first()
+        if existing is None:
+            db.add(
+                models.UserPreference(
+                    user_id=user_id,
+                    field_name=entry.field_name,
+                    values=list(entry.values),
+                )
+            )
+        else:
+            merged = list(existing.values or [])
+            for value in entry.values:
+                if value not in merged:
+                    merged.append(value)
+            existing.values = merged
+
+
+@router.post("/end-chat")
+def end_chat(
+    db: Session = Depends(get_db),
+    claims: dict[str, Any] = Depends(require_jwt),
+):
+    """End the authenticated user's active chat session.
+
+    There's no live LLM connection to close (every turn is stateless), so this
+    simply: distills a durable customer profile from the transcript and writes
+    it to ``user_preferences``, then deletes the session — the
+    ``chat_contexts`` row and, by cascade, its whole ``chatbot_transcripts`` log.
+
+    Building the profile is best-effort: if the LLM call fails, the session is
+    still cleared (so a user is never stuck in a session they can't end). The
+    response reports whether the profile was saved.
+    """
+    user_id = int(claims["sub"])
+
+    context = db.execute(
+        select(models.ChatContext).where(
+            models.ChatContext.user_id == user_id,
+            models.ChatContext.is_active.is_(True),
+        )
+    ).scalars().first()
+    if context is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No active chat session to end",
+        )
+
+    transcript = get_transcript(db, context.id)
+
+    # Best-effort: the profile must never block the session from being cleared.
+    profile_saved = False
+    preferences: list[dict] = []
+    try:
+        profile = create_user_profile(transcript)
+        _save_user_preferences(db, user_id, profile)
+        preferences = [p.model_dump() for p in profile.preferences]
+        profile_saved = True
+    except Exception:
+        db.rollback()
+
+    # Clear the session; the transcript rows go with it via ON DELETE CASCADE.
+    db.delete(context)
+    db.commit()
+
+    return {"ended": True, "profile_saved": profile_saved, "preferences": preferences}

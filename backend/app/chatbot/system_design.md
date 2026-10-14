@@ -13,3 +13,6 @@
 
 **backend\app\chatbot\internal_tools\process_food_listing_from_llm.py** during the conversations, the llm always returns the item suggestions to the person based on his inputs, in json format to the code. this function picks it up and converts into a item-menu json that can be rendered by the frontend. it is used to disply the item suggested by the llm and place order. 
 
+**/message** api sends message to llm, and also saves chat_transcripsts
+
+**/end-chat** ends the chat and saves user_perefences to the table. 

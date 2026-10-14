@@ -687,6 +687,17 @@ class InitiateChatResponse(BaseModel):
     cart_id: int
 
 
+class ActiveChatSession(BaseModel):
+    """Whether the user has a resumable barista session (an active chat context
+    *and* an open cart). ``active`` is true only when both exist, in which case
+    their ids are returned so the client can jump straight into the chat; it is
+    false otherwise (after the endpoint has repaired any inconsistent state)."""
+
+    active: bool
+    chat_context_id: int | None = None
+    cart_id: int | None = None
+
+
 class ChatTranscriptEntry(BaseModel):
     """One stored turn of a chat session, for replaying the conversation.
 

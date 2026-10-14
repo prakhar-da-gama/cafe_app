@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import './App.css'
-import { getToken, type Tag } from './api'
+import { getActiveChatSession, getToken, type Tag } from './api'
 import { useScreen } from './useScreen'
 import Login from './pages/customer/Login'
 import VerifyOtp from './pages/VerifyOtp'
@@ -49,6 +49,27 @@ function App() {
   const openCart = () => navigate('cart')
   const openOrders = () => navigate('orders')
 
+  // Opening the barista chat: resume the existing session (skipping the setup
+  // step) when one is active, otherwise run the InitiateChat setup flow.
+  const openBaristaChat = async () => {
+    try {
+      const session = await getActiveChatSession()
+      if (
+        session.active &&
+        session.chat_context_id !== null &&
+        session.cart_id !== null
+      ) {
+        setChatContextId(session.chat_context_id)
+        setChatCartId(session.cart_id)
+        navigate('chat')
+        return
+      }
+    } catch {
+      /* fall through to the setup flow if the check fails */
+    }
+    navigate('initiate-chat')
+  }
+
   return (
     <div className="app">
       {screen === 'login' && (
@@ -85,7 +106,7 @@ function App() {
         <DashboardCustomer
           greetingName={name}
           onViewMenu={() => navigate('fullmenu')}
-          onOpenChat={() => navigate('initiate-chat')}
+          onOpenChat={openBaristaChat}
           onPlay={() => setShowGamePopup(true)}
           onGoAhead={(chosen) => {
             setSelection(chosen)

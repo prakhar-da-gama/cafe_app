@@ -986,6 +986,24 @@ export function initiateChat(
   }).then((r) => handle<InitiateChatResponse>(r))
 }
 
+// Whether the user has a resumable barista session (an active chat context and
+// an open cart). `active` is true only when both exist; the ids are then set.
+export interface ActiveChatSession {
+  active: boolean
+  chat_context_id: number | null
+  cart_id: number | null
+}
+
+// Customer: check for a resumable barista session before opening the chat. When
+// `active` is true the client can skip the setup step and go straight to the
+// chat; otherwise the setup flow runs. The backend repairs inconsistent state
+// (stale session / missing cart) as a side effect.
+export function getActiveChatSession(): Promise<ActiveChatSession> {
+  return fetch('/api/chatbot/active-session', {
+    headers: authHeaders(),
+  }).then((r) => handle<ActiveChatSession>(r))
+}
+
 // A menu item the barista suggested: a full menu item plus the quantity the
 // customer asked for (resolved against the real menu by the backend).
 export interface ChatMenuItem extends MenuItem {

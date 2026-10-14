@@ -11,7 +11,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from .. import models, schemas
+from .. import crud, models, schemas
 from ..auth import require_jwt
 from ..chatbot.internal_tools import (
     food_listing_from_llm,
@@ -83,6 +83,56 @@ def initiate_chat(
     db.commit()
     db.refresh(context)
     return {"chat_context_id": context.id, "cart_id": cart_id}
+
+
+@router.get("/active-session", response_model=schemas.ActiveChatSession)
+def active_session(
+    db: Session = Depends(get_db),
+    claims: dict[str, Any] = Depends(require_jwt),
+):
+    """Report whether the user has a resumable barista session, repairing state.
+
+    Called before opening the barista chat so the client can skip the setup step
+    (``InitiateChat``) and land directly in the chat when a session is already in
+    progress. A session is resumable only when *both* an active ``chat_contexts``
+    row and an open cart (``orders`` with status ``cart``) exist for the user:
+
+    * both exist -> ``active: true`` with ``chat_context_id`` and ``cart_id``.
+    * chat context exists but the cart is gone (e.g. it was checked out) -> the
+      chat session is stale, so it and its transcript are deleted (cascade), an
+      empty cart is ensured, and ``active: false`` is returned.
+    * no cart -> an empty cart is created and ``active: false`` is returned.
+    * no chat context (cart present) -> ``active: false`` (nothing to repair).
+    """
+    user_id = int(claims["sub"])
+
+    context = db.execute(
+        select(models.ChatContext).where(
+            models.ChatContext.user_id == user_id,
+            models.ChatContext.is_active.is_(True),
+        )
+    ).scalars().first()
+    cart = db.execute(
+        select(models.Order).where(
+            models.Order.user_id == user_id,
+            models.Order.status == models.OrderStatus.cart,
+        )
+    ).scalars().first()
+
+    if context is not None and cart is not None:
+        return {"active": True, "chat_context_id": context.id, "cart_id": cart.id}
+
+    # Not resumable: leave the session state consistent before reporting back.
+    if context is not None and cart is None:
+        # The cart backing this chat is gone, so the session is orphaned — drop
+        # it and its transcript (the FK cascade handles the transcript rows).
+        db.delete(context)
+        db.commit()
+    if cart is None:
+        # Always leave the user with an open cart to add to next time.
+        crud.get_or_create_cart(db, user_id)
+
+    return {"active": False}
 
 
 @router.get("/transcript", response_model=list[schemas.ChatTranscriptEntry])

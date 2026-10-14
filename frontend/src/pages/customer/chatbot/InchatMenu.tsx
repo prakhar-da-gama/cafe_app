@@ -12,6 +12,15 @@ interface Props {
   items: ChatItems
 }
 
+// Per-row choices the guest makes before confirming: whether the item is
+// selected, its toppings/variant, and how many.
+interface Selection {
+  selected: boolean
+  toppingIds: number[]
+  variantId: number | null
+  quantity: number
+}
+
 // Self-contained styles so the whole table — markup, logic and motion — lives
 // in this one file, in the app's candy palette. Rendered inline in the chat so
 // it reads as if the barista answered with a small menu (never a popup).
@@ -56,7 +65,7 @@ const IM_CSS = `
   color: var(--ink);
   line-height: 1.25;
 }
-.im-name .im-qty { color: var(--ink-soft); font-weight: 700; }
+.im-name .im-qty-sug { color: var(--ink-soft); font-weight: 700; }
 .im-price { font-size: 0.82rem; color: var(--candy-6); font-weight: 700; }
 .im-veg {
   width: 13px; height: 13px; flex-shrink: 0;
@@ -73,30 +82,32 @@ const IM_CSS = `
 
 .im-select {
   flex-shrink: 0;
-  border: none;
+  border: 2px solid var(--line);
   cursor: pointer;
   font-weight: 800;
   font-size: 0.8rem;
-  padding: 8px 16px;
+  padding: 7px 15px;
   border-radius: 999px;
-  color: #fff;
-  background: linear-gradient(135deg, var(--candy-1), var(--candy-6));
-  box-shadow: 0 4px 10px color-mix(in srgb, var(--candy-6) 35%, transparent);
-  transition: transform 0.1s, filter 0.15s;
+  color: var(--ink);
+  background: #fff;
+  transition: transform 0.1s, border-color 0.12s, background 0.12s, color 0.12s;
 }
 .im-select:active:not(:disabled) { transform: scale(0.94); }
-.im-select:disabled { opacity: 0.5; cursor: default; box-shadow: none; }
-.im-select-added {
-  background: color-mix(in srgb, var(--candy-4) 20%, #fff);
-  color: #1b7a50;
+.im-select:disabled { opacity: 0.5; cursor: default; }
+.im-select-on {
+  border-color: var(--candy-6);
+  background: linear-gradient(135deg, var(--candy-1), var(--candy-6));
+  color: #fff;
 }
 
-.im-expand { padding: 0 15px 14px; display: flex; flex-direction: column; gap: 10px; }
+.im-expand { padding: 0 15px 14px; display: flex; flex-direction: column; gap: 12px; }
 .im-step-label {
   font-size: 0.74rem;
   font-weight: 800;
   color: var(--ink-soft);
   letter-spacing: 0.02em;
+  margin-bottom: 6px;
+  display: block;
 }
 .im-chips { display: flex; flex-wrap: wrap; gap: 8px; }
 .im-chip {
@@ -110,52 +121,54 @@ const IM_CSS = `
   border-radius: 999px;
   transition: border-color 0.12s, background 0.12s;
 }
-.im-chip:hover { border-color: color-mix(in srgb, var(--candy-6) 50%, #fff); }
+.im-chip:hover:not(:disabled) { border-color: color-mix(in srgb, var(--candy-6) 50%, #fff); }
 .im-chip-on {
   border-color: var(--candy-6);
   background: color-mix(in srgb, var(--candy-6) 12%, #fff);
 }
-.im-chip-oos { opacity: 0.45; cursor: not-allowed; }
-.im-step-actions { display: flex; gap: 8px; margin-top: 2px; }
-.im-btn {
-  border: none;
-  cursor: pointer;
-  font-weight: 800;
-  font-size: 0.82rem;
-  padding: 9px 16px;
-  border-radius: 999px;
-  color: #fff;
-  background: linear-gradient(135deg, #52e0b0, #14b98a);
-  box-shadow: 0 4px 10px rgba(20,185,138,.32);
-  transition: transform 0.1s, filter 0.15s;
-}
-.im-btn:active:not(:disabled) { transform: scale(0.96); }
-.im-btn:disabled { opacity: 0.5; cursor: default; box-shadow: none; }
-.im-btn-ghost {
-  background: #fff;
-  color: var(--ink-soft);
+.im-chip:disabled { cursor: not-allowed; }
+.im-chip-oos { opacity: 0.45; }
+
+/* Quantity stepper */
+.im-qty { display: flex; align-items: center; gap: 12px; }
+.im-stepper {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
   border: 2px solid var(--line);
-  box-shadow: none;
+  border-radius: 999px;
+  padding: 2px;
+}
+.im-step-btn {
+  width: 30px; height: 30px;
+  border: none;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--candy-6) 10%, #fff);
+  color: var(--candy-6);
+  font-size: 1.1rem;
+  font-weight: 800;
+  line-height: 1;
+  cursor: pointer;
+  display: grid; place-items: center;
+  transition: transform 0.1s, filter 0.12s;
+}
+.im-step-btn:hover:not(:disabled) { filter: brightness(0.97); }
+.im-step-btn:active:not(:disabled) { transform: scale(0.9); }
+.im-step-btn:disabled { opacity: 0.4; cursor: default; }
+.im-step-val {
+  min-width: 24px;
+  text-align: center;
+  font-weight: 800;
+  font-size: 0.95rem;
+  color: var(--ink);
 }
 
-.im-confirm {
+/* Footer: the single red Confirm button at the right of the last row. */
+.im-foot {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  gap: 8px;
-  border: none;
-  cursor: pointer;
-  font-weight: 800;
-  font-size: 0.9rem;
-  padding: 14px 16px;
-  color: var(--ink);
-  background: color-mix(in srgb, var(--candy-3) 22%, #fff);
-  transition: filter 0.15s;
+  justify-content: flex-end;
+  padding: 12px 15px;
 }
-.im-confirm:hover:not(:disabled) { filter: brightness(0.98); }
-.im-confirm:disabled { opacity: 0.6; cursor: default; }
-.im-confirm-done { color: #1b7a50; background: color-mix(in srgb, var(--candy-4) 24%, #fff); }
 .im-err { padding: 0 15px 12px; color: var(--danger); font-size: 0.82rem; font-weight: 700; }
 `
 
@@ -171,52 +184,40 @@ function flattenItems(items: ChatItems): ChatMenuItem[] {
   return flat.slice(0, 4)
 }
 
-type Stage = 'idle' | 'toppings' | 'variants' | 'confirm'
-
 interface RowProps {
   item: ChatMenuItem
-  onAdd: (toppingIds: number[], variantId: number | null) => Promise<void>
+  sel: Selection
+  onChange: (next: Selection) => void
+  // Locked once the items have been added to the cart.
+  locked: boolean
 }
 
-/** One item row: name + price + a Select button that walks the guest through
- *  toppings (multi-select) → variants (single-select) → Add to cart. Items with
- *  no toppings/variants go straight to the Add to cart step. */
-function MenuRow({ item, onAdd }: RowProps) {
-  const [stage, setStage] = useState<Stage>('idle')
-  const [toppingIds, setToppingIds] = useState<number[]>([])
-  const [variantId, setVariantId] = useState<number | null>(null)
-  const [busy, setBusy] = useState(false)
-  const [added, setAdded] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-
+/** One item row: name + price + a Select toggle. Selecting it reveals the
+ *  item's toppings (multi-select), variants (single-select) and a quantity
+ *  stepper — the choices confirmed together by the footer button. */
+function MenuRow({ item, sel, onChange, locked }: RowProps) {
   const hasToppings = item.toppings.length > 0
   const hasVariants = item.variants.length > 0
 
-  // Where "Select" lands first: toppings, then variants, else straight to add.
-  function startStage(): Stage {
-    if (hasToppings) return 'toppings'
-    if (hasVariants) return 'variants'
-    return 'confirm'
+  function toggleSelected() {
+    const selected = !sel.selected
+    // Preselect the first variant when an item with variants is picked, so a
+    // variant-bearing item never gets added without one.
+    const variantId =
+      selected && hasVariants && sel.variantId === null
+        ? item.variants[0].id
+        : sel.variantId
+    onChange({ ...sel, selected, variantId })
   }
 
   function toggleTopping(id: number) {
-    setToppingIds((ids) =>
-      ids.includes(id) ? ids.filter((t) => t !== id) : [...ids, id],
-    )
-  }
-
-  async function add() {
-    setBusy(true)
-    setError(null)
-    try {
-      await onAdd(toppingIds, variantId)
-      setAdded(true)
-      setStage('idle')
-    } catch (e) {
-      setError((e as Error).message)
-    } finally {
-      setBusy(false)
-    }
+    const on = sel.toppingIds.includes(id)
+    onChange({
+      ...sel,
+      toppingIds: on
+        ? sel.toppingIds.filter((t) => t !== id)
+        : [...sel.toppingIds, id],
+    })
   }
 
   return (
@@ -229,131 +230,146 @@ function MenuRow({ item, onAdd }: RowProps) {
         <div className="im-row-info">
           <div className="im-name">
             {item.name}
-            {item.quantity > 1 && <span className="im-qty"> ×{item.quantity}</span>}
+            {item.quantity > 1 && (
+              <span className="im-qty-sug"> (×{item.quantity} suggested)</span>
+            )}
           </div>
           <div className="im-price">{money(item.price)}</div>
         </div>
         <button
           type="button"
-          className={added ? 'im-select im-select-added' : 'im-select'}
-          onClick={() => setStage(stage === 'idle' ? startStage() : 'idle')}
-          disabled={!item.is_available && !added}
+          className={sel.selected ? 'im-select im-select-on' : 'im-select'}
+          onClick={toggleSelected}
+          disabled={locked || (!item.is_available && !sel.selected)}
+          aria-pressed={sel.selected}
         >
-          {added ? 'Added ✓' : stage === 'idle' ? 'Select' : 'Close'}
+          {sel.selected ? 'Selected ✓' : 'Select'}
         </button>
       </div>
 
-      {stage === 'toppings' && (
+      {sel.selected && (
         <div className="im-expand">
-          <span className="im-step-label">Add toppings (optional)</span>
-          <div className="im-chips">
-            {item.toppings.map((t) => {
-              const on = toppingIds.includes(t.id)
-              const oos = !t.is_available
-              return (
-                <button
-                  key={t.id}
-                  type="button"
-                  className={`im-chip${on ? ' im-chip-on' : ''}${oos ? ' im-chip-oos' : ''}`}
-                  onClick={() => !oos && toggleTopping(t.id)}
-                  disabled={oos}
-                  aria-pressed={on}
-                >
-                  {t.name} {Number(t.price) > 0 ? signedMoney(t.price) : ''}
-                </button>
-              )
-            })}
-          </div>
-          <div className="im-step-actions">
-            <button
-              type="button"
-              className="im-btn"
-              onClick={() => setStage(hasVariants ? 'variants' : 'confirm')}
-            >
-              Continue
-            </button>
-          </div>
-        </div>
-      )}
+          {hasToppings && (
+            <div>
+              <span className="im-step-label">Add toppings (optional)</span>
+              <div className="im-chips">
+                {item.toppings.map((t) => {
+                  const on = sel.toppingIds.includes(t.id)
+                  const oos = !t.is_available
+                  return (
+                    <button
+                      key={t.id}
+                      type="button"
+                      className={`im-chip${on ? ' im-chip-on' : ''}${oos ? ' im-chip-oos' : ''}`}
+                      onClick={() => toggleTopping(t.id)}
+                      disabled={locked || oos}
+                      aria-pressed={on}
+                    >
+                      {t.name} {Number(t.price) > 0 ? signedMoney(t.price) : ''}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          )}
 
-      {stage === 'variants' && (
-        <div className="im-expand">
-          <span className="im-step-label">Choose a size / variant</span>
-          <div className="im-chips">
-            {item.variants.map((v) => (
+          {hasVariants && (
+            <div>
+              <span className="im-step-label">Choose a size / variant</span>
+              <div className="im-chips">
+                {item.variants.map((v) => (
+                  <button
+                    key={v.id}
+                    type="button"
+                    className={sel.variantId === v.id ? 'im-chip im-chip-on' : 'im-chip'}
+                    onClick={() => onChange({ ...sel, variantId: v.id })}
+                    disabled={locked}
+                    aria-pressed={sel.variantId === v.id}
+                  >
+                    {v.name}{' '}
+                    {Number(v.price_delta) !== 0 ? signedMoney(v.price_delta) : ''}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="im-qty">
+            <span className="im-step-label" style={{ margin: 0 }}>
+              Quantity
+            </span>
+            <div className="im-stepper">
               <button
-                key={v.id}
                 type="button"
-                className={variantId === v.id ? 'im-chip im-chip-on' : 'im-chip'}
-                onClick={() => setVariantId(v.id)}
-                aria-pressed={variantId === v.id}
+                className="im-step-btn"
+                onClick={() => onChange({ ...sel, quantity: Math.max(1, sel.quantity - 1) })}
+                disabled={locked || sel.quantity <= 1}
+                aria-label="Fewer"
               >
-                {v.name} {Number(v.price_delta) !== 0 ? signedMoney(v.price_delta) : ''}
+                −
               </button>
-            ))}
-          </div>
-          <div className="im-step-actions">
-            {hasToppings && (
+              <span className="im-step-val" aria-live="polite">
+                {sel.quantity}
+              </span>
               <button
                 type="button"
-                className="im-btn im-btn-ghost"
-                onClick={() => setStage('toppings')}
+                className="im-step-btn"
+                onClick={() => onChange({ ...sel, quantity: sel.quantity + 1 })}
+                disabled={locked}
+                aria-label="More"
               >
-                Back
+                +
               </button>
-            )}
-            <button
-              type="button"
-              className="im-btn"
-              onClick={add}
-              disabled={busy || variantId === null}
-            >
-              {busy ? 'Adding…' : 'Add to cart'}
-            </button>
+            </div>
           </div>
         </div>
       )}
-
-      {stage === 'confirm' && (
-        <div className="im-expand">
-          <div className="im-step-actions">
-            <button type="button" className="im-btn" onClick={add} disabled={busy}>
-              {busy ? 'Adding…' : 'Add to cart'}
-            </button>
-          </div>
-        </div>
-      )}
-
-      {error && <p className="im-err">{error}</p>}
     </div>
   )
 }
 
-/** The barista's suggested items as a small in-chat table (up to four rows,
- *  each with its own topping/variant selection), plus a final row that adds
- *  every suggested item to the cart as-is. */
+/** The barista's suggested items as a small in-chat table (up to four rows).
+ *  The guest selects the items they want (with toppings, variant and quantity)
+ *  and the single Confirm button adds every selected item to the cart. */
 export default function InchatMenu({ items }: Props) {
   const rows = flattenItems(items)
-  const [confirming, setConfirming] = useState(false)
-  const [confirmed, setConfirmed] = useState(false)
+  const [selections, setSelections] = useState<Selection[]>(() =>
+    rows.map((item) => ({
+      selected: false,
+      toppingIds: [],
+      variantId: null,
+      quantity: Math.max(1, item.quantity || 1),
+    })),
+  )
+  const [submitting, setSubmitting] = useState(false)
+  const [done, setDone] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   if (rows.length === 0) return null
 
-  // The fifth row: add every suggested item with its requested quantity, taking
-  // the payload straight from items_json (no custom toppings/variants).
-  async function confirmAll() {
-    setConfirming(true)
+  const anySelected = selections.some((s) => s.selected)
+
+  function update(i: number, next: Selection) {
+    setSelections((prev) => prev.map((s, idx) => (idx === i ? next : s)))
+  }
+
+  // Add every selected item to the cart with its chosen toppings, variant and
+  // quantity (the payload drawn from items_json + the guest's choices).
+  async function confirm() {
+    if (!anySelected) return
+    setSubmitting(true)
     setError(null)
     try {
-      for (const item of rows) {
-        await addItemToCart(item.id, [], null, item.quantity)
+      for (let i = 0; i < rows.length; i++) {
+        const sel = selections[i]
+        if (!sel.selected) continue
+        await addItemToCart(rows[i].id, sel.toppingIds, sel.variantId, sel.quantity)
       }
-      setConfirmed(true)
+      setDone(true)
     } catch (e) {
       setError((e as Error).message)
     } finally {
-      setConfirming(false)
+      setSubmitting(false)
     }
   }
 
@@ -365,26 +381,22 @@ export default function InchatMenu({ items }: Props) {
         <MenuRow
           key={`${item.id}-${i}`}
           item={item}
-          onAdd={(toppingIds, variantId) =>
-            addItemToCart(item.id, toppingIds, variantId, item.quantity).then(
-              () => undefined,
-            )
-          }
+          sel={selections[i]}
+          onChange={(next) => update(i, next)}
+          locked={done}
         />
       ))}
       {error && <p className="im-err">{error}</p>}
-      <button
-        type="button"
-        className={confirmed ? 'im-confirm im-confirm-done' : 'im-confirm'}
-        onClick={confirmAll}
-        disabled={confirming || confirmed}
-      >
-        {confirmed
-          ? 'Added to cart ✓'
-          : confirming
-            ? 'Adding items…'
-            : 'Confirm above items and add to cart'}
-      </button>
+      <div className="im-foot">
+        <button
+          type="button"
+          className="end-chat-btn"
+          onClick={confirm}
+          disabled={!anySelected || submitting || done}
+        >
+          {done ? 'Added to cart ✓' : submitting ? 'Adding…' : 'Confirm items'}
+        </button>
+      </div>
     </div>
   )
 }

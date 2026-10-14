@@ -182,7 +182,10 @@ export default function BaristaChat({
     }, 1400)
   }
 
-  async function handleEndChat() {
+  // End the session server-side, then leave the chat. Both the Back button and
+  // the End chat button end the session; they differ only in where they go
+  // afterwards (Back to the previous screen, End chat to the dashboard).
+  async function endSession(after: () => void) {
     if (ending) return
     setEnding(true)
     try {
@@ -190,7 +193,7 @@ export default function BaristaChat({
     } catch {
       /* even if distilling preferences failed, the session is cleared */
     } finally {
-      onEnded()
+      after()
     }
   }
 
@@ -205,7 +208,8 @@ export default function BaristaChat({
           <button
             type="button"
             className="hdr-back"
-            onClick={onBack}
+            onClick={() => endSession(onBack)}
+            disabled={ending}
             aria-label="Go back"
           >
             <svg viewBox="0 0 24 24" width="20" height="20" fill="none">
@@ -225,7 +229,7 @@ export default function BaristaChat({
         <button
           type="button"
           className="end-chat-btn"
-          onClick={handleEndChat}
+          onClick={() => endSession(onEnded)}
           disabled={ending}
         >
           {ending ? 'Ending…' : 'End chat'}

@@ -7,8 +7,8 @@ from ._base import ResolutionError, resolve
 from .category import resolve_category
 from .item import resolve_item
 from .subcategory import resolve_subcategory
-from .topping import resolve_topping
-from .variant import resolve_variant
+from .topping import item_topping_ids, resolve_topping
+from .variant import item_variant_ids, resolve_variant
 
 __all__ = [
     "ResolutionError",
@@ -18,4 +18,6 @@ __all__ = [
     "resolve_subcategory",
     "resolve_topping",
     "resolve_variant",
+    "item_topping_ids",
+    "item_variant_ids",
 ]

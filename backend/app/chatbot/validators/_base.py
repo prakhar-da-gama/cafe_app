@@ -11,7 +11,7 @@ row and score it in memory rather than pushing the fuzzy match into SQL.
 These are internal helpers, not HTTP endpoints, so a failed resolution raises
 `ResolutionError` for the caller to handle rather than an HTTP error.
 """
-from typing import Type, TypeVar
+from typing import Any, Type, TypeVar
 
 from rapidfuzz import fuzz, process, utils
 from sqlalchemy.orm import Session
@@ -31,13 +31,21 @@ def resolve(
     query: str,
     score_cutoff: float,
     label: str,
+    *filters: Any,
 ) -> ModelT:
     """Return the row of `model` whose `name` best matches `query`.
 
-    Raises `ResolutionError` if the table is empty or nothing scores at/above
+    Any `filters` (SQLAlchemy boolean expressions) narrow the candidate rows
+    before matching — e.g. scoping subcategories to a single category — so the
+    fuzzy match can only ever land on a row within that scope.
+
+    Raises `ResolutionError` if no rows are in scope or nothing scores at/above
     `score_cutoff`.
     """
-    rows = db.query(model).all()
+    q = db.query(model)
+    if filters:
+        q = q.filter(*filters)
+    rows = q.all()
     if not rows:
         raise ResolutionError(f"No {label} exist to match against")
 

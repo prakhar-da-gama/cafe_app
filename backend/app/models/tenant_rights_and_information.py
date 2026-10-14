@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import BigInteger, Boolean, DateTime, String, Text
+from sqlalchemy import BigInteger, Boolean, DateTime, Float, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from ..database import Base
@@ -47,3 +47,11 @@ class TenantRightsAndInformation(Base):
     # speciality, used as context when recommending menu changes. Null until the
     # first AI menu-assistant call generates it.
     current_menu_description: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    # Where this cafe physically is. ``location`` is a human-readable
+    # city/address used to geocode when latitude/longitude aren't set; the
+    # coordinates, when present, are used directly (and preferred) for weather
+    # lookups so we skip the geocoding round-trip.
+    location: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    latitude: Mapped[float | None] = mapped_column(Float, nullable=True)
+    longitude: Mapped[float | None] = mapped_column(Float, nullable=True)

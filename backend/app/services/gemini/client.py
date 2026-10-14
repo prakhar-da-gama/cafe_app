@@ -1,10 +1,10 @@
 """Shared Gemini client and low-level completion helpers.
 
-Uses the official ``google-genai`` SDK. When ``gemini_use_vertex`` is set (the
-default) the client talks to Vertex AI, so usage is billed to the configured
-GCP project and your console.google.com credits apply. Authentication then uses
-Application Default Credentials (``gcloud auth application-default login`` or a
-service-account key referenced by GOOGLE_APPLICATION_CREDENTIALS).
+Uses the official ``google-genai`` SDK. Authentication is always the
+``GEMINI_API_KEY`` from ``.env`` (``settings.gemini_api_key``). The
+``gemini_use_vertex`` toggle only picks the endpoint: when set (the default) the
+client talks to Vertex AI in Express mode (key billed to its GCP project, so
+console.google.com credits apply); otherwise it uses the Gemini Developer API.
 
 The SDK is imported lazily inside ``get_client`` so the API still boots if the
 package isn't installed yet; only the AI endpoints fail (with 502) in that case.
@@ -30,22 +30,16 @@ def get_client():
             detail="google-genai is not installed on the server",
         ) from exc
 
-    if settings.gemini_use_vertex:
-        if not settings.gcp_project:
-            raise HTTPException(
-                status_code=status.HTTP_502_BAD_GATEWAY,
-                detail="GCP_PROJECT is not configured for Vertex AI",
-            )
-        return genai.Client(
-            vertexai=True,
-            project=settings.gcp_project,
-            location=settings.gcp_location,
-        )
     if not settings.gemini_api_key:
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail="GEMINI_API_KEY is not configured",
         )
+
+    if settings.gemini_use_vertex:
+        # Vertex AI Express mode: same API key, billed to the key's GCP project.
+        return genai.Client(vertexai=True, api_key=settings.gemini_api_key)
+    # Gemini Developer API.
     return genai.Client(api_key=settings.gemini_api_key)
 
 

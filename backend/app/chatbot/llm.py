@@ -1,9 +1,11 @@
 """The Gemini call behind the food-ordering chatbot.
 
-Unlike the Vertex-backed helpers in ``app/services/gemini``, this talks to the
-Gemini Developer API using the ``GEMINI_API_KEY`` read from ``.env`` (exposed as
-``settings.gemini_api_key``). The SDK is imported lazily so the API still boots
-if ``google-genai`` isn't installed — only this endpoint fails (with 502).
+Authenticates with the ``GEMINI_API_KEY`` from ``.env`` (exposed as
+``settings.gemini_api_key``). Like the helpers in ``app/services/gemini``, the
+``gemini_use_vertex`` toggle picks the endpoint: Vertex AI Express mode when set
+(the default), otherwise the Gemini Developer API. The SDK is imported lazily so
+the API still boots if ``google-genai`` isn't installed — only this endpoint
+fails (with 502).
 
 No chat history is kept yet: each call is a fresh, single-shot completion. The
 caller assembles the whole prompt (session context + menu + cart + the latest
@@ -36,6 +38,11 @@ def _get_client():
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail="GEMINI_API_KEY is not configured",
         )
+
+    if settings.gemini_use_vertex:
+        # Vertex AI Express mode: same API key, billed to the key's GCP project.
+        return genai.Client(vertexai=True, api_key=settings.gemini_api_key)
+    # Gemini Developer API.
     return genai.Client(api_key=settings.gemini_api_key)
 
 

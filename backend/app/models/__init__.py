@@ -1,6 +1,7 @@
 """SQLAlchemy models, one per file. Imported here so metadata sees them all."""
 from .associations import item_toppings, item_variants
 from .category import Category
+from .chat_context import ChatContext
 from .game_stat import GameStat
 from .item import Item
 from .order import Order, OrderStatus
@@ -17,6 +18,7 @@ from .variant import Variant
 
 __all__ = [
     "Category",
+    "ChatContext",
     "Subcategory",
     "Item",
     "Variant",

@@ -10,6 +10,7 @@ import PersonalisedMenu from './pages/customer/PersonalisedMenu'
 import FullMenu from './pages/customer/FullMenu'
 import MyCart from './pages/customer/MyCart'
 import MyOrders from './pages/customer/MyOrders'
+import InitiateChat from './pages/customer/InitiateChat'
 import BaristaChat from './pages/customer/BaristaChat'
 import SnakeGame from './pages/customer/SnakeGame'
 import GameStats from './pages/customer/GameStats'
@@ -24,6 +25,7 @@ type Screen =
   | 'fullmenu'
   | 'cart'
   | 'orders'
+  | 'initiate-chat'
   | 'chat'
   | 'game'
   | 'gamestats'
@@ -38,6 +40,9 @@ function App() {
   const [email, setEmail] = useState('')
   const [name, setName] = useState<string | null>(null)
   const [selection, setSelection] = useState<Tag[]>([])
+  // The active barista chat session id, set once Initiate Chat creates it and
+  // carried into the chat interface for the rest of the session.
+  const [chatContextId, setChatContextId] = useState<number | null>(null)
   // The Play button in the header opens the game lobby popup over any screen.
   const [showGamePopup, setShowGamePopup] = useState(false)
   const openCart = () => navigate('cart')
@@ -79,7 +84,7 @@ function App() {
         <DashboardCustomer
           greetingName={name}
           onViewMenu={() => navigate('fullmenu')}
-          onOpenChat={() => navigate('chat')}
+          onOpenChat={() => navigate('initiate-chat')}
           onPlay={() => setShowGamePopup(true)}
           onGoAhead={(chosen) => {
             setSelection(chosen)
@@ -88,8 +93,25 @@ function App() {
         />
       )}
 
+      {screen === 'initiate-chat' && (
+        <InitiateChat
+          onBack={goBack}
+          onViewMenu={() => navigate('fullmenu')}
+          onProceed={(id) => {
+            setChatContextId(id)
+            // Replace the setup step so Back from the chat returns to the
+            // dashboard rather than re-opening the (already-answered) form.
+            navigate('chat', { replace: true })
+          }}
+        />
+      )}
+
       {screen === 'chat' && (
-        <BaristaChat onBack={goBack} onViewMenu={() => navigate('fullmenu')} />
+        <BaristaChat
+          chatContextId={chatContextId}
+          onBack={goBack}
+          onViewMenu={() => navigate('fullmenu')}
+        />
       )}
 
       {screen === 'menu' && (

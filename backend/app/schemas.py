@@ -665,3 +665,21 @@ class MenuBackupInfo(BaseModel):
     created_at: str | None = None
     categories: int = 0
     items: int = 0
+
+
+# ---- Chatbot ----
+
+
+class InitiateChatRequest(BaseModel):
+    """What the frontend sends to start (or resume) a chat session."""
+
+    # Free-text description of who's at the table, e.g. "2 adults and a kid".
+    setup_of_people: str = Field(..., min_length=1)
+    # Whether the chatbot should only consider vegetarian items.
+    veg_only: bool = False
+
+
+class InitiateChatResponse(BaseModel):
+    """The id of the active chat context to use for the rest of the session."""
+
+    chat_context_id: int

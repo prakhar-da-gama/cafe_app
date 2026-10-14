@@ -2,6 +2,9 @@ import { useEffect, useRef, useState } from 'react'
 import CafeHeader from '../../components/CafeHeader'
 
 interface Props {
+  // The chat session id from /initiate-chat; scopes the (soon) real barista
+  // calls to this session.
+  chatContextId: number | null
   onBack: () => void
   onViewMenu: () => void
 }
@@ -18,7 +21,7 @@ const GREETING: Msg = {
   text: "Hi, I'm your barista. Tell me what you're craving and I'll find your drink.",
 }
 
-export default function BaristaChat({ onBack, onViewMenu }: Props) {
+export default function BaristaChat({ chatContextId, onBack, onViewMenu }: Props) {
   const [messages, setMessages] = useState<Msg[]>([GREETING])
   const [value, setValue] = useState('')
   const [typing, setTyping] = useState(false)
@@ -58,7 +61,7 @@ export default function BaristaChat({ onBack, onViewMenu }: Props) {
   }
 
   return (
-    <div className="screen chat-screen">
+    <div className="screen chat-screen" data-chat-context-id={chatContextId ?? undefined}>
       <CafeHeader onBack={onBack} onViewMenu={onViewMenu} />
 
       <div className="chat-log">

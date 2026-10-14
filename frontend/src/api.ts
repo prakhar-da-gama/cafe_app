@@ -962,6 +962,28 @@ export function listServiceReviews(
   }).then((r) => handle<PaginatedServiceReviews>(r))
 }
 
+// ---- Chatbot ----
+
+export interface InitiateChatResponse {
+  chat_context_id: number
+}
+
+// Customer: start (or resume) a barista chat session. `setupOfPeople` is a
+// free-text description of who's at the table (e.g. "2 adults and 1 child") and
+// `vegOnly` restricts the barista to vegetarian items. Returns the active chat
+// context id that scopes the rest of the session. If the user already has an
+// active session the same id is returned.
+export function initiateChat(
+  setupOfPeople: string,
+  vegOnly: boolean,
+): Promise<InitiateChatResponse> {
+  return fetch('/api/chatbot/initiate-chat', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body: JSON.stringify({ setup_of_people: setupOfPeople, veg_only: vegOnly }),
+  }).then((r) => handle<InitiateChatResponse>(r))
+}
+
 // ---- Helpers ----
 
 export function money(value: number | string): string {

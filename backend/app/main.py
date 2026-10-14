@@ -12,6 +12,7 @@ from .routers import (
     ai_menu_creation,
     auth,
     cart,
+    chatbot,
     game,
     menu,
     orders,
@@ -84,6 +85,7 @@ app.add_middleware(
 app.include_router(ai_menu_creation.router)
 app.include_router(auth.router)
 app.include_router(cart.router)
+app.include_router(chatbot.router)
 app.include_router(game.router)
 app.include_router(menu.router)
 app.include_router(orders.router)

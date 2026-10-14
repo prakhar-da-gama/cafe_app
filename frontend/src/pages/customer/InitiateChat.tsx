@@ -38,30 +38,43 @@ const IC_CSS = `
   min-height: 100dvh;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  animation: ic-fade 0.5s ease both;
 }
-/* Ambient candy orbs drifting far behind the content. */
+/* Full-screen candy wash: fixed to the viewport so the rainbow hue fills the
+   whole phone, not just the centred app column. */
+.ic-bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  background:
+    radial-gradient(120% 68% at 50% -12%, rgba(255,111,181,.18), transparent 62%),
+    radial-gradient(95% 60% at 100% 102%, rgba(82,224,176,.16), transparent 60%),
+    radial-gradient(95% 62% at 0% 100%, rgba(176,107,245,.18), transparent 60%);
+}
+/* Ambient candy orbs drifting far behind the content, sized in vw so they
+   scale to the real screen. */
 .ic-orb {
   position: absolute;
-  z-index: 0;
   border-radius: 50%;
-  filter: blur(46px);
-  opacity: 0.55;
-  pointer-events: none;
+  aspect-ratio: 1;
+  filter: blur(54px);
+  opacity: 0.6;
   will-change: transform;
 }
 .ic-orb-1 {
-  width: 260px; height: 260px; top: -70px; right: -80px;
+  width: 70vw; max-width: 360px; top: -9vh; right: -16vw;
   background: radial-gradient(circle at 32% 30%, #ff9ecb, #ff6fb5);
   animation: ic-drift-1 15s ease-in-out infinite;
 }
 .ic-orb-2 {
-  width: 240px; height: 240px; bottom: 30px; left: -90px;
+  width: 66vw; max-width: 340px; bottom: -7vh; left: -18vw;
   background: radial-gradient(circle at 32% 30%, #d6a9ff, #b06bf5);
   animation: ic-drift-2 18s ease-in-out infinite;
 }
 .ic-orb-3 {
-  width: 190px; height: 190px; top: 42%; right: -60px;
+  width: 54vw; max-width: 280px; top: 40%; right: -14vw;
   background: radial-gradient(circle at 32% 30%, #8bead0, #52e0b0);
   animation: ic-drift-3 13s ease-in-out infinite;
 }
@@ -148,6 +161,15 @@ const IC_CSS = `
 .ic-counters { display: flex; flex-direction: column; gap: 6px; }
 .ic-counter-sep { height: 1px; background: var(--line); margin: 4px 0; }
 .ic-choices { display: flex; flex-direction: column; gap: 10px; }
+.ic-veg-choice {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  font-size: 2rem;
+  line-height: 1;
+  padding: 18px 16px;
+}
 .ic-reveal { animation: ic-rise 0.55s cubic-bezier(.22,1,.36,1) both; }
 
 @keyframes ic-rise {
@@ -164,7 +186,8 @@ const IC_CSS = `
 
 @media (prefers-reduced-motion: reduce) {
   .ic-greet-wrap, .ic-greet { transition: none; }
-  .ic-card, .ic-card.ic-leaving, .ic-reveal, .ic-dock, .ic-steps, .ic-orb {
+  .ic-root, .ic-card, .ic-card.ic-leaving, .ic-reveal, .ic-dock, .ic-steps,
+  .ic-orb {
     animation: none;
   }
 }
@@ -185,12 +208,15 @@ function Typed({ text, speed = 32, startDelay = 0, onDone, className }: TypedPro
   const [count, setCount] = useState(0)
   const onDoneRef = useRef(onDone)
   onDoneRef.current = onDone
+  // Reveal by code point, not UTF-16 unit, so emoji are never split mid-type.
+  const units = Array.from(text)
 
   useEffect(() => {
     setCount(0)
+    const len = Array.from(text).length
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     if (reduce) {
-      setCount(text.length)
+      setCount(len)
       const t = window.setTimeout(() => onDoneRef.current?.(), 0)
       return () => window.clearTimeout(t)
     }
@@ -199,10 +225,10 @@ function Typed({ text, speed = 32, startDelay = 0, onDone, className }: TypedPro
       interval = window.setInterval(() => {
         setCount((c) => {
           const next = c + 1
-          if (next >= text.length) {
+          if (next >= len) {
             window.clearInterval(interval)
             window.setTimeout(() => onDoneRef.current?.(), 0)
-            return text.length
+            return len
           }
           return next
         })
@@ -214,10 +240,10 @@ function Typed({ text, speed = 32, startDelay = 0, onDone, className }: TypedPro
     }
   }, [text, speed, startDelay])
 
-  const done = count >= text.length
+  const done = count >= units.length
   return (
     <span className={className} aria-label={text}>
-      {text.slice(0, count)}
+      {units.slice(0, count).join('')}
       <span className={done ? 'caret caret-rest' : 'caret'} aria-hidden="true" />
     </span>
   )
@@ -324,11 +350,13 @@ export default function InitiateChat({ onBack, onViewMenu, onProceed }: Props) {
   }
 
   return (
-    <div className="screen ic-root">
+    <div className="ic-root">
       <style>{IC_CSS}</style>
-      <div className="ic-orb ic-orb-1" aria-hidden="true" />
-      <div className="ic-orb ic-orb-2" aria-hidden="true" />
-      <div className="ic-orb ic-orb-3" aria-hidden="true" />
+      <div className="ic-bg" aria-hidden="true">
+        <div className="ic-orb ic-orb-1" />
+        <div className="ic-orb ic-orb-2" />
+        <div className="ic-orb ic-orb-3" />
+      </div>
 
       <CafeHeader onBack={onBack} onViewMenu={onViewMenu} />
 
@@ -347,7 +375,7 @@ export default function InitiateChat({ onBack, onViewMenu, onProceed }: Props) {
         >
           <p className="ic-greet">
             <Typed
-              text={`${greeting}, and a warm welcome to Seoulmate Cafe.`}
+              text={`Namaste 🙏 ${greeting}, and a warm welcome to Seoulmate Cafe.`}
               speed={34}
               onDone={onGreetingDone}
             />
@@ -383,7 +411,7 @@ export default function InitiateChat({ onBack, onViewMenu, onProceed }: Props) {
             <section className="ic-card">
               <h2 className="ic-q">
                 <Typed
-                  text="Would you prefer vegetarian only, or both vegetarian and non-vegetarian?"
+                  text="Would you prefer vegetarian only 🟢, or both vegetarian and non-vegetarian 🔴?"
                   speed={24}
                   startDelay={320}
                   onDone={() => setVegQDone(true)}
@@ -393,19 +421,29 @@ export default function InitiateChat({ onBack, onViewMenu, onProceed }: Props) {
                 <div className="ic-choices ic-reveal">
                   <button
                     type="button"
-                    className={vegOnly === true ? 'choice choice-on' : 'choice'}
+                    className={
+                      vegOnly === true
+                        ? 'choice ic-veg-choice choice-on'
+                        : 'choice ic-veg-choice'
+                    }
                     onClick={() => setVegOnly(true)}
                     aria-pressed={vegOnly === true}
+                    aria-label="Vegetarian only"
                   >
-                    Vegetarian only
+                    <span aria-hidden="true">🟢</span>
                   </button>
                   <button
                     type="button"
-                    className={vegOnly === false ? 'choice choice-on' : 'choice'}
+                    className={
+                      vegOnly === false
+                        ? 'choice ic-veg-choice choice-on'
+                        : 'choice ic-veg-choice'
+                    }
                     onClick={() => setVegOnly(false)}
                     aria-pressed={vegOnly === false}
+                    aria-label="Both vegetarian and non-vegetarian"
                   >
-                    Both vegetarian &amp; non-vegetarian
+                    <span aria-hidden="true">🟢 🔴 🟤</span>
                   </button>
                 </div>
               )}

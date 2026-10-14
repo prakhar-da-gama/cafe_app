@@ -18,17 +18,17 @@ The session is opened by **`POST /api/chatbot/initiate-chat`**
 3. Looks up an existing `chat_contexts` row for that `user_id` with `is_active = true`.
    - If one exists, it returns that row's id — the session is resumed, not duplicated.
    - Otherwise it creates a new row: `weather` and `time` are filled from the
-     `tools` functions, `setup_of_people` and `veg_only` come from the request body,
-     `is_active` is set true, and the new row's id is returned. Weather is
-     best-effort — if `tools/weather.py` fails for any reason, `weather` is stored
-     as null and the request still succeeds.
+     `internal_tools` functions, `setup_of_people` and `veg_only` come from the
+     request body, `is_active` is set true, and the new row's id is returned.
+     Weather is best-effort — if `internal_tools/weather.py` fails for any reason,
+     `weather` is stored as null and the request still succeeds.
 
 Everything the chatbot does afterwards is scoped to this `chat_context_id`.
 
 ## Subpackages
 
-- **`tools/`** — trimmed, read-only helpers the model is given. Not MCP, just plain
-  functions over a `Session`:
+- **`tools/`** — trimmed, read-only helpers the *model* is given. Not MCP, just
+  plain functions over a `Session`:
   - `get_full_menu(db, chat_context_id)` — the menu as a nested
     categories → subcategories → items tree, stripped to names/prices. Reads the
     session's `veg_only` flag to decide whether non-veg items are dropped (only
@@ -36,15 +36,23 @@ Everything the chatbot does afterwards is scoped to this `chat_context_id`.
   - `get_context(db, chat_context_id)` — the session's stored fields (everything
     except `id`, `created_at`, `updated_at`), with any `None`-valued field omitted
     entirely.
+  - `view_my_cart(db, order_id)` — one order stripped to `total_amount` plus, per
+    line, just `{name, quantity}`. Raises `OrderNotFound` for an unknown id.
+- **`internal_tools/`** — helpers wired directly into API routes (not handed to
+  the model). See `internal_tools/README.md` for the function → API mapping.
   - `get_current_time()` — current local time as an ISO string.
   - `get_weather(db)` — current weather at the cafe's location as a short phrase
     (raises `WeatherUnavailable` when there's no usable location / the API is down).
   - `initiate_my_cart(db, user_id)` — the id of the user's open cart, creating an
     empty one if none exists (same `get_or_create_cart` logic as the cart endpoints).
-  - `view_my_cart(db, order_id)` — one order stripped to `total_amount` plus, per
-    line, just `{name, quantity}`. Raises `OrderNotFound` for an unknown id.
+  - `food_listing_from_llm(db, payload)` — resolves an LLM-produced nested food
+    listing (fuzzy names + quantities) to a `get-full-menu`-shaped tree of real
+    menu rows, dropping anything it can't confidently resolve and pruning empty
+    branches. Validated by `pydantic_validators/food_listing.py`.
 - **`validators/`** — the reverse direction: fuzzy-resolve noisy, model-produced
   free text (e.g. `"EXTRA CHEESE"`) back to a real menu row by name.
+- **`pydantic_validators/`** — Pydantic schemas for model-produced payloads, e.g.
+  `FoodListingFromLLM`, which `food_listing_from_llm` validates its input against.
 
 ## Schema / table creation
 

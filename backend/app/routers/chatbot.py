@@ -12,7 +12,7 @@ from sqlalchemy.orm import Session
 
 from .. import models, schemas
 from ..auth import require_jwt
-from ..chatbot.tools import get_current_time, get_weather, initiate_my_cart
+from ..chatbot.internal_tools import get_current_time, get_weather, initiate_my_cart
 from ..database import get_db
 
 router = APIRouter(prefix="/api/chatbot", tags=["chatbot"])

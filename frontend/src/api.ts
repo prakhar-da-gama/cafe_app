@@ -966,13 +966,15 @@ export function listServiceReviews(
 
 export interface InitiateChatResponse {
   chat_context_id: number
+  // The user's open cart; later /message and /add-item calls are scoped to it.
+  cart_id: number
 }
 
 // Customer: start (or resume) a barista chat session. `setupOfPeople` is a
 // free-text description of who's at the table (e.g. "2 adults and 1 child") and
 // `vegOnly` restricts the barista to vegetarian items. Returns the active chat
-// context id that scopes the rest of the session. If the user already has an
-// active session the same id is returned.
+// context id and the open cart id that scope the rest of the session. If the
+// user already has an active session the same ids are returned.
 export function initiateChat(
   setupOfPeople: string,
   vegOnly: boolean,
@@ -982,6 +984,89 @@ export function initiateChat(
     headers: { 'Content-Type': 'application/json', ...authHeaders() },
     body: JSON.stringify({ setup_of_people: setupOfPeople, veg_only: vegOnly }),
   }).then((r) => handle<InitiateChatResponse>(r))
+}
+
+// A menu item the barista suggested: a full menu item plus the quantity the
+// customer asked for (resolved against the real menu by the backend).
+export interface ChatMenuItem extends MenuItem {
+  quantity: number
+}
+
+export interface ChatMenuSubcategory {
+  id: number
+  name: string
+  description: string | null
+  photos: string[]
+  display_order: number
+  is_active: boolean
+  items: ChatMenuItem[]
+}
+
+export interface ChatMenuCategory {
+  id: number
+  name: string
+  description: string | null
+  photos: string[]
+  display_order: number
+  is_active: boolean
+  subcategories: ChatMenuSubcategory[]
+}
+
+// The resolved suggestion tree the barista returns for a turn (get-full-menu
+// shaped, pruned to the suggested items). Null when nothing was suggested.
+export interface ChatItems {
+  categories: ChatMenuCategory[]
+}
+
+export interface ChatMessageResponse {
+  items_json: ChatItems | null
+  // The backend returns the text under the key "llm response" (with a space).
+  'llm response': string | null
+}
+
+export interface ChatTranscriptEntry {
+  role: 'user' | 'assistant'
+  content: string | null
+}
+
+// Customer: send one turn to the barista. `cartId` is the open cart from
+// initiate-chat. The reply carries the resolved item suggestions (if any) and
+// the barista's natural-language message.
+export function sendChatMessage(
+  chatContextId: number,
+  cartId: number,
+  message: string,
+): Promise<ChatMessageResponse> {
+  return fetch('/api/chatbot/message', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body: JSON.stringify({
+      chat_context_id: chatContextId,
+      cart_id: cartId,
+      message,
+    }),
+  }).then((r) => handle<ChatMessageResponse>(r))
+}
+
+// Customer: the stored turns for a chat session (oldest first), used to preload
+// an in-progress conversation so it can be continued. Item suggestions are not
+// included — replayed turns are plain text bubbles.
+export function getChatTranscript(
+  chatContextId: number,
+): Promise<ChatTranscriptEntry[]> {
+  const params = new URLSearchParams({ chat_context_id: String(chatContextId) })
+  return fetch(`/api/chatbot/transcript?${params.toString()}`, {
+    headers: authHeaders(),
+  }).then((r) => handle<ChatTranscriptEntry[]>(r))
+}
+
+// Customer: end the active chat session (distills preferences, clears the
+// session and its transcript server-side).
+export function endChat(): Promise<{ ended: boolean; profile_saved: boolean }> {
+  return fetch('/api/chatbot/end-chat', {
+    method: 'POST',
+    headers: authHeaders(),
+  }).then((r) => handle<{ ended: boolean; profile_saved: boolean }>(r))
 }
 
 // ---- Helpers ----

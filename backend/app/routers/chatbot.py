@@ -50,8 +50,9 @@ def initiate_chat(
     user_id = int(claims["sub"])
 
     # Make sure the user has an open cart for this session (reuses the existing
-    # one if there is already a cart, just like POST /api/cart/add-item).
-    initiate_my_cart(db, user_id)
+    # one if there is already a cart, just like POST /api/cart/add-item). Its id
+    # is returned so the client can scope later /message and /add-item calls.
+    cart_id = initiate_my_cart(db, user_id)
 
     existing = db.execute(
         select(models.ChatContext).where(
@@ -60,7 +61,7 @@ def initiate_chat(
         )
     ).scalars().first()
     if existing is not None:
-        return {"chat_context_id": existing.id}
+        return {"chat_context_id": existing.id, "cart_id": cart_id}
 
     # Weather is best-effort: nothing about it should ever block the chat from
     # starting, so any failure at all (no location, API down, bad response, ...)
@@ -81,7 +82,41 @@ def initiate_chat(
     db.add(context)
     db.commit()
     db.refresh(context)
-    return {"chat_context_id": context.id}
+    return {"chat_context_id": context.id, "cart_id": cart_id}
+
+
+@router.get("/transcript", response_model=list[schemas.ChatTranscriptEntry])
+def get_chat_transcript(
+    chat_context_id: int,
+    db: Session = Depends(get_db),
+    claims: dict[str, Any] = Depends(require_jwt),
+):
+    """Return a chat session's stored turns, oldest first, for resuming a chat.
+
+    When the barista chat is (re)opened the frontend preloads these so the
+    conversation continues where it left off. Only the caller's own session is
+    readable. The raw ``items_json`` suggestions are intentionally not returned
+    (``ChatTranscriptEntry`` carries only ``role`` + ``content``), so replayed
+    turns render as plain chat bubbles rather than rebuilding the menu tables.
+    """
+    user_id = int(claims["sub"])
+    context = db.get(models.ChatContext, chat_context_id)
+    if context is None or context.user_id != user_id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Chat session not found",
+        )
+
+    rows = (
+        db.execute(
+            select(models.ChatbotTranscript)
+            .where(models.ChatbotTranscript.chat_context_id == chat_context_id)
+            .order_by(models.ChatbotTranscript.id)
+        )
+        .scalars()
+        .all()
+    )
+    return [{"role": row.role, "content": row.content} for row in rows]
 
 
 @router.post("/message")

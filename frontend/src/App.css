@@ -827,6 +827,37 @@
 .send-btn:active:not(:disabled) { transform: scale(0.92); }
 .send-btn:disabled { opacity: 0.45; cursor: default; }
 
+/* Barista chat header: back + view-full-menu on the left, End chat on the right. */
+.chat-header { gap: 10px; }
+.chat-header-left { display: flex; align-items: center; gap: 10px; }
+.end-chat-btn {
+  border: none;
+  color: #fff;
+  background: var(--danger);
+  font-weight: 800;
+  font-size: 0.85rem;
+  padding: 10px 16px;
+  border-radius: 999px;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 4px 0 #b43358, 0 8px 16px rgba(226, 74, 110, 0.35);
+  transition: transform 0.1s ease, box-shadow 0.1s ease, filter 0.15s;
+}
+.end-chat-btn:hover:not(:disabled) { filter: brightness(1.04); }
+.end-chat-btn:active:not(:disabled) {
+  transform: translateY(4px);
+  box-shadow: 0 0 0 #b43358, 0 4px 10px rgba(226, 74, 110, 0.3);
+}
+.end-chat-btn:disabled { opacity: 0.6; cursor: default; }
+
+/* A single barista turn: the suggested-items table stacked above its reply. */
+.barista-turn {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-start;
+}
+
 /* ---- Initiate chat (barista setup) ---- */
 .initiate {
   min-height: 100dvh;

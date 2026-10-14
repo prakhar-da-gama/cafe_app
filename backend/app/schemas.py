@@ -680,9 +680,21 @@ class InitiateChatRequest(BaseModel):
 
 
 class InitiateChatResponse(BaseModel):
-    """The id of the active chat context to use for the rest of the session."""
+    """The ids the rest of the session is scoped to: the active chat context and
+    the user's open cart (the chatbot builds the order into this cart)."""
 
     chat_context_id: int
+    cart_id: int
+
+
+class ChatTranscriptEntry(BaseModel):
+    """One stored turn of a chat session, for replaying the conversation.
+
+    Deliberately omits ``items_json`` — resuming a chat replays the turns as
+    plain bubbles, so only the role and the message text are carried."""
+
+    role: str
+    content: str | None = None
 
 
 class ChatMessageRequest(BaseModel):

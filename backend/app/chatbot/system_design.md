@@ -16,3 +16,6 @@
 **/message** api sends message to llm, and also saves chat_transcripsts
 
 **/end-chat** ends the chat and saves user_perefences to the table. 
+
+frontend chat page in **baristachat.tsx**
+items table to be in **inchat_menu.tsx**

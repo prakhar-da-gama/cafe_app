@@ -7,8 +7,9 @@ import nonVegSymbol from '../../assets/non-veg-symbol.svg'
 interface Props {
   onBack: () => void
   onViewMenu: () => void
-  // Called once the chat session is created; receives the id to carry forward.
-  onProceed: (chatContextId: number) => void
+  // Called once the chat session is created; receives the session id and the
+  // open cart id to carry forward.
+  onProceed: (chatContextId: number, cartId: number) => void
 }
 
 type Phase = 'intro' | 'people' | 'veg'
@@ -347,11 +348,11 @@ export default function InitiateChat({ onBack, onViewMenu, onProceed }: Props) {
     setSubmitting(true)
     setError(null)
     try {
-      const { chat_context_id } = await initiateChat(
+      const { chat_context_id, cart_id } = await initiateChat(
         describeParty(adults, children),
         vegOnly as boolean,
       )
-      onProceed(chat_context_id)
+      onProceed(chat_context_id, cart_id)
     } catch (e) {
       setError((e as Error).message)
       setSubmitting(false)

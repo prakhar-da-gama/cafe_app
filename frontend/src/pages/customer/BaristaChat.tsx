@@ -1,18 +1,31 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
-import CafeHeader from '../../components/CafeHeader'
+import {
+  endChat,
+  getChatTranscript,
+  sendChatMessage,
+  type ChatItems,
+} from '../../api'
+import InchatMenu from './chatbot/InchatMenu'
 
 interface Props {
-  // The chat session id from /initiate-chat; scopes the (soon) real barista
-  // calls to this session.
+  // The chat session id and open cart from /initiate-chat; scope the barista
+  // calls (/message, and the resumed transcript) to this session.
   chatContextId: number | null
+  cartId: number | null
   onBack: () => void
   onViewMenu: () => void
+  // Called once the session has been ended server-side, so the app can leave
+  // the chat screen.
+  onEnded: () => void
 }
 
 interface Msg {
   id: number
   from: 'you' | 'barista'
-  text: string
+  // The text bubble for this turn (optional — an item-only barista turn has none).
+  text?: string
+  // A barista turn's suggested items, rendered as an in-chat menu table.
+  items?: ChatItems | null
 }
 
 const GREETING: Msg = {
@@ -21,12 +34,45 @@ const GREETING: Msg = {
   text: "Hi, I'm your barista. Tell me what you're craving and I'll find your drink.",
 }
 
-export default function BaristaChat({ chatContextId, onBack, onViewMenu }: Props) {
+export default function BaristaChat({
+  chatContextId,
+  cartId,
+  onBack,
+  onViewMenu,
+  onEnded,
+}: Props) {
   const [messages, setMessages] = useState<Msg[]>([GREETING])
   const [value, setValue] = useState('')
   const [typing, setTyping] = useState(false)
   const [listening, setListening] = useState(false)
+  const [ending, setEnding] = useState(false)
   const endRef = useRef<HTMLDivElement | null>(null)
+
+  // Preload any existing turns so an in-progress chat continues where it left
+  // off. The transcript omits item suggestions, so replayed turns are plain
+  // bubbles; the greeting is only shown when there's nothing to resume.
+  useEffect(() => {
+    if (chatContextId === null) return
+    let cancelled = false
+    getChatTranscript(chatContextId)
+      .then((entries) => {
+        if (cancelled) return
+        const preloaded = entries
+          .filter((e) => e.content && e.content.trim())
+          .map((e, i) => ({
+            id: i + 1,
+            from: e.role === 'user' ? ('you' as const) : ('barista' as const),
+            text: e.content as string,
+          }))
+        if (preloaded.length > 0) setMessages(preloaded)
+      })
+      .catch(() => {
+        /* a failed preload just leaves the greeting in place */
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [chatContextId])
 
   // --- Keyboard handling (the ChatGPT-mobile approach) ---------------------
   // A sticky composer inside a 100dvh column makes the browser scroll the whole
@@ -96,24 +142,36 @@ export default function BaristaChat({ chatContextId, onBack, onViewMenu }: Props
     ? { flex: 1, minHeight: 0, overflowY: 'auto', paddingBottom: 16 }
     : {}
 
-  function send(text: string) {
+  async function send(text: string) {
     const clean = text.trim()
-    if (!clean) return
+    if (!clean || chatContextId === null || cartId === null) return
     setMessages((m) => [...m, { id: Date.now(), from: 'you', text: clean }])
     setValue('')
     setTyping(true)
-    // Dummy barista — a canned reply stands in for the real assistant.
-    window.setTimeout(() => {
+    try {
+      const reply = await sendChatMessage(chatContextId, cartId, clean)
+      const replyText = reply['llm response']
       setTyping(false)
       setMessages((m) => [
         ...m,
         {
           id: Date.now() + 1,
           from: 'barista',
-          text: "I'm still warming up the espresso machine — live answers are brewing soon.",
+          text: replyText ?? undefined,
+          items: reply.items_json,
         },
       ])
-    }, 1200)
+    } catch (e) {
+      setTyping(false)
+      setMessages((m) => [
+        ...m,
+        {
+          id: Date.now() + 1,
+          from: 'barista',
+          text: `Sorry — something went wrong. ${(e as Error).message}`,
+        },
+      ])
+    }
   }
 
   function toggleMic() {
@@ -124,20 +182,77 @@ export default function BaristaChat({ chatContextId, onBack, onViewMenu }: Props
     }, 1400)
   }
 
+  async function handleEndChat() {
+    if (ending) return
+    setEnding(true)
+    try {
+      await endChat()
+    } catch {
+      /* even if distilling preferences failed, the session is cleared */
+    } finally {
+      onEnded()
+    }
+  }
+
   return (
     <div
       className={pinned ? 'chat-screen' : 'screen chat-screen'}
       style={screenStyle}
       data-chat-context-id={chatContextId ?? undefined}
     >
-      <CafeHeader onBack={onBack} onViewMenu={onViewMenu} />
+      <header className="cafe-header chat-header">
+        <div className="chat-header-left">
+          <button
+            type="button"
+            className="hdr-back"
+            onClick={onBack}
+            aria-label="Go back"
+          >
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none">
+              <path
+                d="M15 6l-6 6 6 6"
+                stroke="currentColor"
+                strokeWidth="2.4"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </button>
+          <button type="button" className="menu-btn" onClick={onViewMenu}>
+            View full menu
+          </button>
+        </div>
+        <button
+          type="button"
+          className="end-chat-btn"
+          onClick={handleEndChat}
+          disabled={ending}
+        >
+          {ending ? 'Ending…' : 'End chat'}
+        </button>
+      </header>
 
       <div className="chat-log" style={logStyle}>
-        {messages.map((m) => (
-          <div key={m.id} className={m.from === 'you' ? 'bubble bubble-you' : 'bubble bubble-barista'}>
-            {m.text}
-          </div>
-        ))}
+        {messages.map((m) => {
+          if (m.from === 'you') {
+            return (
+              <div key={m.id} className="bubble bubble-you">
+                {m.text}
+              </div>
+            )
+          }
+          // A barista turn: the suggested-items table (if any) first, then the
+          // natural-language reply below it — rendered as if the barista replied
+          // with both the component and a message.
+          return (
+            <div key={m.id} className="barista-turn">
+              {m.items && m.items.categories.length > 0 && (
+                <InchatMenu items={m.items} />
+              )}
+              {m.text && <div className="bubble bubble-barista">{m.text}</div>}
+            </div>
+          )
+        })}
         {typing && (
           <div className="bubble bubble-barista bubble-typing" aria-label="Barista is typing">
             <span className="dot" />

@@ -40,9 +40,10 @@ function App() {
   const [email, setEmail] = useState('')
   const [name, setName] = useState<string | null>(null)
   const [selection, setSelection] = useState<Tag[]>([])
-  // The active barista chat session id, set once Initiate Chat creates it and
-  // carried into the chat interface for the rest of the session.
+  // The active barista chat session id and its open cart, set once Initiate
+  // Chat creates them and carried into the chat interface for the session.
   const [chatContextId, setChatContextId] = useState<number | null>(null)
+  const [chatCartId, setChatCartId] = useState<number | null>(null)
   // The Play button in the header opens the game lobby popup over any screen.
   const [showGamePopup, setShowGamePopup] = useState(false)
   const openCart = () => navigate('cart')
@@ -97,8 +98,9 @@ function App() {
         <InitiateChat
           onBack={goBack}
           onViewMenu={() => navigate('fullmenu')}
-          onProceed={(id) => {
+          onProceed={(id, cart) => {
             setChatContextId(id)
+            setChatCartId(cart)
             // Replace the setup step so Back from the chat returns to the
             // dashboard rather than re-opening the (already-answered) form.
             navigate('chat', { replace: true })
@@ -109,8 +111,15 @@ function App() {
       {screen === 'chat' && (
         <BaristaChat
           chatContextId={chatContextId}
+          cartId={chatCartId}
           onBack={goBack}
           onViewMenu={() => navigate('fullmenu')}
+          onEnded={() => {
+            setChatContextId(null)
+            setChatCartId(null)
+            // The session is gone; replace the chat so Back skips it.
+            navigate('dashboard', { replace: true })
+          }}
         />
       )}
 

@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { initiateChat } from '../../api'
 import CafeHeader from '../../components/CafeHeader'
+import vegSymbol from '../../assets/veg-symbol.svg'
+import nonVegSymbol from '../../assets/non-veg-symbol.svg'
 
 interface Props {
   onBack: () => void
@@ -160,16 +162,23 @@ const IC_CSS = `
 }
 .ic-counters { display: flex; flex-direction: column; gap: 6px; }
 .ic-counter-sep { height: 1px; background: var(--line); margin: 4px 0; }
+.ic-q-marks {
+  display: inline-flex;
+  gap: 6px;
+  margin-left: 8px;
+  vertical-align: -5px;
+  animation: ic-fade 0.4s ease both;
+}
+.ic-mark { width: 20px; height: 20px; display: block; }
 .ic-choices { display: flex; flex-direction: column; gap: 10px; }
 .ic-veg-choice {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 14px;
-  font-size: 2rem;
-  line-height: 1;
-  padding: 18px 16px;
+  gap: 16px;
+  padding: 16px;
 }
+.ic-veg-icon { width: 38px; height: 38px; display: block; }
 .ic-reveal { animation: ic-rise 0.55s cubic-bezier(.22,1,.36,1) both; }
 
 @keyframes ic-rise {
@@ -411,11 +420,17 @@ export default function InitiateChat({ onBack, onViewMenu, onProceed }: Props) {
             <section className="ic-card">
               <h2 className="ic-q">
                 <Typed
-                  text="Would you prefer vegetarian only 🟢, or both vegetarian and non-vegetarian 🔴?"
+                  text="Would you prefer vegetarian only, or both vegetarian and non-vegetarian?"
                   speed={24}
                   startDelay={320}
                   onDone={() => setVegQDone(true)}
                 />
+                {vegQDone && (
+                  <span className="ic-q-marks">
+                    <img src={vegSymbol} alt="" className="ic-mark" />
+                    <img src={nonVegSymbol} alt="" className="ic-mark" />
+                  </span>
+                )}
               </h2>
               {vegQDone && (
                 <div className="ic-choices ic-reveal">
@@ -430,7 +445,7 @@ export default function InitiateChat({ onBack, onViewMenu, onProceed }: Props) {
                     aria-pressed={vegOnly === true}
                     aria-label="Vegetarian only"
                   >
-                    <span aria-hidden="true">🟢</span>
+                    <img src={vegSymbol} alt="" className="ic-veg-icon" />
                   </button>
                   <button
                     type="button"
@@ -443,7 +458,8 @@ export default function InitiateChat({ onBack, onViewMenu, onProceed }: Props) {
                     aria-pressed={vegOnly === false}
                     aria-label="Both vegetarian and non-vegetarian"
                   >
-                    <span aria-hidden="true">🟢 🔴 🟤</span>
+                    <img src={vegSymbol} alt="" className="ic-veg-icon" />
+                    <img src={nonVegSymbol} alt="" className="ic-veg-icon" />
                   </button>
                 </div>
               )}

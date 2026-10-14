@@ -12,6 +12,7 @@ from .tag import Tag
 from .tenant_rights_and_information import TenantRightsAndInformation
 from .topping import Topping
 from .user import User, UserType
+from .user_preferences import UserPreference
 from .variant import Variant
 
 __all__ = [
@@ -23,6 +24,7 @@ __all__ = [
     "Tag",
     "User",
     "UserType",
+    "UserPreference",
     "Order",
     "OrderStatus",
     "OrderItem",

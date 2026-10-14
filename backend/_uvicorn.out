@@ -1,0 +1,12 @@
+INFO:     127.0.0.1:57070 - "GET /api/health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58594 - "GET /api/text-to-id/categories?q=coffee+bar HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58595 - "GET /api/text-to-id/categories?q=pls+Beverages HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58596 - "GET /api/text-to-id/subcategories?q=Cold+Brews HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58597 - "GET /api/text-to-id/subcategories?q=HOT+COFFEE HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58598 - "GET /api/text-to-id/items?q=Gluten-Free-Brownie HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62904 - "GET /api/text-to-id/items?q=CARAMEL+CLOUD+LATTE HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62905 - "GET /api/text-to-id/items?q=Decaf+Flat HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62906 - "GET /api/text-to-id/toppings?q=extra+cheese HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62907 - "GET /api/text-to-id/toppings?q=EXTRA+SHOT HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62908 - "GET /api/text-to-id/variants?q=Smally HTTP/1.1" 200 OK
+INFO:     127.0.0.1:62909 - "GET /api/text-to-id/variants?q=Large HTTP/1.1" 200 OK

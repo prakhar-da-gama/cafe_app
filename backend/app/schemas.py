@@ -292,6 +292,32 @@ class PaginatedOrders(BaseModel):
     has_more: bool
 
 
+class OrderSummary(BaseModel):
+    """A lightweight order row for the manager dashboard list — exactly what the
+    collapsed card shows (number, time, drink count, total, status, paid). The
+    line items are deliberately *not* expanded here; fetch them on expand via
+    GET /api/orders/{order_id}."""
+
+    id: int
+    status: str
+    total_amount: Decimal
+    payment_status: bool
+    created_at: datetime
+    # Total quantity across the order's lines (the "N drinks" count).
+    item_count: int
+
+
+class PaginatedOrderSummaries(BaseModel):
+    """A page of order summaries for the manager dashboard, newest first, paged
+    on the orders table."""
+
+    items: list[OrderSummary]
+    total: int
+    page: int
+    page_size: int
+    has_more: bool
+
+
 class OrderManagerUpdate(BaseModel):
     """Manager-driven changes to an order: advance its status along the kitchen
     workflow and/or mark it paid. Allowed status transitions are enforced by the

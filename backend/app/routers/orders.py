@@ -61,6 +61,40 @@ def list_all_orders(
     return crud.list_all_orders(db, status=status, page=page, page_size=page_size)
 
 
+@router.get("/all/summary", response_model=schemas.PaginatedOrderSummaries)
+def list_all_orders_summary(
+    status: models.OrderStatus = Query(..., description="Status to filter by."),
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=10, ge=1, le=50),
+    db: Session = Depends(get_db),
+    _claims: dict[str, Any] = Depends(require_manager),
+):
+    """Manager dashboard list: every user's orders with the given status, newest
+    first, as lightweight summaries (number, time, drink count, total, status,
+    paid) — line items are not expanded. Use this to render the collapsed list,
+    then GET /api/orders/{order_id} on expand for the full detail. Requires a
+    manager JWT."""
+    return crud.list_all_orders_summary(
+        db, status=status, page=page, page_size=page_size
+    )
+
+
+@router.get("/{order_id}", response_model=schemas.OrderRead)
+def get_order(
+    order_id: int,
+    db: Session = Depends(get_db),
+    _claims: dict[str, Any] = Depends(require_manager),
+):
+    """Manager: one order with its line items fully expanded — every line's
+    item, chosen toppings and variants, price snapshot and any review. Backs the
+    detail shown when a manager expands a row in the dashboard list. Returns 404
+    if no such order exists. Requires a manager JWT."""
+    order = crud.get_order_detail(db, order_id)
+    if order is None:
+        raise HTTPException(status_code=404, detail="Order not found")
+    return order
+
+
 @router.patch("/{order_id}", response_model=schemas.OrderRead)
 def manager_update_order(
     order_id: int,

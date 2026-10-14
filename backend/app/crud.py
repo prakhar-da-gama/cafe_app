@@ -933,6 +933,82 @@ def list_all_orders(
     }
 
 
+def list_all_orders_summary(
+    db: Session,
+    *,
+    status: models.OrderStatus,
+    page: int = 1,
+    page_size: int = 10,
+) -> dict:
+    """A page of *every* user's orders with the given status, as lightweight
+    summaries for the manager dashboard list.
+
+    Unlike `list_all_orders`, the line items are not expanded: the only extra
+    work is a single grouped query that sums each order's line quantities (the
+    "N drinks" count). No item/topping/variant rows are loaded. Pagination and
+    the newest-first sort are pushed to the database.
+    """
+    base = select(models.Order).where(models.Order.status == status)
+    total = db.execute(
+        select(func.count()).select_from(base.order_by(None).subquery())
+    ).scalar_one()
+
+    offset = (page - 1) * page_size
+    orders = list(
+        db.execute(
+            base.order_by(models.Order.created_at.desc(), models.Order.id.desc())
+            .limit(page_size)
+            .offset(offset)
+        )
+        .scalars()
+        .all()
+    )
+
+    # Total quantity per order in one grouped query, so we never touch the
+    # order_items relationship (which would N+1 across the page).
+    order_ids = [o.id for o in orders]
+    counts: dict[int, int] = {}
+    if order_ids:
+        rows = db.execute(
+            select(
+                models.OrderItem.order_id,
+                func.coalesce(func.sum(models.OrderItem.quantity), 0),
+            )
+            .where(models.OrderItem.order_id.in_(order_ids))
+            .group_by(models.OrderItem.order_id)
+        ).all()
+        counts = {order_id: int(qty) for order_id, qty in rows}
+
+    items = [
+        schemas.OrderSummary(
+            id=o.id,
+            status=o.status.value,
+            total_amount=o.total_amount,
+            payment_status=o.payment_status,
+            created_at=o.created_at,
+            item_count=counts.get(o.id, 0),
+        )
+        for o in orders
+    ]
+
+    return {
+        "items": items,
+        "total": total,
+        "page": page,
+        "page_size": page_size,
+        "has_more": offset + len(orders) < total,
+    }
+
+
+def get_order_detail(db: Session, order_id: int) -> schemas.OrderRead | None:
+    """The one order with its line items fully expanded, or None if no such
+    order exists. Backs the manager dashboard's expand-a-row detail view."""
+    order = db.get(models.Order, order_id)
+    if order is None:
+        return None
+    return _serialize_orders(db, [order])[0]
+
+
 def manager_update_order(
     db: Session,
     order: models.Order,

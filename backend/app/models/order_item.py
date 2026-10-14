@@ -3,7 +3,7 @@ from __future__ import annotations
 from decimal import Decimal
 from typing import TYPE_CHECKING
 
-from sqlalchemy import JSON, ForeignKey, Integer, Numeric, Text
+from sqlalchemy import JSON, ForeignKey, Integer, Numeric, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ..database import Base
@@ -30,6 +30,8 @@ class OrderItem(Base):
     quantity: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
     # Unit price snapshot (base + variant deltas + toppings) at the time of ordering.
     price: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False, default=0)
+    # Optional short note/description for this line.
+    description: Mapped[str | None] = mapped_column(String(100), nullable=True)
 
     # Customer review of this line, left once the order is completed. All optional:
     # a star rating (0-5), a free-text note, and any uploaded photo paths.

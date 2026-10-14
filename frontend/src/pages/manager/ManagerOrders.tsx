@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import {
+  getOrder,
   listAllOrders,
   money,
   signedMoney,
   updateOrder,
   type Order,
   type OrderStatus,
+  type OrderSummary,
 } from '../../api'
 import OrderLines from '../../components/OrderLines'
 
@@ -23,16 +25,25 @@ const NEW_ORDER_SOUND = '/new-order.mp3'
 // How often to check for newly-arrived pending orders.
 const POLL_MS = 8000
 
-const drinkCount = (o: Order) =>
-  o.order_items.reduce((s, l) => s + l.quantity, 0)
-const orderTotal = (o: Order) =>
-  o.order_items.reduce((s, l) => s + Number(l.price) * l.quantity, 0)
+// A manager action (mark paid/completed) returns the full order; fold it back
+// into the summary the list holds.
+const orderToSummary = (o: Order): OrderSummary => ({
+  id: o.id,
+  status: o.status,
+  total_amount: o.total_amount,
+  payment_status: o.payment_status,
+  created_at: o.created_at,
+  item_count: o.order_items.reduce((s, l) => s + l.quantity, 0),
+})
 
 /** The manager dashboard: all orders for a chosen status, newest first, with
  *  the kitchen workflow controls that differ per status. */
 export default function ManagerOrders() {
   const [status, setStatus] = useState<OrderStatus>('pending')
-  const [orders, setOrders] = useState<Order[]>([])
+  const [orders, setOrders] = useState<OrderSummary[]>([])
+  // Full line-item detail for orders the manager has expanded, keyed by id.
+  // Fetched lazily so the list itself stays lightweight.
+  const [details, setDetails] = useState<Record<number, Order>>({})
   const [page, setPage] = useState(1)
   const [hasMore, setHasMore] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -53,6 +64,9 @@ export default function ManagerOrders() {
   // Orders opened (expanded) at least once — these never alarm again.
   const openedRef = useRef<Set<number>>(new Set())
   const baselineRef = useRef(false)
+  // Order ids whose detail fetch is in flight, so expanding twice fast doesn't
+  // fire two requests for the same order.
+  const detailFetching = useRef<Set<number>>(new Set())
   // Exactly one <audio> element drives the alarm (never overlapping streams).
   const audioRef = useRef<HTMLAudioElement | null>(null)
   // Latest selected status, read inside the background poll without resubscribing.
@@ -77,10 +91,28 @@ export default function ManagerOrders() {
   // Reset everything and refetch whenever the status filter changes.
   useEffect(() => {
     setOrders([])
+    setDetails({})
     setExpandedId(null)
     setPrepared({})
     load(status, 1)
   }, [status, load])
+
+  // Fetch an order's full line items the first time it's expanded, then cache.
+  const ensureDetail = useCallback(
+    async (id: number) => {
+      if (details[id] || detailFetching.current.has(id)) return
+      detailFetching.current.add(id)
+      try {
+        const full = await getOrder(id)
+        setDetails((prev) => ({ ...prev, [id]: full }))
+      } catch (e) {
+        setError((e as Error).message)
+      } finally {
+        detailFetching.current.delete(id)
+      }
+    },
+    [details],
+  )
 
   // A single looping <audio> element drives the alarm. Keeping exactly one
   // element (and only ever toggling play/pause) guarantees the sound never
@@ -221,14 +253,17 @@ export default function ManagerOrders() {
   const toggleExpand = (id: number) =>
     setExpandedId((cur) => {
       const opening = cur !== id
-      if (opening) acknowledge(id)
+      if (opening) {
+        acknowledge(id)
+        ensureDetail(id)
+      }
       return opening ? id : null
     })
 
   // Apply a manager action. `remove` drops the order from the current list
   // (its status moved out of the active filter); otherwise it's updated in place.
   const act = async (
-    order: Order,
+    order: OrderSummary,
     changes: { status?: OrderStatus; payment_status?: boolean },
     remove: boolean,
   ) => {
@@ -240,7 +275,13 @@ export default function ManagerOrders() {
         setOrders((prev) => prev.filter((o) => o.id !== order.id))
         setExpandedId((cur) => (cur === order.id ? null : cur))
       } else {
-        setOrders((prev) => prev.map((o) => (o.id === order.id ? updated : o)))
+        setOrders((prev) =>
+          prev.map((o) => (o.id === order.id ? orderToSummary(updated) : o)),
+        )
+        // Keep the cached detail in sync if this order is expanded.
+        setDetails((prev) =>
+          prev[order.id] ? { ...prev, [order.id]: updated } : prev,
+        )
       }
     } catch (e) {
       setError((e as Error).message)
@@ -290,6 +331,7 @@ export default function ManagerOrders() {
       <div className="order-list">
         {orders.map((order) => {
           const expanded = expandedId === order.id
+          const detail = details[order.id]
           const prepSet = prepared[order.id] ?? new Set<number>()
           return (
             <section key={order.id} className="order-card mgr-order">
@@ -307,7 +349,7 @@ export default function ManagerOrders() {
                 </span>
                 <span className="mgr-head-right">
                   <span className="order-summary">
-                    {drinkCount(order)} drinks · {money(orderTotal(order))}
+                    {order.item_count} drinks · {money(order.total_amount)}
                   </span>
                   <span className={`status-badge status-${order.status}`}>
                     {order.status}
@@ -350,10 +392,12 @@ export default function ManagerOrders() {
 
               {expanded && (
                 <div className="mgr-detail">
-                  {order.status === 'preparing' ? (
+                  {!detail ? (
+                    <p className="muted center">Loading…</p>
+                  ) : order.status === 'preparing' ? (
                     <>
                       <div className="prep-list">
-                        {order.order_items.map((line) => {
+                        {detail.order_items.map((line) => {
                           const done = prepSet.has(line.id)
                           return (
                             <div
@@ -412,15 +456,15 @@ export default function ManagerOrders() {
                         type="button"
                         className="candy-btn btn-grape mgr-full-btn"
                         onClick={() => act(order, { status: 'ready' }, true)}
-                        disabled={!allPrepared(order) || busyId === order.id}
+                        disabled={!allPrepared(detail) || busyId === order.id}
                       >
-                        {allPrepared(order)
+                        {allPrepared(detail)
                           ? 'Order is Ready'
                           : 'Mark every item prepared first'}
                       </button>
                     </>
                   ) : (
-                    <OrderLines lines={order.order_items} />
+                    <OrderLines lines={detail.order_items} />
                   )}
 
                   {order.status === 'pending' && (

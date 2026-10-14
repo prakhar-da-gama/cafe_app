@@ -234,6 +234,27 @@ export interface PaginatedOrders {
   has_more: boolean
 }
 
+// A lightweight order row for the manager dashboard list — exactly the fields
+// the collapsed card shows. The line items are deliberately not included; fetch
+// them on expand via getOrder().
+export interface OrderSummary {
+  id: number
+  status: OrderStatus
+  total_amount: number | string
+  payment_status: boolean
+  created_at: string
+  // Total quantity across the order's lines (the "N drinks" count).
+  item_count: number
+}
+
+export interface PaginatedOrderSummaries {
+  items: OrderSummary[]
+  total: number
+  page: number
+  page_size: number
+  has_more: boolean
+}
+
 // ---- Fetch plumbing ----
 
 async function handle<T>(res: Response): Promise<T> {
@@ -816,20 +837,29 @@ export function placeOrder(): Promise<Order> {
 // ---- Orders (manager) ----
 
 // Manager view: a page of every user's orders with the given status, newest
-// first, paginated on the orders table. Requires a manager token.
+// first, as lightweight summaries (no line items). Backs the dashboard list;
+// call getOrder() to expand one. Requires a manager token.
 export function listAllOrders(
   status: OrderStatus,
   page = 1,
   pageSize = 10,
-): Promise<PaginatedOrders> {
+): Promise<PaginatedOrderSummaries> {
   const params = new URLSearchParams({
     status,
     page: String(page),
     page_size: String(pageSize),
   })
-  return fetch(`/api/orders/all?${params.toString()}`, {
+  return fetch(`/api/orders/all/summary?${params.toString()}`, {
     headers: authHeaders(),
-  }).then((r) => handle<PaginatedOrders>(r))
+  }).then((r) => handle<PaginatedOrderSummaries>(r))
+}
+
+// Manager view: one order with its line items fully expanded. Fetched when a
+// manager expands a row in the dashboard list. Requires a manager token.
+export function getOrder(orderId: number): Promise<Order> {
+  return fetch(`/api/orders/${orderId}`, {
+    headers: authHeaders(),
+  }).then((r) => handle<Order>(r))
 }
 
 // Manager action: advance an order's status along the kitchen workflow and/or

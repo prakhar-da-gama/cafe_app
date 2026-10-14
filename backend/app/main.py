@@ -17,7 +17,6 @@ from .routers import (
     orders,
     service_reviews,
     tags,
-    text_to_id,
     uploads,
     users,
 )
@@ -90,7 +89,6 @@ app.include_router(menu.router)
 app.include_router(orders.router)
 app.include_router(service_reviews.router)
 app.include_router(tags.router)
-app.include_router(text_to_id.router)
 app.include_router(uploads.router)
 app.include_router(users.router)
 

@@ -692,8 +692,13 @@ class InitiateChatResponse(BaseModel):
 
     chat_context_id: int
     cart_id: int
+    # True when an existing active session was resumed, False when a brand-new
+    # one was created. The client uses this (not the presence of an opener) to
+    # decide whether to show the generated opening turn below.
+    resumed: bool = False
     # The barista's opening message text, and its resolved item suggestions
-    # (get-full-menu-shaped, like the /message endpoint's items_json).
+    # (get-full-menu-shaped, like the /message endpoint's items_json). Only set
+    # for a new session (``resumed`` False).
     first_message: str | None = None
     first_items: dict[str, Any] | None = None
 

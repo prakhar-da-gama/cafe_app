@@ -44,6 +44,9 @@ function App() {
   // Chat creates them and carried into the chat interface for the session.
   const [chatContextId, setChatContextId] = useState<number | null>(null)
   const [chatCartId, setChatCartId] = useState<number | null>(null)
+  // Whether the chat being opened is a brand-new session (show the generated
+  // opener below) or a resumed one (replay the transcript, no opener items).
+  const [chatIsNewSession, setChatIsNewSession] = useState(false)
   // The barista's generated opening turn for a brand-new session (message +
   // suggested items), handed from InitiateChat to seed the chat. Null when a
   // session is resumed — the opener is then replayed from the transcript.
@@ -67,6 +70,7 @@ function App() {
         setChatContextId(session.chat_context_id)
         setChatCartId(session.cart_id)
         // Resuming: no fresh opener — the chat replays it from the transcript.
+        setChatIsNewSession(false)
         setChatFirstMessage(null)
         setChatFirstItems(null)
         navigate('chat')
@@ -127,9 +131,10 @@ function App() {
         <InitiateChat
           onBack={goBack}
           onViewMenu={() => navigate('fullmenu')}
-          onProceed={(id, cart, firstMessage, firstItems) => {
+          onProceed={(id, cart, newSession, firstMessage, firstItems) => {
             setChatContextId(id)
             setChatCartId(cart)
+            setChatIsNewSession(newSession)
             setChatFirstMessage(firstMessage)
             setChatFirstItems(firstItems)
             // Replace the setup step so Back from the chat returns to the
@@ -143,6 +148,7 @@ function App() {
         <BaristaChat
           chatContextId={chatContextId}
           cartId={chatCartId}
+          isNewSession={chatIsNewSession}
           firstMessage={chatFirstMessage}
           firstItems={chatFirstItems}
           onBack={goBack}

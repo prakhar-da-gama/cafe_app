@@ -12,6 +12,10 @@ interface Props {
   // calls (/message, and the resumed transcript) to this session.
   chatContextId: number | null
   cartId: number | null
+  // Whether this is a brand-new session (seed the generated opener below and
+  // skip the transcript preload) or a resumed one (replay the transcript, no
+  // opener). Authoritative — comes from the /initiate-chat `resumed` flag.
+  isNewSession: boolean
   // The barista's generated opening turn for a brand-new session (from
   // /initiate-chat): the greeting text and its suggested items. Null when a
   // session is resumed — the opener is then replayed from the transcript.
@@ -65,17 +69,18 @@ const GREETING: Msg = {
 export default function BaristaChat({
   chatContextId,
   cartId,
+  isNewSession,
   firstMessage,
   firstItems,
   onBack,
   onViewMenu,
   onEnded,
 }: Props) {
-  // Seed with the barista's generated opener (text + suggested items) for a
-  // fresh session; otherwise start on the fallback greeting until the resumed
-  // transcript loads over it.
+  // For a brand-new session, seed with the barista's generated opener (text +
+  // suggested items). For a resumed session, start on the fallback greeting
+  // until the transcript preload (below) loads over it.
   const [messages, setMessages] = useState<Msg[]>(() =>
-    firstMessage || firstItems
+    isNewSession && (firstMessage || firstItems)
       ? [
           {
             id: 0,
@@ -96,10 +101,10 @@ export default function BaristaChat({
   // Preload any existing turns so an in-progress chat continues where it left
   // off. The transcript omits item suggestions, so replayed turns are plain
   // bubbles; the greeting is only shown when there's nothing to resume. Skipped
-  // for a fresh session — its only turn is the opener we already seeded above
-  // (with its item suggestions, which the transcript endpoint strips).
+  // for a brand-new session — its only turn is the opener we already seeded
+  // above (with its item suggestions, which the transcript endpoint strips).
   useEffect(() => {
-    if (chatContextId === null || firstMessage || firstItems) return
+    if (chatContextId === null || isNewSession) return
     let cancelled = false
     getChatTranscript(chatContextId)
       .then((entries) => {
@@ -119,7 +124,7 @@ export default function BaristaChat({
     return () => {
       cancelled = true
     }
-  }, [chatContextId, firstMessage, firstItems])
+  }, [chatContextId, isNewSession])
 
   // --- Keyboard handling (the ChatGPT-mobile approach) ---------------------
   // A sticky composer inside a 100dvh column makes the browser scroll the whole

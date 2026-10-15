@@ -61,7 +61,15 @@ def initiate_chat(
         )
     ).scalars().first()
     if existing is not None:
-        return {"chat_context_id": existing.id, "cart_id": cart_id}
+        # Resuming an existing session: no fresh opener is generated (the chat's
+        # first turn is already in the transcript). ``resumed`` lets the client
+        # tell this apart from a brand-new session without inferring it from
+        # whether an opener came back.
+        return {
+            "chat_context_id": existing.id,
+            "cart_id": cart_id,
+            "resumed": True,
+        }
 
     # Weather is best-effort: nothing about it should ever block the chat from
     # starting, so any failure at all (no location, API down, bad response, ...)
@@ -115,6 +123,7 @@ def initiate_chat(
     return {
         "chat_context_id": context.id,
         "cart_id": cart_id,
+        "resumed": False,
         "first_message": first_message,
         "first_items": first_items,
     }

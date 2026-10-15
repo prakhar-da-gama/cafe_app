@@ -8,11 +8,13 @@ interface Props {
   onBack: () => void
   onViewMenu: () => void
   // Called once the chat session is created; receives the session id, the open
-  // cart id, and the barista's generated opening turn (message + suggested
-  // items) to seed the chat with.
+  // cart id, whether this is a brand-new session (vs a resumed one), and the
+  // barista's generated opening turn (message + suggested items) to seed the
+  // chat with. The opener is only shown for a new session.
   onProceed: (
     chatContextId: number,
     cartId: number,
+    newSession: boolean,
     firstMessage: string | null,
     firstItems: ChatItems | null,
   ) => void
@@ -423,9 +425,9 @@ export default function InitiateChat({ onBack, onViewMenu, onProceed }: Props) {
     setSubmitting(true)
     setError(null)
     try {
-      const { chat_context_id, cart_id, first_message, first_items } =
+      const { chat_context_id, cart_id, resumed, first_message, first_items } =
         await initiateChat(describeParty(adults, children), vegOnly as boolean)
-      onProceed(chat_context_id, cart_id, first_message, first_items)
+      onProceed(chat_context_id, cart_id, !resumed, first_message, first_items)
     } catch (e) {
       setError((e as Error).message)
       setSubmitting(false)

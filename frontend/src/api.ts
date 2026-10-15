@@ -968,6 +968,10 @@ export interface InitiateChatResponse {
   chat_context_id: number
   // The user's open cart; later /message and /add-item calls are scoped to it.
   cart_id: number
+  // True when an existing session was resumed, false when a brand-new one was
+  // created. Drives whether the chat shows the generated opener (below) or
+  // replays the transcript.
+  resumed: boolean
   // The barista's generated opening message and its suggested items, for a
   // brand-new session. Both null when an existing session is resumed (its
   // opener is already in the transcript) or if generating the opener failed.

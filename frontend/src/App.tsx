@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import './App.css'
-import { getActiveChatSession, getToken, type Tag } from './api'
+import { getActiveChatSession, getToken, type ChatItems, type Tag } from './api'
 import { useScreen } from './useScreen'
 import Login from './pages/customer/Login'
 import VerifyOtp from './pages/VerifyOtp'
@@ -44,6 +44,11 @@ function App() {
   // Chat creates them and carried into the chat interface for the session.
   const [chatContextId, setChatContextId] = useState<number | null>(null)
   const [chatCartId, setChatCartId] = useState<number | null>(null)
+  // The barista's generated opening turn for a brand-new session (message +
+  // suggested items), handed from InitiateChat to seed the chat. Null when a
+  // session is resumed — the opener is then replayed from the transcript.
+  const [chatFirstMessage, setChatFirstMessage] = useState<string | null>(null)
+  const [chatFirstItems, setChatFirstItems] = useState<ChatItems | null>(null)
   // The Play button in the header opens the game lobby popup over any screen.
   const [showGamePopup, setShowGamePopup] = useState(false)
   const openCart = () => navigate('cart')
@@ -61,6 +66,9 @@ function App() {
       ) {
         setChatContextId(session.chat_context_id)
         setChatCartId(session.cart_id)
+        // Resuming: no fresh opener — the chat replays it from the transcript.
+        setChatFirstMessage(null)
+        setChatFirstItems(null)
         navigate('chat')
         return
       }
@@ -119,9 +127,11 @@ function App() {
         <InitiateChat
           onBack={goBack}
           onViewMenu={() => navigate('fullmenu')}
-          onProceed={(id, cart) => {
+          onProceed={(id, cart, firstMessage, firstItems) => {
             setChatContextId(id)
             setChatCartId(cart)
+            setChatFirstMessage(firstMessage)
+            setChatFirstItems(firstItems)
             // Replace the setup step so Back from the chat returns to the
             // dashboard rather than re-opening the (already-answered) form.
             navigate('chat', { replace: true })
@@ -133,6 +143,8 @@ function App() {
         <BaristaChat
           chatContextId={chatContextId}
           cartId={chatCartId}
+          firstMessage={chatFirstMessage}
+          firstItems={chatFirstItems}
           onBack={goBack}
           onViewMenu={() => navigate('fullmenu')}
           onEnded={() => {

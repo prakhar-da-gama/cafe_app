@@ -1,5 +1,6 @@
 from datetime import datetime
 from decimal import Decimal
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
@@ -681,10 +682,20 @@ class InitiateChatRequest(BaseModel):
 
 class InitiateChatResponse(BaseModel):
     """The ids the rest of the session is scoped to: the active chat context and
-    the user's open cart (the chatbot builds the order into this cart)."""
+    the user's open cart (the chatbot builds the order into this cart).
+
+    For a brand-new session the barista's opening turn is generated and returned
+    too (``first_message`` text + ``first_items`` resolved suggestion tree), so
+    the chat opens on a real greeting instead of a hardcoded one. Both are null
+    when an existing session is resumed (its opening turn is already in the
+    transcript) or if generating the opener failed."""
 
     chat_context_id: int
     cart_id: int
+    # The barista's opening message text, and its resolved item suggestions
+    # (get-full-menu-shaped, like the /message endpoint's items_json).
+    first_message: str | None = None
+    first_items: dict[str, Any] | None = None
 
 
 class ActiveChatSession(BaseModel):

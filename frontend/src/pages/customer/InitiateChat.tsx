@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { initiateChat } from '../../api'
+import { initiateChat, type ChatItems } from '../../api'
 import CafeHeader from '../../components/CafeHeader'
 import vegSymbol from '../../assets/veg-symbol.svg'
 import nonVegSymbol from '../../assets/non-veg-symbol.svg'
@@ -7,9 +7,15 @@ import nonVegSymbol from '../../assets/non-veg-symbol.svg'
 interface Props {
   onBack: () => void
   onViewMenu: () => void
-  // Called once the chat session is created; receives the session id and the
-  // open cart id to carry forward.
-  onProceed: (chatContextId: number, cartId: number) => void
+  // Called once the chat session is created; receives the session id, the open
+  // cart id, and the barista's generated opening turn (message + suggested
+  // items) to seed the chat with.
+  onProceed: (
+    chatContextId: number,
+    cartId: number,
+    firstMessage: string | null,
+    firstItems: ChatItems | null,
+  ) => void
 }
 
 type Phase = 'intro' | 'people' | 'veg'
@@ -35,6 +41,7 @@ function describeParty(adults: number, children: number): string {
 // Component-scoped styles. Kept inline so the whole experience — markup, logic
 // and motion — lives in this one file. Reuses the app's existing candy palette.
 const IC_CSS = `
+@import url('https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&display=swap');
 .ic-root {
   position: relative;
   isolation: isolate;
@@ -127,17 +134,35 @@ const IC_CSS = `
 }
 .ic-greet {
   margin: 0;
-  font-weight: 800;
-  font-size: clamp(1.55rem, 7.2vw, 2.15rem);
-  line-height: 1.2;
-  letter-spacing: -0.015em;
+  /* Handwriting face, used only for this greeting line. */
+  font-family: 'Caveat', 'Segoe Script', cursive;
+  font-weight: 700;
+  /* Caveat runs small, so the size is bumped vs. the sans greeting it replaces. */
+  font-size: clamp(2.3rem, 10.5vw, 3.15rem);
+  line-height: 1.15;
+  letter-spacing: 0;
   color: var(--ink);
   transition: font-size 0.95s cubic-bezier(.22,1,.36,1);
   text-wrap: balance;
 }
 .ic-greet-wrap[data-up="true"] .ic-greet {
-  font-size: clamp(1.1rem, 4.4vw, 1.35rem);
+  font-size: clamp(1.6rem, 6.4vw, 2rem);
   color: var(--ink-soft);
+}
+
+/* The handwriting reveal: each glyph is "inked" in — it rises from below with a
+   slight rotation while a blur clears, so the line reads as if it's being
+   written rather than typed. Words stay whole (inline-block) so wrapping only
+   happens at spaces. */
+.ic-word { display: inline-block; }
+.ic-ink {
+  display: inline-block;
+  animation: ic-ink-in 0.44s cubic-bezier(.22,1,.36,1) both;
+}
+@keyframes ic-ink-in {
+  0%   { opacity: 0; filter: blur(5px); transform: translateY(0.24em) rotate(-9deg) scale(.82); }
+  55%  { opacity: 1; }
+  100% { opacity: 1; filter: blur(0); transform: none; }
 }
 
 .ic-cards { margin-top: 20px; }
@@ -197,7 +222,7 @@ const IC_CSS = `
 @media (prefers-reduced-motion: reduce) {
   .ic-greet-wrap, .ic-greet { transition: none; }
   .ic-root, .ic-card, .ic-card.ic-leaving, .ic-reveal, .ic-dock, .ic-steps,
-  .ic-orb {
+  .ic-orb, .ic-ink {
     animation: none;
   }
 }
@@ -255,6 +280,56 @@ function Typed({ text, speed = 32, startDelay = 0, onDone, className }: TypedPro
     <span className={className} aria-label={text}>
       {units.slice(0, count).join('')}
       <span className={done ? 'caret caret-rest' : 'caret'} aria-hidden="true" />
+    </span>
+  )
+}
+
+/** A handwriting-style reveal: renders `text` in the handwriting face and
+ *  "inks" each glyph in sequence (staggered by `speed` ms) for a Canva-like
+ *  written-out effect. Words stay whole so wrapping only breaks at spaces.
+ *  Fires `onDone` once the final glyph has settled. */
+function Handwritten({ text, speed = 42, startDelay = 0, onDone, className }: TypedProps) {
+  const onDoneRef = useRef(onDone)
+  onDoneRef.current = onDone
+
+  useEffect(() => {
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    const total = Array.from(text).length
+    // Last glyph starts at startDelay + (total-1)*speed and takes ~440ms to land.
+    const settle = reduce ? 0 : startDelay + Math.max(0, total - 1) * speed + 440
+    const t = window.setTimeout(() => onDoneRef.current?.(), settle)
+    return () => window.clearTimeout(t)
+  }, [text, speed, startDelay])
+
+  // Split into words (kept whole) then glyphs, carrying a running index so the
+  // ink delay flows continuously across the whole line.
+  const words = text.split(' ')
+  let i = 0
+  return (
+    <span className={className} aria-label={text}>
+      {words.map((word, wi) => {
+        const glyphs = Array.from(word).map((ch) => {
+          const delay = startDelay + i * speed
+          i += 1
+          return (
+            <span
+              className="ic-ink"
+              key={i}
+              style={{ animationDelay: `${delay}ms` }}
+            >
+              {ch}
+            </span>
+          )
+        })
+        // The space lives outside the word span (as a text node sibling) so the
+        // line can wrap between words but never inside one.
+        return (
+          <span key={wi} aria-hidden="true">
+            <span className="ic-word">{glyphs}</span>
+            {wi < words.length - 1 ? ' ' : ''}
+          </span>
+        )
+      })}
     </span>
   )
 }
@@ -348,11 +423,9 @@ export default function InitiateChat({ onBack, onViewMenu, onProceed }: Props) {
     setSubmitting(true)
     setError(null)
     try {
-      const { chat_context_id, cart_id } = await initiateChat(
-        describeParty(adults, children),
-        vegOnly as boolean,
-      )
-      onProceed(chat_context_id, cart_id)
+      const { chat_context_id, cart_id, first_message, first_items } =
+        await initiateChat(describeParty(adults, children), vegOnly as boolean)
+      onProceed(chat_context_id, cart_id, first_message, first_items)
     } catch (e) {
       setError((e as Error).message)
       setSubmitting(false)
@@ -384,9 +457,9 @@ export default function InitiateChat({ onBack, onViewMenu, onProceed }: Props) {
           style={{ transform: movedUp ? 'translateY(0)' : 'translateY(30vh)' }}
         >
           <p className="ic-greet">
-            <Typed
+            <Handwritten
               text={`Namaste 🙏 ${greeting}, and a warm welcome to Seoulmate Cafe.`}
-              speed={34}
+              speed={42}
               onDone={onGreetingDone}
             />
           </p>

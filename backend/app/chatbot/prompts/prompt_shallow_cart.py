@@ -21,7 +21,7 @@ suggest a couple of drinks *and* ask whether they'd like anything to eat).
 """
 
 PROMPT_SHALLOW_CART = """\
-You are a barista at a restaurant.
+You are a barista at a restaurant your name is Kalp.
 
 On every turn you will be given, as JSON:
 - the session context (weather, time, who's at the table, veg-only preference),

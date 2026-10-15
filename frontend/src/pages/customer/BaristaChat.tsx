@@ -12,6 +12,11 @@ interface Props {
   // calls (/message, and the resumed transcript) to this session.
   chatContextId: number | null
   cartId: number | null
+  // The barista's generated opening turn for a brand-new session (from
+  // /initiate-chat): the greeting text and its suggested items. Null when a
+  // session is resumed — the opener is then replayed from the transcript.
+  firstMessage: string | null
+  firstItems: ChatItems | null
   onBack: () => void
   onViewMenu: () => void
   // Called once the session has been ended server-side, so the app can leave
@@ -26,8 +31,31 @@ interface Msg {
   text?: string
   // A barista turn's suggested items, rendered as an in-chat menu table.
   items?: ChatItems | null
+  // Set on a freshly-arrived barista reply so its text types out character by
+  // character. Preloaded/greeting turns render instantly.
+  animate?: boolean
 }
 
+// Reveals `text` one character at a time for a typewriter effect. Calls
+// `onTick` after each character so the log can keep the latest text in view.
+function TypingText({ text, onTick }: { text: string; onTick?: () => void }) {
+  const [shown, setShown] = useState(0)
+  useEffect(() => {
+    setShown(0)
+    let i = 0
+    const id = window.setInterval(() => {
+      i += 1
+      setShown(i)
+      onTick?.()
+      if (i >= text.length) window.clearInterval(id)
+    }, 18)
+    return () => window.clearInterval(id)
+  }, [text])
+  return <>{text.slice(0, shown)}</>
+}
+
+// Fallback greeting shown only when there's no generated opener and nothing to
+// resume (e.g. the opener failed to generate server-side).
 const GREETING: Msg = {
   id: 0,
   from: 'barista',
@@ -37,11 +65,28 @@ const GREETING: Msg = {
 export default function BaristaChat({
   chatContextId,
   cartId,
+  firstMessage,
+  firstItems,
   onBack,
   onViewMenu,
   onEnded,
 }: Props) {
-  const [messages, setMessages] = useState<Msg[]>([GREETING])
+  // Seed with the barista's generated opener (text + suggested items) for a
+  // fresh session; otherwise start on the fallback greeting until the resumed
+  // transcript loads over it.
+  const [messages, setMessages] = useState<Msg[]>(() =>
+    firstMessage || firstItems
+      ? [
+          {
+            id: 0,
+            from: 'barista',
+            text: firstMessage ?? undefined,
+            items: firstItems,
+            animate: true,
+          },
+        ]
+      : [GREETING],
+  )
   const [value, setValue] = useState('')
   const [typing, setTyping] = useState(false)
   const [listening, setListening] = useState(false)
@@ -50,9 +95,11 @@ export default function BaristaChat({
 
   // Preload any existing turns so an in-progress chat continues where it left
   // off. The transcript omits item suggestions, so replayed turns are plain
-  // bubbles; the greeting is only shown when there's nothing to resume.
+  // bubbles; the greeting is only shown when there's nothing to resume. Skipped
+  // for a fresh session — its only turn is the opener we already seeded above
+  // (with its item suggestions, which the transcript endpoint strips).
   useEffect(() => {
-    if (chatContextId === null) return
+    if (chatContextId === null || firstMessage || firstItems) return
     let cancelled = false
     getChatTranscript(chatContextId)
       .then((entries) => {
@@ -72,7 +119,7 @@ export default function BaristaChat({
     return () => {
       cancelled = true
     }
-  }, [chatContextId])
+  }, [chatContextId, firstMessage, firstItems])
 
   // --- Keyboard handling (the ChatGPT-mobile approach) ---------------------
   // A sticky composer inside a 100dvh column makes the browser scroll the whole
@@ -159,6 +206,7 @@ export default function BaristaChat({
           from: 'barista',
           text: replyText ?? undefined,
           items: reply.items_json,
+          animate: true,
         },
       ])
     } catch (e) {
@@ -182,19 +230,18 @@ export default function BaristaChat({
     }, 1400)
   }
 
-  // End the session server-side, then leave the chat. Both the Back button and
-  // the End chat button end the session; they differ only in where they go
-  // afterwards (Back to the previous screen, End chat to the dashboard).
-  async function endSession(after: () => void) {
+  // Leave the chat immediately and clear the session server-side in the
+  // background — the user shouldn't wait on /end-chat (preference distilling)
+  // to finish. Both the Back button and the End chat button end the session;
+  // they differ only in where they go afterwards (Back to the previous screen,
+  // End chat to the dashboard).
+  function endSession(after: () => void) {
     if (ending) return
     setEnding(true)
-    try {
-      await endChat()
-    } catch {
-      /* even if distilling preferences failed, the session is cleared */
-    } finally {
-      after()
-    }
+    // Fire-and-forget; even if distilling preferences failed the session is
+    // cleared, and we've already left the screen.
+    void endChat().catch(() => {})
+    after()
   }
 
   return (
@@ -253,7 +300,20 @@ export default function BaristaChat({
               {m.items && m.items.categories.length > 0 && (
                 <InchatMenu items={m.items} />
               )}
-              {m.text && <div className="bubble bubble-barista">{m.text}</div>}
+              {m.text && (
+                <div className="bubble bubble-barista">
+                  {m.animate ? (
+                    <TypingText
+                      text={m.text}
+                      onTick={() =>
+                        endRef.current?.scrollIntoView({ behavior: 'smooth' })
+                      }
+                    />
+                  ) : (
+                    m.text
+                  )}
+                </div>
+              )}
             </div>
           )
         })}

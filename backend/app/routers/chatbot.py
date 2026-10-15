@@ -22,7 +22,7 @@ from ..chatbot.internal_tools import (
 from ..chatbot.llm import generate_chatbot_reply
 from ..chatbot.prompts.prompt_shallow_cart import PROMPT_SHALLOW_CART
 from ..chatbot.pydantic_validators.user_profile import UserProfileFromLLM
-from ..chatbot.support_llms import create_user_profile
+from ..chatbot.support_llms import create_user_profile, initial_barista_message
 from ..chatbot.tools import get_context, get_full_menu, get_transcript, view_my_cart
 from ..chatbot.tools.fullmenu import ChatContextNotFound
 from ..chatbot.tools.viewmycart import OrderNotFound
@@ -82,7 +82,42 @@ def initiate_chat(
     db.add(context)
     db.commit()
     db.refresh(context)
-    return {"chat_context_id": context.id, "cart_id": cart_id}
+
+    # Open the conversation with a generated barista greeting + 4 starter
+    # suggestions, stored as the session's first transcript turn so the chat
+    # opens on a real message instead of a hardcoded one. Best-effort: a failed
+    # LLM call must never block the session from starting, so any failure just
+    # leaves the opener empty (the client falls back to its own greeting).
+    first_message: str | None = None
+    first_items: dict[str, Any] | None = None
+    try:
+        reply = initial_barista_message(
+            get_context(db, context.id), get_full_menu(db, context.id)
+        )
+        # Log the opener like any other assistant turn (raw suggestions kept for
+        # faithful replay); mirrors the /message endpoint's logging.
+        db.add(
+            models.ChatbotTranscript(
+                chat_context_id=context.id,
+                role="assistant",
+                content=reply.llm_response,
+                items_json=reply.items_json.model_dump() if reply.items_json else None,
+            )
+        )
+        db.commit()
+        first_message = reply.llm_response
+        first_items = (
+            food_listing_from_llm(db, reply.items_json) if reply.items_json else None
+        )
+    except Exception:
+        db.rollback()
+
+    return {
+        "chat_context_id": context.id,
+        "cart_id": cart_id,
+        "first_message": first_message,
+        "first_items": first_items,
+    }
 
 
 @router.get("/active-session", response_model=schemas.ActiveChatSession)
@@ -94,15 +129,14 @@ def active_session(
 
     Called before opening the barista chat so the client can skip the setup step
     (``InitiateChat``) and land directly in the chat when a session is already in
-    progress. A session is resumable only when *both* an active ``chat_contexts``
-    row and an open cart (``orders`` with status ``cart``) exist for the user:
+    progress. A session is resumable whenever an active ``chat_contexts`` row
+    exists for the user; its cart is ensured either way:
 
-    * both exist -> ``active: true`` with ``chat_context_id`` and ``cart_id``.
-    * chat context exists but the cart is gone (e.g. it was checked out) -> the
-      chat session is stale, so it and its transcript are deleted (cascade), an
-      empty cart is ensured, and ``active: false`` is returned.
-    * no cart -> an empty cart is created and ``active: false`` is returned.
-    * no chat context (cart present) -> ``active: false`` (nothing to repair).
+    * chat context + cart both exist -> ``active: true`` with the two ids.
+    * chat context exists but the cart is gone (e.g. it was checked out) -> an
+      empty cart is created and ``active: true`` is returned with the two ids.
+    * no chat context, no cart -> an empty cart is created, ``active: false``.
+    * no chat context, cart present -> ``active: false`` (nothing to repair).
     """
     user_id = int(claims["sub"])
 
@@ -119,19 +153,16 @@ def active_session(
         )
     ).scalars().first()
 
-    if context is not None and cart is not None:
-        return {"active": True, "chat_context_id": context.id, "cart_id": cart.id}
+    if context is not None:
+        # An active session is resumable. Make sure it has a cart to build the
+        # order into, creating an empty one if the previous cart is gone.
+        cart_id = cart.id if cart is not None else crud.get_or_create_cart(db, user_id).id
+        return {"active": True, "chat_context_id": context.id, "cart_id": cart_id}
 
-    # Not resumable: leave the session state consistent before reporting back.
-    if context is not None and cart is None:
-        # The cart backing this chat is gone, so the session is orphaned — drop
-        # it and its transcript (the FK cascade handles the transcript rows).
-        db.delete(context)
-        db.commit()
+    # No active session to resume. Still leave the user with an open cart to add
+    # to next time.
     if cart is None:
-        # Always leave the user with an open cart to add to next time.
         crud.get_or_create_cart(db, user_id)
-
     return {"active": False}
 
 

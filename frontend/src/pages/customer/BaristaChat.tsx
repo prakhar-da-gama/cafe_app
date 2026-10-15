@@ -66,6 +66,12 @@ const GREETING: Msg = {
   text: "Hi, I'm your barista. Tell me what you're craving and I'll find your drink.",
 }
 
+// The barista's generated opening turn, as a single chat message (greeting text
+// + the suggested-items table).
+function openerMsg(text: string | null, items: ChatItems | null): Msg {
+  return { id: 0, from: 'barista', text: text ?? undefined, items, animate: true }
+}
+
 export default function BaristaChat({
   chatContextId,
   cartId,
@@ -81,15 +87,7 @@ export default function BaristaChat({
   // until the transcript preload (below) loads over it.
   const [messages, setMessages] = useState<Msg[]>(() =>
     isNewSession && (firstMessage || firstItems)
-      ? [
-          {
-            id: 0,
-            from: 'barista',
-            text: firstMessage ?? undefined,
-            items: firstItems,
-            animate: true,
-          },
-        ]
+      ? [openerMsg(firstMessage, firstItems)]
       : [GREETING],
   )
   const [value, setValue] = useState('')
@@ -97,6 +95,18 @@ export default function BaristaChat({
   const [listening, setListening] = useState(false)
   const [ending, setEnding] = useState(false)
   const endRef = useRef<HTMLDivElement | null>(null)
+
+  // Also seed the opener from an effect, not just the initial state. The opener
+  // props can land just after mount (set alongside the navigation) and, in dev,
+  // a hot-reload preserves the old message state while skipping the initializer
+  // — this makes the generated greeting + item table show in both cases. The
+  // opener props are fixed for a session's lifetime, so this runs once per
+  // session and never clobbers an ongoing conversation.
+  useEffect(() => {
+    if (isNewSession && (firstMessage || firstItems)) {
+      setMessages([openerMsg(firstMessage, firstItems)])
+    }
+  }, [isNewSession, firstMessage, firstItems])
 
   // Preload any existing turns so an in-progress chat continues where it left
   // off. The transcript omits item suggestions, so replayed turns are plain

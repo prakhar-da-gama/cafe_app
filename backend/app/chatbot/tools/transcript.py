@@ -18,11 +18,17 @@ def get_transcript(db: Session, chat_context_id: int) -> list[dict]:
     Each entry is ``{"role", "content"}`` plus an ``"items_json"`` key only when
     that turn carried item suggestions. Ordered oldest-first by row id. Returns
     an empty list if the session has no messages yet (or doesn't exist).
+
+    Only active turns are returned; once a session is ended its turns are
+    soft-deleted (``is_active=False``) and no longer show up here.
     """
     rows = (
         db.execute(
             select(models.ChatbotTranscript)
-            .where(models.ChatbotTranscript.chat_context_id == chat_context_id)
+            .where(
+                models.ChatbotTranscript.chat_context_id == chat_context_id,
+                models.ChatbotTranscript.is_active.is_(True),
+            )
             .order_by(models.ChatbotTranscript.id)
         )
         .scalars()

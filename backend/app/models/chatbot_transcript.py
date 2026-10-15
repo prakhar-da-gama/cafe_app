@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import JSON, DateTime, ForeignKey, String, Text, func
+from sqlalchemy import JSON, Boolean, DateTime, ForeignKey, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from ..database import Base
@@ -17,8 +17,11 @@ class ChatbotTranscript(Base):
     (the autoincrement key already encodes insertion order within a session, so
     no separate sequence column is needed).
 
-    When the session ends the whole transcript is deleted along with its
-    ``chat_contexts`` row (FK ``ON DELETE CASCADE``).
+    When the session ends the transcript is *soft-deleted*: each row's
+    ``is_active`` is flipped to ``False`` (along with the ``chat_contexts``
+    row's) rather than being physically removed, so the conversation is still on
+    hand for the background profile build. Transcript reads filter on
+    ``is_active`` so ended sessions don't resurface.
     """
 
     __tablename__ = "chatbot_transcripts"
@@ -36,6 +39,11 @@ class ChatbotTranscript(Base):
     # The items the bot suggested that turn, if any (raw LLM listing). Null for
     # user turns and for assistant turns with no suggestions.
     items_json: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)
+    # Soft-delete flag. True for a live session's turns; flipped to False when
+    # the session ends (see the class docstring). Transcript reads filter on it.
+    is_active: Mapped[bool] = mapped_column(
+        Boolean, default=True, nullable=False
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime, server_default=func.now(), nullable=False
     )

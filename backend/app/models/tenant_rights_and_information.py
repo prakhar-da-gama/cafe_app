@@ -55,3 +55,14 @@ class TenantRightsAndInformation(Base):
     location: Mapped[str | None] = mapped_column(String(255), nullable=True)
     latitude: Mapped[float | None] = mapped_column(Float, nullable=True)
     longitude: Mapped[float | None] = mapped_column(Float, nullable=True)
+
+    # Cached current-weather phrase for the cafe's location, refreshed on a
+    # background poll (every ~30 min) in ``app/main.py`` so chat sessions never
+    # pay the Open-Meteo round-trip on the request path. ``get_weather`` in
+    # ``chatbot/internal_tools/weather.py`` just reads this field.
+    # ``weather_prompt`` holds the exact phrase an initiate-chat used to compute
+    # inline; ``weather_updated_at`` is when the poll last refreshed it.
+    weather_prompt: Mapped[str | None] = mapped_column(Text, nullable=True)
+    weather_updated_at: Mapped[datetime | None] = mapped_column(
+        DateTime, nullable=True
+    )

@@ -86,6 +86,36 @@ function App() {
     navigate('initiate-chat')
   }
 
+  // Recover the barista session after a /message call fails because its chat
+  // context no longer exists (e.g. the session was ended in another tab, or the
+  // DB was reset while this tab kept the old id). Asks the backend for the
+  // user's current active session (which also repairs a missing cart) and, if
+  // one exists, adopts its ids so the chat can retry transparently. Returns the
+  // fresh ids, or null when there's no active session to resume.
+  const recoverChatSession = async (): Promise<{
+    chatContextId: number
+    cartId: number
+  } | null> => {
+    try {
+      const session = await getActiveChatSession()
+      if (
+        session.active &&
+        session.chat_context_id !== null &&
+        session.cart_id !== null
+      ) {
+        setChatContextId(session.chat_context_id)
+        setChatCartId(session.cart_id)
+        return {
+          chatContextId: session.chat_context_id,
+          cartId: session.cart_id,
+        }
+      }
+    } catch {
+      /* no recovery possible — fall through to null */
+    }
+    return null
+  }
+
   return (
     <div className="app">
       {screen === 'login' && (
@@ -164,6 +194,7 @@ function App() {
           firstMessage={chatFirstMessage}
           firstItems={chatFirstItems}
           firstOptions={chatFirstOptions}
+          onRecoverSession={recoverChatSession}
           onBack={goBack}
           onViewMenu={() => navigate('fullmenu')}
           onEnded={() => {

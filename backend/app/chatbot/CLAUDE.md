@@ -41,8 +41,12 @@ Everything the chatbot does afterwards is scoped to this `chat_context_id`.
 - **`internal_tools/`** — helpers wired directly into API routes (not handed to
   the model). See `internal_tools/README.md` for the function → API mapping.
   - `get_current_time()` — current local time as an ISO string.
-  - `get_weather(db)` — current weather at the cafe's location as a short phrase
-    (raises `WeatherUnavailable` when there's no usable location / the API is down).
+  - `get_weather(db)` — current weather at the cafe's location as a short phrase,
+    read from the cached `weather_prompt` on the tenant row (no network call;
+    raises `WeatherUnavailable` when nothing is cached yet). The cache is kept
+    fresh by `refresh_weather_prompt(db)`, which `app/main.py` polls every ~30
+    min against Open-Meteo — this is what keeps `initiate-chat` off the slow API
+    round-trip.
   - `initiate_my_cart(db, user_id)` — the id of the user's open cart, creating an
     empty one if none exists (same `get_or_create_cart` logic as the cart endpoints).
   - `food_listing_from_llm(db, payload)` — resolves an LLM-produced nested food

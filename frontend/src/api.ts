@@ -1093,11 +1093,11 @@ export function getChatTranscript(
 
 // Customer: end the active chat session (distills preferences, clears the
 // session and its transcript server-side).
-export function endChat(): Promise<{ ended: boolean; profile_saved: boolean }> {
+export function endChat(): Promise<{ ended: boolean }> {
   return fetch('/api/chatbot/end-chat', {
     method: 'POST',
     headers: authHeaders(),
-  }).then((r) => handle<{ ended: boolean; profile_saved: boolean }>(r))
+  }).then((r) => handle<{ ended: boolean }>(r))
 }
 
 // ---- Helpers ----

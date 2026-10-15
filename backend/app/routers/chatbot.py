@@ -7,8 +7,8 @@ reasons with; every later chatbot call is scoped to that row's id.
 import json
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import select
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
+from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 
 from .. import crud, models, schemas
@@ -26,7 +26,7 @@ from ..chatbot.support_llms import create_user_profile, initial_barista_message
 from ..chatbot.tools import get_context, get_full_menu, get_transcript, view_my_cart
 from ..chatbot.tools.fullmenu import ChatContextNotFound
 from ..chatbot.tools.viewmycart import OrderNotFound
-from ..database import get_db
+from ..database import SessionLocal, get_db
 
 router = APIRouter(prefix="/api/chatbot", tags=["chatbot"])
 
@@ -205,7 +205,10 @@ def get_chat_transcript(
     rows = (
         db.execute(
             select(models.ChatbotTranscript)
-            .where(models.ChatbotTranscript.chat_context_id == chat_context_id)
+            .where(
+                models.ChatbotTranscript.chat_context_id == chat_context_id,
+                models.ChatbotTranscript.is_active.is_(True),
+            )
             .order_by(models.ChatbotTranscript.id)
         )
         .scalars()
@@ -329,21 +332,43 @@ def _save_user_preferences(
             existing.values = merged
 
 
+def _build_and_save_profile(user_id: int, transcript: list[dict]) -> None:
+    """Distill a customer profile from ``transcript`` and persist it.
+
+    Runs off the request path (via ``BackgroundTasks``) so ``/end-chat`` can
+    return instantly instead of waiting on the LLM. Opens its own DB session —
+    the request's session is already closed by the time this runs. Best-effort:
+    the session has already been ended, so any failure here is simply swallowed.
+    """
+    db = SessionLocal()
+    try:
+        profile = create_user_profile(transcript)
+        _save_user_preferences(db, user_id, profile)
+        db.commit()
+    except Exception:
+        db.rollback()
+    finally:
+        db.close()
+
+
 @router.post("/end-chat")
 def end_chat(
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     claims: dict[str, Any] = Depends(require_jwt),
 ):
     """End the authenticated user's active chat session.
 
-    There's no live LLM connection to close (every turn is stateless), so this
-    simply: distills a durable customer profile from the transcript and writes
-    it to ``user_preferences``, then deletes the session — the
-    ``chat_contexts`` row and, by cascade, its whole ``chatbot_transcripts`` log.
+    There's no live LLM connection to close (every turn is stateless). The
+    session is *soft-deleted* — the ``chat_contexts`` row and all its
+    ``chatbot_transcripts`` turns have ``is_active`` flipped to ``False`` — and
+    the endpoint returns immediately. Distilling the durable customer profile
+    into ``user_preferences`` is the slow part (an LLM call), so it's handed to
+    a background task rather than blocking the response.
 
-    Building the profile is best-effort: if the LLM call fails, the session is
-    still cleared (so a user is never stuck in a session they can't end). The
-    response reports whether the profile was saved.
+    The transcript is read *before* the soft-delete (while its rows are still
+    active) and passed to the background task, so the task never has to re-read
+    rows it just deactivated.
     """
     user_id = int(claims["sub"])
 
@@ -359,21 +384,20 @@ def end_chat(
             detail="No active chat session to end",
         )
 
+    # Grab the transcript while it's still active, for the background profiler.
     transcript = get_transcript(db, context.id)
 
-    # Best-effort: the profile must never block the session from being cleared.
-    profile_saved = False
-    preferences: list[dict] = []
-    try:
-        profile = create_user_profile(transcript)
-        _save_user_preferences(db, user_id, profile)
-        preferences = [p.model_dump() for p in profile.preferences]
-        profile_saved = True
-    except Exception:
-        db.rollback()
-
-    # Clear the session; the transcript rows go with it via ON DELETE CASCADE.
-    db.delete(context)
+    # Soft-delete: flip the session and all its turns inactive. Nothing is
+    # physically removed, so the transcript survives for the background build.
+    context.is_active = False
+    db.execute(
+        update(models.ChatbotTranscript)
+        .where(models.ChatbotTranscript.chat_context_id == context.id)
+        .values(is_active=False)
+    )
     db.commit()
 
-    return {"ended": True, "profile_saved": profile_saved, "preferences": preferences}
+    # Build + persist the profile off the request path so this stays instant.
+    background_tasks.add_task(_build_and_save_profile, user_id, transcript)
+
+    return {"ended": True}

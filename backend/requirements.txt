@@ -13,3 +13,4 @@ email-validator==2.2.0
 alembic==1.14.0
 google-genai==1.38.0
 rapidfuzz==3.10.1
+tzdata==2026.5

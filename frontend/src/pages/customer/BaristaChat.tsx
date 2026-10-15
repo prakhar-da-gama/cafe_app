@@ -25,6 +25,11 @@ interface Props {
   // The opener's quick-action chips (first-person utterances the guest can tap);
   // rendered below the opening message as the in-chat MCQ. Null on resume.
   firstOptions: string[] | null
+  // Recover the session when a /message call fails because its chat context is
+  // gone (ended elsewhere, DB reset, …). Returns the user's current active
+  // session ids so the chat can retry transparently, or null if there's no
+  // active session to resume.
+  onRecoverSession: () => Promise<{ chatContextId: number; cartId: number } | null>
   onBack: () => void
   onViewMenu: () => void
   // Called once the session has been ended server-side, so the app can leave
@@ -97,10 +102,20 @@ export default function BaristaChat({
   firstMessage,
   firstItems,
   firstOptions,
+  onRecoverSession,
   onBack,
   onViewMenu,
   onEnded,
 }: Props) {
+  // The live session ids. Seeded from the props but able to move on when a
+  // stale session is recovered mid-chat (see send()), so subsequent turns use
+  // the fresh ids without re-mounting.
+  const [sessionCtxId, setSessionCtxId] = useState(chatContextId)
+  const [sessionCartId, setSessionCartId] = useState(cartId)
+  useEffect(() => {
+    setSessionCtxId(chatContextId)
+    setSessionCartId(cartId)
+  }, [chatContextId, cartId])
   // For a brand-new session, seed with the barista's generated opener (text +
   // suggested items + quick-action chips). For a resumed session, start on the
   // fallback greeting until the transcript preload (below) loads over it.
@@ -223,14 +238,32 @@ export default function BaristaChat({
     ? { flex: 1, minHeight: 0, overflowY: 'auto', paddingBottom: 16 }
     : {}
 
+  // Deliver one turn, recovering a stale session once if the context is gone.
+  // When /message 404s with "No chat context …" the session was torn down (ended
+  // elsewhere, DB reset, …) while this tab kept the old id; ask the parent for
+  // the user's current active session and retry with the fresh ids. Throws a
+  // sentinel 'session-expired' when there's no active session left to resume.
+  async function deliver(ctxId: number, cartIdArg: number, text: string) {
+    try {
+      return await sendChatMessage(ctxId, cartIdArg, text)
+    } catch (e) {
+      if (!/no chat context/i.test((e as Error).message)) throw e
+      const recovered = await onRecoverSession()
+      if (!recovered) throw new Error('session-expired')
+      setSessionCtxId(recovered.chatContextId)
+      setSessionCartId(recovered.cartId)
+      return await sendChatMessage(recovered.chatContextId, recovered.cartId, text)
+    }
+  }
+
   async function send(text: string) {
     const clean = text.trim()
-    if (!clean || chatContextId === null || cartId === null) return
+    if (!clean || sessionCtxId === null || sessionCartId === null) return
     setMessages((m) => [...m, { id: Date.now(), from: 'you', text: clean }])
     setValue('')
     setTyping(true)
     try {
-      const reply = await sendChatMessage(chatContextId, cartId, clean)
+      const reply = await deliver(sessionCtxId, sessionCartId, clean)
       const replyText = reply['llm response']
       setTyping(false)
       setMessages((m) => [
@@ -245,12 +278,15 @@ export default function BaristaChat({
       ])
     } catch (e) {
       setTyping(false)
+      const expired = (e as Error).message === 'session-expired'
       setMessages((m) => [
         ...m,
         {
           id: Date.now() + 1,
           from: 'barista',
-          text: `Sorry — something went wrong. ${(e as Error).message}`,
+          text: expired
+            ? 'This chat session has ended. Tap back and start a new chat to keep ordering.'
+            : `Sorry — something went wrong. ${(e as Error).message}`,
         },
       ])
     }

@@ -1,3 +1,5 @@
+import asyncio
+import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -6,8 +8,9 @@ from fastapi.staticfiles import StaticFiles
 
 from sqlalchemy import inspect, text
 
+from .chatbot.internal_tools import refresh_weather_prompt
 from .config import get_settings
-from .database import Base, engine, ensure_database_exists
+from .database import Base, SessionLocal, engine, ensure_database_exists
 from .routers import (
     ai_menu_creation,
     auth,
@@ -24,6 +27,38 @@ from .routers import (
 from .routers.uploads import UPLOAD_DIR
 
 settings = get_settings()
+
+logger = logging.getLogger(__name__)
+
+# How often the background task refreshes the cached cafe weather. Kept off the
+# request path so initiate-chat never waits on the Open-Meteo round-trip.
+_WEATHER_POLL_INTERVAL_SECONDS = 30 * 60
+
+
+def _refresh_weather_once() -> None:
+    """Fetch + cache the weather in its own DB session (run in a worker thread
+    since the fetch and SQLAlchemy calls are blocking)."""
+    db = SessionLocal()
+    try:
+        refresh_weather_prompt(db)
+    finally:
+        db.close()
+
+
+async def _poll_weather_forever() -> None:
+    """Refresh the cached weather now and every 30 min thereafter.
+
+    Failures (API down, no location set, ...) are logged and swallowed so the
+    loop simply tries again on the next cycle, leaving the last good value in
+    place. The blocking refresh runs in a thread so it never stalls the event
+    loop.
+    """
+    while True:
+        try:
+            await asyncio.to_thread(_refresh_weather_once)
+        except Exception as exc:  # noqa: BLE001 - best-effort poll, never fatal
+            logger.warning("Weather refresh failed, will retry in 30 min: %s", exc)
+        await asyncio.sleep(_WEATHER_POLL_INTERVAL_SECONDS)
 
 
 @asynccontextmanager
@@ -69,7 +104,32 @@ async def lifespan(app: FastAPI):
                     "ADD COLUMN current_menu_description TEXT NULL"
                 )
             )
-    yield
+    # Add the cached-weather columns the background poll writes to.
+    if "weather_prompt" not in tenant_columns:
+        with engine.begin() as conn:
+            conn.execute(
+                text("ALTER TABLE tenant_rights ADD COLUMN weather_prompt TEXT NULL")
+            )
+    if "weather_updated_at" not in tenant_columns:
+        with engine.begin() as conn:
+            conn.execute(
+                text(
+                    "ALTER TABLE tenant_rights "
+                    "ADD COLUMN weather_updated_at DATETIME NULL"
+                )
+            )
+
+    # Poll the weather in the background so it's cached on the tenant row and
+    # initiate-chat can read it without hitting the network.
+    weather_task = asyncio.create_task(_poll_weather_forever())
+    try:
+        yield
+    finally:
+        weather_task.cancel()
+        try:
+            await weather_task
+        except asyncio.CancelledError:
+            pass
 
 
 app = FastAPI(title="Cafe App API", version="1.0.0", lifespan=lifespan)

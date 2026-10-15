@@ -6,6 +6,7 @@ import {
   type ChatItems,
 } from '../../api'
 import InchatMenu from './chatbot/InchatMenu'
+import InchatMCQ from './chatbot/InchatMCQ'
 
 interface Props {
   // The chat session id and open cart from /initiate-chat; scope the barista
@@ -21,6 +22,9 @@ interface Props {
   // session is resumed — the opener is then replayed from the transcript.
   firstMessage: string | null
   firstItems: ChatItems | null
+  // The opener's quick-action chips (first-person utterances the guest can tap);
+  // rendered below the opening message as the in-chat MCQ. Null on resume.
+  firstOptions: string[] | null
   onBack: () => void
   onViewMenu: () => void
   // Called once the session has been ended server-side, so the app can leave
@@ -35,6 +39,9 @@ interface Msg {
   text?: string
   // A barista turn's suggested items, rendered as an in-chat menu table.
   items?: ChatItems | null
+  // A barista turn's quick-action chips, rendered as an in-chat MCQ below the
+  // text; tapping one sends its exact text as the customer's next message.
+  options?: string[] | null
   // Set on a freshly-arrived barista reply so its text types out character by
   // character. Preloaded/greeting turns render instantly.
   animate?: boolean
@@ -67,9 +74,20 @@ const GREETING: Msg = {
 }
 
 // The barista's generated opening turn, as a single chat message (greeting text
-// + the suggested-items table).
-function openerMsg(text: string | null, items: ChatItems | null): Msg {
-  return { id: 0, from: 'barista', text: text ?? undefined, items, animate: true }
+// + the suggested-items table + the quick-action chips).
+function openerMsg(
+  text: string | null,
+  items: ChatItems | null,
+  options: string[] | null,
+): Msg {
+  return {
+    id: 0,
+    from: 'barista',
+    text: text ?? undefined,
+    items,
+    options,
+    animate: true,
+  }
 }
 
 export default function BaristaChat({
@@ -78,16 +96,17 @@ export default function BaristaChat({
   isNewSession,
   firstMessage,
   firstItems,
+  firstOptions,
   onBack,
   onViewMenu,
   onEnded,
 }: Props) {
   // For a brand-new session, seed with the barista's generated opener (text +
-  // suggested items). For a resumed session, start on the fallback greeting
-  // until the transcript preload (below) loads over it.
+  // suggested items + quick-action chips). For a resumed session, start on the
+  // fallback greeting until the transcript preload (below) loads over it.
   const [messages, setMessages] = useState<Msg[]>(() =>
-    isNewSession && (firstMessage || firstItems)
-      ? [openerMsg(firstMessage, firstItems)]
+    isNewSession && (firstMessage || firstItems || firstOptions)
+      ? [openerMsg(firstMessage, firstItems, firstOptions)]
       : [GREETING],
   )
   const [value, setValue] = useState('')
@@ -103,10 +122,10 @@ export default function BaristaChat({
   // opener props are fixed for a session's lifetime, so this runs once per
   // session and never clobbers an ongoing conversation.
   useEffect(() => {
-    if (isNewSession && (firstMessage || firstItems)) {
-      setMessages([openerMsg(firstMessage, firstItems)])
+    if (isNewSession && (firstMessage || firstItems || firstOptions)) {
+      setMessages([openerMsg(firstMessage, firstItems, firstOptions)])
     }
-  }, [isNewSession, firstMessage, firstItems])
+  }, [isNewSession, firstMessage, firstItems, firstOptions])
 
   // Preload any existing turns so an in-progress chat continues where it left
   // off. The transcript omits item suggestions, so replayed turns are plain
@@ -328,6 +347,9 @@ export default function BaristaChat({
                     m.text
                   )}
                 </div>
+              )}
+              {m.options && m.options.length > 0 && (
+                <InchatMCQ options={m.options} onSelect={(text) => send(text)} />
               )}
             </div>
           )

@@ -701,6 +701,10 @@ class InitiateChatResponse(BaseModel):
     # for a new session (``resumed`` False).
     first_message: str | None = None
     first_items: dict[str, Any] | None = None
+    # The opener's quick-action chips: short, first-person utterances the guest
+    # can tap, each sent verbatim to /message as their turn. Rendered as the
+    # in-chat MCQ. Only set for a new session.
+    first_options: list[str] | None = None
 
 
 class ActiveChatSession(BaseModel):

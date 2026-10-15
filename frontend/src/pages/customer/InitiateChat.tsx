@@ -17,6 +17,7 @@ interface Props {
     newSession: boolean,
     firstMessage: string | null,
     firstItems: ChatItems | null,
+    firstOptions: string[] | null,
   ) => void
 }
 
@@ -425,9 +426,22 @@ export default function InitiateChat({ onBack, onViewMenu, onProceed }: Props) {
     setSubmitting(true)
     setError(null)
     try {
-      const { chat_context_id, cart_id, resumed, first_message, first_items } =
-        await initiateChat(describeParty(adults, children), vegOnly as boolean)
-      onProceed(chat_context_id, cart_id, !resumed, first_message, first_items)
+      const {
+        chat_context_id,
+        cart_id,
+        resumed,
+        first_message,
+        first_items,
+        first_options,
+      } = await initiateChat(describeParty(adults, children), vegOnly as boolean)
+      onProceed(
+        chat_context_id,
+        cart_id,
+        !resumed,
+        first_message,
+        first_items,
+        first_options,
+      )
     } catch (e) {
       setError((e as Error).message)
       setSubmitting(false)

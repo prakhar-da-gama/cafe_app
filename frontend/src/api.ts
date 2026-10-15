@@ -977,6 +977,10 @@ export interface InitiateChatResponse {
   // opener is already in the transcript) or if generating the opener failed.
   first_message: string | null
   first_items: ChatItems | null
+  // The opener's quick-action chips: short, first-person utterances the guest
+  // can tap, each sent verbatim to /message as their turn. Null when a session
+  // is resumed or the opener failed to generate.
+  first_options: string[] | null
 }
 
 // Customer: start (or resume) a barista chat session. `setupOfPeople` is a

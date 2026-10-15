@@ -98,9 +98,12 @@ def initiate_chat(
     # leaves the opener empty (the client falls back to its own greeting).
     first_message: str | None = None
     first_items: dict[str, Any] | None = None
+    first_options: list[str] | None = None
     try:
         reply = initial_barista_message(
-            get_context(db, context.id), get_full_menu(db, context.id)
+            get_context(db, context.id),
+            get_full_menu(db, context.id),
+            view_my_cart(db, cart_id),
         )
         # Log the opener like any other assistant turn (raw suggestions kept for
         # faithful replay); mirrors the /message endpoint's logging.
@@ -117,6 +120,7 @@ def initiate_chat(
         first_items = (
             food_listing_from_llm(db, reply.items_json) if reply.items_json else None
         )
+        first_options = reply.options
     except Exception:
         db.rollback()
 
@@ -126,6 +130,7 @@ def initiate_chat(
         "resumed": False,
         "first_message": first_message,
         "first_items": first_items,
+        "first_options": first_options,
     }
 
 

@@ -46,6 +46,11 @@ class ChatbotReply(BaseModel):
 
     items_json: FoodListingFromLLM | None = None
     llm_response: str | None = None
+    # Optional quick-action chips: short, first-person utterances the customer
+    # can tap instead of typing (each sent verbatim to /message as their turn).
+    # Only the opener (``initial_barista_message``) fills this; live turns leave
+    # it ``None``.
+    options: list[str] | None = None
 
     @model_validator(mode="after")
     def _at_least_one(self) -> "ChatbotReply":

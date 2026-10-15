@@ -52,6 +52,9 @@ function App() {
   // session is resumed — the opener is then replayed from the transcript.
   const [chatFirstMessage, setChatFirstMessage] = useState<string | null>(null)
   const [chatFirstItems, setChatFirstItems] = useState<ChatItems | null>(null)
+  // The opener's quick-action chips (first-person utterances the guest can tap),
+  // handed from InitiateChat to seed the chat's in-chat MCQ. Null on resume.
+  const [chatFirstOptions, setChatFirstOptions] = useState<string[] | null>(null)
   // The Play button in the header opens the game lobby popup over any screen.
   const [showGamePopup, setShowGamePopup] = useState(false)
   const openCart = () => navigate('cart')
@@ -73,6 +76,7 @@ function App() {
         setChatIsNewSession(false)
         setChatFirstMessage(null)
         setChatFirstItems(null)
+        setChatFirstOptions(null)
         navigate('chat')
         return
       }
@@ -131,12 +135,20 @@ function App() {
         <InitiateChat
           onBack={goBack}
           onViewMenu={() => navigate('fullmenu')}
-          onProceed={(id, cart, newSession, firstMessage, firstItems) => {
+          onProceed={(
+            id,
+            cart,
+            newSession,
+            firstMessage,
+            firstItems,
+            firstOptions,
+          ) => {
             setChatContextId(id)
             setChatCartId(cart)
             setChatIsNewSession(newSession)
             setChatFirstMessage(firstMessage)
             setChatFirstItems(firstItems)
+            setChatFirstOptions(firstOptions)
             // Replace the setup step so Back from the chat returns to the
             // dashboard rather than re-opening the (already-answered) form.
             navigate('chat', { replace: true })
@@ -151,6 +163,7 @@ function App() {
           isNewSession={chatIsNewSession}
           firstMessage={chatFirstMessage}
           firstItems={chatFirstItems}
+          firstOptions={chatFirstOptions}
           onBack={goBack}
           onViewMenu={() => navigate('fullmenu')}
           onEnded={() => {

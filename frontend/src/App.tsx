@@ -74,7 +74,6 @@ function App() {
         // Resuming: no fresh opener — the chat replays it from the transcript.
         setChatIsNewSession(false)
         setChatFirstMessage(null)
-        setChatFirstItems(null)
         setChatFirstOptions(null)
         navigate('chat')
         return

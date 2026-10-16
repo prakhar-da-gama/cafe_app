@@ -424,9 +424,10 @@ export default function ServiceReviewAnalysis({ onBack }: Props) {
             {groups.map(({ band, items }) => (
               <div key={band.id} className="sra-band">
                 <div className="sra-band-head">
-                  <span className="sra-band-dot" style={{ background: band.color }} />
-                  <span className="sra-band-name">{band.label}</span>
-                  <span className="sra-band-count">{items.length}</span>
+                  <span className="sra-band-chip" style={{ background: band.color }}>
+                    {band.label}
+                    <span className="sra-band-count">{items.length}</span>
+                  </span>
                   <span className="sra-band-hint">{band.hint}</span>
                 </div>
                 {items.map((a) => {
@@ -479,30 +480,104 @@ export default function ServiceReviewAnalysis({ onBack }: Props) {
   )
 }
 
-/** Sorted horizontal bars. Unrated aspects show an empty track and a dash. */
+const BARS_PER_PAGE = 5
+
+/** Vertical bar chart that shows a handful of tags at a time and slides through
+ *  the rest with the arrow buttons — keeps the dashboard clean. Unrated aspects
+ *  show an empty column and a dash. */
 function BarsChart({ items }: { items: Scored[] }) {
+  const [page, setPage] = useState(0)
+
+  const pages: Scored[][] = []
+  for (let i = 0; i < items.length; i += BARS_PER_PAGE) {
+    pages.push(items.slice(i, i + BARS_PER_PAGE))
+  }
+  const lastPage = Math.max(0, pages.length - 1)
+
+  // Reset to the first page whenever the ordering/content changes.
+  useEffect(() => {
+    setPage(0)
+  }, [items])
+
+  const safePage = Math.min(page, lastPage)
+
   return (
-    <ul className="sra-bars">
-      {items.map((a) => {
-        const band = bandFor(a.value)
-        return (
-          <li key={a.key} className="sra-bar-row">
-            <span className="sra-bar-label">{a.label}</span>
-            <div className="sra-bar-track">
-              {a.value != null && (
-                <div
-                  className="sra-bar-fill"
-                  style={{ width: `${a.value * 10}%`, background: band.color }}
-                />
-              )}
+    <div className="sra-vbars">
+      <div className="sra-vbars-viewport">
+        <div
+          className="sra-vbars-track"
+          style={{ transform: `translateX(-${safePage * 100}%)` }}
+        >
+          {pages.map((pg, pi) => (
+            <div key={pi} className="sra-vbars-page">
+              {pg.map((a) => {
+                const band = bandFor(a.value)
+                return (
+                  <div key={a.key} className="sra-vcol">
+                    <span
+                      className="sra-vcol-score"
+                      style={{ color: a.value != null ? band.color : '#a99fb5' }}
+                    >
+                      {a.value != null ? a.value : '—'}
+                    </span>
+                    <div className="sra-vcol-track">
+                      {a.value != null && (
+                        <div
+                          className="sra-vcol-fill"
+                          style={{
+                            height: `${a.value * 10}%`,
+                            background: band.color,
+                          }}
+                        />
+                      )}
+                    </div>
+                    <span className="sra-vcol-label">{a.label}</span>
+                  </div>
+                )
+              })}
             </div>
-            <span className="sra-bar-score">
-              {a.value != null ? a.value : '—'}
-            </span>
-          </li>
-        )
-      })}
-    </ul>
+          ))}
+        </div>
+      </div>
+
+      {pages.length > 1 && (
+        <div className="sra-vbars-nav">
+          <button
+            type="button"
+            className="sra-vbars-arrow"
+            onClick={() => setPage((p) => Math.max(0, p - 1))}
+            disabled={safePage === 0}
+            aria-label="Previous tags"
+          >
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none">
+              <path d="M15 6l-6 6 6 6" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+          <div className="sra-vbars-dots">
+            {pages.map((_, pi) => (
+              <button
+                key={pi}
+                type="button"
+                className={`sra-vbars-dot${pi === safePage ? ' is-on' : ''}`}
+                onClick={() => setPage(pi)}
+                aria-label={`Page ${pi + 1}`}
+              />
+            ))}
+          </div>
+          <button
+            type="button"
+            className="sra-vbars-arrow"
+            onClick={() => setPage((p) => Math.min(lastPage, p + 1))}
+            disabled={safePage === lastPage}
+            aria-label="More tags"
+          >
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none">
+              <path d="M9 6l6 6-6 6" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+        </div>
+      )}
+    </div>
   )
 }
 

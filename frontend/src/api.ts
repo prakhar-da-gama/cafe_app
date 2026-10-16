@@ -15,6 +15,19 @@ export function clearToken(): void {
   localStorage.removeItem(TOKEN_KEY)
 }
 
+// Drop the session and bounce to the login screen of whichever area we're in.
+// Which app mounts is decided by the pathname (see main.tsx): /app/admin ->
+// admin, /app/manager -> manager, everything else -> customer. Reloading the
+// same path therefore re-mounts the right app, and with the token cleared each
+// app renders its own login screen. We reset the saved history screen to
+// 'login' first because useScreen restores history.state.screen on load — so
+// without this a reload would land back on the screen the token died on.
+export function redirectToLogin(): void {
+  clearToken()
+  window.history.replaceState({ screen: 'login' }, '')
+  window.location.reload()
+}
+
 // ---- Types ----
 
 export interface VerifyOtpResponse {
@@ -258,6 +271,15 @@ export interface PaginatedOrderSummaries {
 // ---- Fetch plumbing ----
 
 async function handle<T>(res: Response): Promise<T> {
+  // An expired or invalid token comes back as 401 (require_jwt). Whenever we
+  // were actually carrying a token, drop it and send the user to the login
+  // screen of their area. The getToken() guard keeps a stray 401 on a pre-auth
+  // screen (where there's nothing to expire) from triggering a reload loop; a
+  // wrong OTP is a 400, so the login flow itself is unaffected.
+  if (res.status === 401 && getToken()) {
+    redirectToLogin()
+    throw new Error('Session expired')
+  }
   if (!res.ok) {
     let detail = res.statusText
     try {

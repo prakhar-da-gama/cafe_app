@@ -1,4 +1,4 @@
-import { clearToken } from '../api'
+import { redirectToLogin } from '../api'
 
 interface Props {
   onViewMenu?: () => void
@@ -11,8 +11,7 @@ interface Props {
 export default function CafeHeader({ onViewMenu, menuActive, onBack, onPlay }: Props) {
   // Frontend-only logout: drop the JWT and reload back to the login screen.
   const handleLogout = () => {
-    clearToken()
-    window.location.reload()
+    redirectToLogin()
   }
 
   return (

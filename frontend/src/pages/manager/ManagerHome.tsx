@@ -3,6 +3,7 @@ import {
   clearToken,
   getMe,
   getServiceRatingSummary,
+  listNotifications,
   type ServiceRatingSummary,
   type User,
 } from '../../api'
@@ -15,6 +16,8 @@ interface Props {
   onViewOosItems: () => void
   onViewOosToppings: () => void
   onViewServiceReviews: () => void
+  onViewServiceAnalysis: () => void
+  onViewNotifications: () => void
 }
 
 /** The manager dashboard shell: confirms the session belongs to a manager
@@ -26,17 +29,26 @@ export default function ManagerHome({
   onViewOosItems,
   onViewOosToppings,
   onViewServiceReviews,
+  onViewServiceAnalysis,
+  onViewNotifications,
 }: Props) {
   const [user, setUser] = useState<User | null>(null)
   const [serviceRating, setServiceRating] = useState<ServiceRatingSummary | null>(
     null,
   )
+  const [unresolved, setUnresolved] = useState(0)
 
   useEffect(() => {
     getServiceRatingSummary()
       .then(setServiceRating)
       .catch(() => {
         /* the rating badge is non-critical; ignore failures */
+      })
+    // The bell's unread count: how many open manager notifications there are.
+    listNotifications('manager', false, 1, 1)
+      .then((res) => setUnresolved(res.total))
+      .catch(() => {
+        /* non-critical */
       })
   }, [])
 
@@ -99,6 +111,38 @@ export default function ManagerHome({
           </button>
           <button type="button" className="menu-btn" onClick={onViewOosToppings}>
             Out of stock toppings
+          </button>
+          <button type="button" className="menu-btn" onClick={onViewServiceAnalysis}>
+            Service analysis
+          </button>
+          <button
+            type="button"
+            className="notif-bell"
+            onClick={onViewNotifications}
+            aria-label="Notifications"
+            title="Notifications"
+          >
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none">
+              <path
+                d="M6 9a6 6 0 0 1 12 0c0 5 1.5 6.5 2 7H4c.5-.5 2-2 2-7z"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              <path
+                d="M10 20a2 2 0 0 0 4 0"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+            {unresolved > 0 && (
+              <span className="notif-bell-badge">
+                {unresolved > 99 ? '99+' : unresolved}
+              </span>
+            )}
           </button>
           <button
             type="button"

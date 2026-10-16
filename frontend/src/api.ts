@@ -984,6 +984,91 @@ export function listServiceReviews(
   }).then((r) => handle<PaginatedServiceReviews>(r))
 }
 
+// ---- Service review analysis (AI aspect scores) ----
+
+// The singleton aggregate of AI-derived 0-10 service-aspect scores. Keys mirror
+// the backend ServiceReviewScores columns; any aspect is null when the reviews
+// gave nothing to score it on.
+export interface ServiceReviewScores {
+  number_of_reviews: number
+  staff_friendliness: number | null
+  speed_of_service: number | null
+  order_accuracy: number | null
+  attentiveness: number | null
+  atmosphere_ambiance: number | null
+  cleanliness: number | null
+  value_for_money: number | null
+  food_quality: number | null
+  beverage_quality: number | null
+  menu_variety: number | null
+  seating_comfort: number | null
+  wait_time_queue_management: number | null
+  problem_resolution: number | null
+  staff_knowledge: number | null
+  noise_level: number | null
+  payment_billing_experience: number | null
+  kid_family_friendliness: number | null
+  pet_friendliness: number | null
+  aesthetic_decor: number | null
+  accessibility: number | null
+}
+
+// Manager: the AI-derived aggregate service-aspect scores for the analysis
+// chart (zeroed/null when none have been computed yet).
+export function getServiceReviewScores(): Promise<ServiceReviewScores> {
+  return fetch('/api/service-reviews/scores', {
+    headers: authHeaders(),
+  }).then((r) => handle<ServiceReviewScores>(r))
+}
+
+// ---- Notifications ----
+
+export type NotificationFor = 'manager' | 'admin' | 'customer'
+
+export interface AppNotification {
+  id: number
+  notification_text: string
+  resolved: boolean
+  notification_for: NotificationFor
+  created_at: string
+  updated_at: string
+}
+
+export interface PaginatedNotifications {
+  items: AppNotification[]
+  total: number
+  page: number
+  page_size: number
+  has_more: boolean
+}
+
+// A page of notifications for one audience, newest first. Optionally filter by
+// resolved state; filtering + pagination happen at the DB level.
+export function listNotifications(
+  notificationFor: NotificationFor,
+  resolved?: boolean,
+  page = 1,
+  pageSize = 20,
+): Promise<PaginatedNotifications> {
+  const params = new URLSearchParams({
+    notification_for: notificationFor,
+    page: String(page),
+    page_size: String(pageSize),
+  })
+  if (resolved !== undefined) params.set('resolved', String(resolved))
+  return fetch(`/api/notifications?${params.toString()}`, {
+    headers: authHeaders(),
+  }).then((r) => handle<PaginatedNotifications>(r))
+}
+
+// Mark a notification resolved (the tick button).
+export function resolveNotification(id: number): Promise<AppNotification> {
+  return fetch(`/api/notifications/${id}/resolve`, {
+    method: 'PATCH',
+    headers: authHeaders(),
+  }).then((r) => handle<AppNotification>(r))
+}
+
 // ---- Chatbot ----
 
 export interface InitiateChatResponse {

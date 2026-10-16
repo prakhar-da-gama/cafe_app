@@ -3498,3 +3498,127 @@
 /* ComingSoon / loading screens inside the theme read crisp, not candy. */
 .app.dashboard.theme-pro .hero-title { color: var(--ink); font-weight: 800; letter-spacing: -0.02em; }
 .app.dashboard.theme-pro .hero-sub { color: var(--ink-soft); }
+
+/* ============================================================
+   Service review analysis — horizontal bar chart (manager)
+   ============================================================ */
+.sra-chart {
+  list-style: none;
+  margin: 8px 0 24px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.sra-row {
+  display: grid;
+  grid-template-columns: 1fr 44px;
+  align-items: center;
+  column-gap: 10px;
+}
+.sra-label {
+  grid-column: 1 / -1;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--ink-soft);
+  margin-bottom: 2px;
+}
+.sra-track {
+  height: 14px;
+  border-radius: 7px;
+  background: #e9edf2;
+  overflow: hidden;
+}
+.sra-fill {
+  height: 100%;
+  border-radius: 7px;
+  min-width: 2px;
+  transition: width 0.4s ease;
+}
+.sra-score {
+  font-weight: 800;
+  color: var(--ink);
+  font-size: 0.95rem;
+  text-align: right;
+}
+
+/* ============================================================
+   Notifications — dashboard bell + list (manager)
+   ============================================================ */
+.notif-bell {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  border: 1.5px solid var(--line);
+  background: var(--surface, #fff);
+  color: var(--ink);
+  cursor: pointer;
+}
+.notif-bell:hover { border-color: var(--pro-blue, #0a66d6); color: var(--pro-blue, #0a66d6); }
+.notif-bell-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: 9px;
+  background: #e24a6e;
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.notif-filters { display: flex; gap: 6px; margin-top: 8px; }
+.notif-filter {
+  padding: 5px 12px;
+  border-radius: 999px;
+  border: 1.5px solid var(--line);
+  background: transparent;
+  color: var(--ink-soft);
+  font-weight: 700;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+.notif-filter.is-active {
+  background: var(--pro-blue, #0a66d6);
+  border-color: var(--pro-blue, #0a66d6);
+  color: #fff;
+}
+
+.notif-list { list-style: none; margin: 12px 0 24px; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.notif-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1.5px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface, #fff);
+}
+.notif-item.is-resolved { opacity: 0.6; }
+.notif-body { flex: 1; min-width: 0; }
+.notif-text { margin: 0; color: var(--ink); font-weight: 600; font-size: 0.9rem; }
+.notif-when { font-size: 0.74rem; color: var(--ink-soft); font-weight: 600; }
+.notif-tick {
+  flex: none;
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  border: 1.5px solid var(--line);
+  background: transparent;
+  color: #14b98a;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.notif-tick:hover { border-color: #14b98a; background: rgba(20, 185, 138, 0.1); }
+.notif-done { flex: none; color: #14b98a; font-weight: 800; font-size: 1.1rem; width: 34px; text-align: center; }

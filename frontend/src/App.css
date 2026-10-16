@@ -3604,6 +3604,12 @@
   box-shadow: 0 10px 26px rgba(58, 43, 74, 0.06);
   margin-bottom: 14px;
 }
+/* Animatable conic stop so the fill angle can be tweened. */
+@property --sra-fill {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
 .sra-ring {
   flex: none;
   width: 92px;
@@ -3611,7 +3617,28 @@
   border-radius: 50%;
   display: grid;
   place-items: center;
-  transition: background 0.5s ease;
+  --sra-fill: var(--sra-base);
+  background: conic-gradient(
+    var(--ring-color, var(--candy-4)) var(--sra-fill),
+    #ece7f1 0
+  );
+}
+/* "Excellent" ring: keeps straining toward full and falling back, like a
+   loading spinner stuck just short of 100%. */
+.sra-ring.is-striving {
+  animation: sra-strive 2.6s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+}
+@keyframes sra-strive {
+  0% { --sra-fill: var(--sra-base); }
+  55% { --sra-fill: var(--sra-peak); }
+  70% { --sra-fill: var(--sra-peak); }
+  100% { --sra-fill: var(--sra-base); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sra-ring.is-striving {
+    animation: none;
+    --sra-fill: var(--sra-base);
+  }
 }
 .sra-ring-core {
   width: 72px;
@@ -3924,7 +3951,7 @@
   /* Pre-reveal: scattered dot. transform is layout-free, so the resting flex
      positions (the "rows") are already reserved — the dots just fly into them. */
   transform: translate(var(--dx), var(--dy)) scale(0.5);
-  transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+  transition: transform 1.3s cubic-bezier(0.22, 1, 0.36, 1);
   transition-delay: var(--d);
 }
 .sra-band.is-revealed .sra-cloud-item {
@@ -3939,8 +3966,8 @@
   background: var(--tint);
   padding: 6px 12px;
   transition:
-    background 0.5s ease,
-    padding 0.5s ease;
+    background 0.9s ease,
+    padding 0.9s ease;
   transition-delay: var(--d);
 }
 /* Pre-reveal the pill collapses to just its dot. */
@@ -3961,9 +3988,9 @@
   max-width: 220px;
   opacity: 1;
   transition:
-    max-width 0.5s ease,
-    opacity 0.45s ease,
-    margin 0.45s ease;
+    max-width 0.9s ease,
+    opacity 0.75s ease,
+    margin 0.75s ease;
   transition-delay: var(--d);
 }
 .sra-chip2-text {

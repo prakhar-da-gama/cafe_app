@@ -330,12 +330,14 @@ export default function ServiceReviewAnalysis({ onBack }: Props) {
           {/* ---- Summary hero ---- */}
           <section className="sra-hero">
             <div
-              className="sra-ring"
-              style={{
-                background: `conic-gradient(${bandFor(Math.round(average)).color} ${
-                  average * 36
-                }deg, #ece7f1 0)`,
-              }}
+              className={`sra-ring${average >= 8.5 ? ' is-striving' : ''}`}
+              style={
+                {
+                  '--ring-color': bandFor(Math.round(average)).color,
+                  '--sra-base': `${average * 36}deg`,
+                  '--sra-peak': '356deg',
+                } as CSSProperties
+              }
             >
               <div className="sra-ring-core">
                 <span className="sra-ring-num">{average.toFixed(1)}</span>
@@ -437,25 +439,26 @@ export default function ServiceReviewAnalysis({ onBack }: Props) {
   )
 }
 
-/** Fires once when the element first scrolls into view. */
-function useInView<T extends HTMLElement>(threshold = 0.25) {
+/** Tracks whether the element sits inside a centred band of the viewport.
+ *  Two-way: reports true once scrolled well into view and false again when it
+ *  leaves (so the clouds re-scatter when you scroll back up). The negative
+ *  top/bottom margins shrink the trigger zone to the middle of the screen, so
+ *  the user has to scroll a bit further before it fires. */
+function useInView<T extends HTMLElement>(
+  rootMargin = '-32% 0px -32% 0px',
+) {
   const ref = useRef<T | null>(null)
   const [inView, setInView] = useState(false)
   useEffect(() => {
     const el = ref.current
     if (!el) return
     const ob = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setInView(true)
-          ob.disconnect()
-        }
-      },
-      { threshold },
+      ([entry]) => setInView(entry.isIntersecting),
+      { rootMargin, threshold: 0 },
     )
     ob.observe(el)
     return () => ob.disconnect()
-  }, [threshold])
+  }, [rootMargin])
   return { ref, inView }
 }
 
@@ -507,7 +510,7 @@ function BandCloud({
                 {
                   '--dx': `${dx}px`,
                   '--dy': `${dy}px`,
-                  '--d': `${i * 70}ms`,
+                  '--d': `${i * 120}ms`,
                 } as CSSProperties
               }
             >

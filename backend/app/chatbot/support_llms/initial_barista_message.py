@@ -3,24 +3,23 @@
 Called by ``POST /api/chatbot/initiate-chat`` when a new ``chat_contexts`` row is
 created: the session context (from ``tools.get_context``), the full menu (from
 ``tools.get_full_menu``) and the current cart (from ``tools.view_my_cart``) are
-handed to the model, which opens the conversation — a warm greeting, 4 starter
-suggestions and 4 tappable quick-action chips. Uses the same .env-keyed Gemini
-client as the live chat (``chatbot.llm.generate_structured``), constrained to
-:class:`ChatbotReply` so the reply is stored and rendered like any other turn.
-The caller persists the result to ``chatbot_transcripts`` and resolves the
-suggestions against the real menu.
+handed to the model, which opens the conversation — a warm greeting and 4
+tappable quick-action chips. It does NOT suggest items up front (that was slow
+and not useful). Uses the same .env-keyed Gemini client as the live chat
+(``chatbot.llm.generate_structured``), constrained to :class:`InitialBaristaReply`.
+The caller persists the greeting to ``chatbot_transcripts``.
 """
 import json
 
 from ..llm import generate_structured
 from ..prompts.initial_barista_message import INITIAL_BARISTA_MESSAGE_PROMPT
-from ..pydantic_validators.chatbot_reply import ChatbotReply
+from ..pydantic_validators.initial_barista_reply import InitialBaristaReply
 
 
 def initial_barista_message(
     context: dict, menu: list[dict], cart: dict
-) -> ChatbotReply:
-    """Build the barista's opening :class:`ChatbotReply` for a new session.
+) -> InitialBaristaReply:
+    """Build the barista's opening :class:`InitialBaristaReply` for a new session.
 
     ``context`` is the session's stored fields (from ``tools.get_context``),
     ``menu`` is the trimmed, veg-scoped menu tree (from ``tools.get_full_menu``)
@@ -34,7 +33,7 @@ def initial_barista_message(
         default=str,
     )
     reply = generate_structured(
-        INITIAL_BARISTA_MESSAGE_PROMPT, user_content, ChatbotReply
+        INITIAL_BARISTA_MESSAGE_PROMPT, user_content, InitialBaristaReply
     )
-    assert isinstance(reply, ChatbotReply)  # narrows the return type
+    assert isinstance(reply, InitialBaristaReply)  # narrows the return type
     return reply

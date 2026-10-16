@@ -91,13 +91,12 @@ def initiate_chat(
     db.commit()
     db.refresh(context)
 
-    # Open the conversation with a generated barista greeting + 4 starter
-    # suggestions, stored as the session's first transcript turn so the chat
-    # opens on a real message instead of a hardcoded one. Best-effort: a failed
-    # LLM call must never block the session from starting, so any failure just
-    # leaves the opener empty (the client falls back to its own greeting).
+    # Open the conversation with a generated barista greeting + 4 quick-action
+    # chips, stored as the session's first transcript turn so the chat opens on
+    # a real message instead of a hardcoded one. Best-effort: a failed LLM call
+    # must never block the session from starting, so any failure just leaves the
+    # opener empty (the client falls back to its own greeting).
     first_message: str | None = None
-    first_items: dict[str, Any] | None = None
     first_options: list[str] | None = None
     try:
         reply = initial_barista_message(
@@ -105,21 +104,18 @@ def initiate_chat(
             get_full_menu(db, context.id),
             view_my_cart(db, cart_id),
         )
-        # Log the opener like any other assistant turn (raw suggestions kept for
-        # faithful replay); mirrors the /message endpoint's logging.
+        # Log the opener like any other assistant turn; mirrors the /message
+        # endpoint's logging. The opener carries no item suggestions.
         db.add(
             models.ChatbotTranscript(
                 chat_context_id=context.id,
                 role="assistant",
                 content=reply.llm_response,
-                items_json=reply.items_json.model_dump() if reply.items_json else None,
+                items_json=None,
             )
         )
         db.commit()
         first_message = reply.llm_response
-        first_items = (
-            food_listing_from_llm(db, reply.items_json) if reply.items_json else None
-        )
         first_options = reply.options
     except Exception:
         db.rollback()
@@ -129,7 +125,6 @@ def initiate_chat(
         "cart_id": cart_id,
         "resumed": False,
         "first_message": first_message,
-        "first_items": first_items,
         "first_options": first_options,
     }
 

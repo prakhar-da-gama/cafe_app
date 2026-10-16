@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { initiateChat, type ChatItems } from '../../api'
+import { initiateChat } from '../../api'
 import CafeHeader from '../../components/CafeHeader'
 import vegSymbol from '../../assets/veg-symbol.svg'
 import nonVegSymbol from '../../assets/non-veg-symbol.svg'
@@ -9,27 +9,15 @@ interface Props {
   onViewMenu: () => void
   // Called once the chat session is created; receives the session id, the open
   // cart id, whether this is a brand-new session (vs a resumed one), and the
-  // barista's generated opening turn (message + suggested items) to seed the
+  // barista's generated opening turn (message + quick-action chips) to seed the
   // chat with. The opener is only shown for a new session.
   onProceed: (
     chatContextId: number,
     cartId: number,
     newSession: boolean,
     firstMessage: string | null,
-    firstItems: ChatItems | null,
     firstOptions: string[] | null,
   ) => void
-}
-
-type Phase = 'intro' | 'people' | 'veg'
-
-// A warm, professional greeting chosen from the current time of day (computed
-// on the client so it reflects the guest's own clock).
-function greetingForNow(): string {
-  const hour = new Date().getHours()
-  if (hour >= 5 && hour < 12) return 'Good morning'
-  if (hour >= 12 && hour < 17) return 'Good afternoon'
-  return 'Good evening'
 }
 
 // Turn the adult/child counts into the free-text party description the backend
@@ -110,65 +98,27 @@ const IC_CSS = `
   flex: 1;
   display: flex;
   flex-direction: column;
-  padding: 6px 2px 118px;
+  padding: 10px 2px 118px;
 }
 
-/* Step pips — appear once the greeting has handed off. */
-.ic-steps {
-  display: flex;
-  justify-content: center;
-  gap: 8px;
-  margin: 2px 0 8px;
-  animation: ic-fade 0.5s ease both;
-}
-.ic-dot {
-  width: 8px; height: 8px;
-  border-radius: 999px;
-  background: var(--line);
-  transition: width 0.4s cubic-bezier(.22,1,.36,1), background 0.4s;
-}
-.ic-dot-on { width: 24px; background: var(--candy-6); }
-
-/* The greeting: types in the centre, then lifts and shrinks to the top. */
+/* The greeting: a simple "Namaste" that types in at the top of the screen. */
 .ic-greet-wrap {
   text-align: center;
-  padding: 2px 4px;
-  transition: transform 0.95s cubic-bezier(.22,1,.36,1);
+  padding: 10px 4px 4px;
 }
 .ic-greet {
   margin: 0;
   /* Handwriting face, used only for this greeting line. */
   font-family: 'Caveat', 'Segoe Script', cursive;
   font-weight: 700;
-  /* Caveat runs small, so the size is bumped vs. the sans greeting it replaces. */
-  font-size: clamp(2.3rem, 10.5vw, 3.15rem);
+  font-size: clamp(2.1rem, 9vw, 2.9rem);
   line-height: 1.15;
   letter-spacing: 0;
   color: var(--ink);
-  transition: font-size 0.95s cubic-bezier(.22,1,.36,1);
   text-wrap: balance;
 }
-.ic-greet-wrap[data-up="true"] .ic-greet {
-  font-size: clamp(1.6rem, 6.4vw, 2rem);
-  color: var(--ink-soft);
-}
 
-/* The handwriting reveal: each glyph is "inked" in — it rises from below with a
-   slight rotation while a blur clears, so the line reads as if it's being
-   written rather than typed. Words stay whole (inline-block) so wrapping only
-   happens at spaces. */
-.ic-word { display: inline-block; }
-.ic-ink {
-  display: inline-block;
-  animation: ic-ink-in 0.44s cubic-bezier(.22,1,.36,1) both;
-}
-@keyframes ic-ink-in {
-  0%   { opacity: 0; filter: blur(5px); transform: translateY(0.24em) rotate(-9deg) scale(.82); }
-  55%  { opacity: 1; }
-  100% { opacity: 1; filter: blur(0); transform: none; }
-}
-
-.ic-cards { margin-top: 20px; }
+.ic-cards { margin-top: 22px; }
 .ic-card {
   background: var(--surface);
   border-radius: var(--radius);
@@ -178,25 +128,24 @@ const IC_CSS = `
   display: flex;
   flex-direction: column;
   gap: 18px;
-  animation: ic-rise 0.65s cubic-bezier(.22,1,.36,1) both;
+  animation: ic-rise 0.6s cubic-bezier(.22,1,.36,1) both;
 }
-.ic-card.ic-leaving { animation: ic-sink 0.42s ease forwards; }
 .ic-q {
-  margin: 0;
-  font-size: 1.1rem;
+  margin: 0 0 4px;
+  font-size: 1.05rem;
   font-weight: 800;
   line-height: 1.38;
   color: var(--ink);
-  min-height: 1.5em;
 }
 .ic-counters { display: flex; flex-direction: column; gap: 6px; }
 .ic-counter-sep { height: 1px; background: var(--line); margin: 4px 0; }
+/* Divider between the party-size block and the vegetarian block. */
+.ic-group-sep { height: 1px; background: var(--line); margin: 2px 0; }
 .ic-q-marks {
   display: inline-flex;
   gap: 6px;
   margin-left: 8px;
   vertical-align: -5px;
-  animation: ic-fade 0.4s ease both;
 }
 .ic-mark { width: 20px; height: 20px; display: block; }
 .ic-choices { display: flex; flex-direction: column; gap: 10px; }
@@ -208,26 +157,17 @@ const IC_CSS = `
   padding: 16px;
 }
 .ic-veg-icon { width: 38px; height: 38px; display: block; }
-.ic-reveal { animation: ic-rise 0.55s cubic-bezier(.22,1,.36,1) both; }
 
 @keyframes ic-rise {
   from { opacity: 0; transform: translateY(24px); }
   to { opacity: 1; transform: none; }
-}
-@keyframes ic-sink {
-  from { opacity: 1; transform: none; }
-  to { opacity: 0; transform: translateY(-18px) scale(.97); }
 }
 @keyframes ic-fade { from { opacity: 0; } to { opacity: 1; } }
 
 .ic-dock { animation: ic-rise 0.5s cubic-bezier(.22,1,.36,1) both; }
 
 @media (prefers-reduced-motion: reduce) {
-  .ic-greet-wrap, .ic-greet { transition: none; }
-  .ic-root, .ic-card, .ic-card.ic-leaving, .ic-reveal, .ic-dock, .ic-steps,
-  .ic-orb, .ic-ink {
-    animation: none;
-  }
+  .ic-root, .ic-card, .ic-dock, .ic-orb { animation: none; }
 }
 `
 
@@ -240,8 +180,7 @@ interface TypedProps {
 }
 
 /** Reveals `text` one character at a time (respecting reduced-motion) and
- *  fires `onDone` once the last character lands — the hook that drives the
- *  staged reveals below. */
+ *  fires `onDone` once the last character lands. */
 function Typed({ text, speed = 32, startDelay = 0, onDone, className }: TypedProps) {
   const [count, setCount] = useState(0)
   const onDoneRef = useRef(onDone)
@@ -283,56 +222,6 @@ function Typed({ text, speed = 32, startDelay = 0, onDone, className }: TypedPro
     <span className={className} aria-label={text}>
       {units.slice(0, count).join('')}
       <span className={done ? 'caret caret-rest' : 'caret'} aria-hidden="true" />
-    </span>
-  )
-}
-
-/** A handwriting-style reveal: renders `text` in the handwriting face and
- *  "inks" each glyph in sequence (staggered by `speed` ms) for a Canva-like
- *  written-out effect. Words stay whole so wrapping only breaks at spaces.
- *  Fires `onDone` once the final glyph has settled. */
-function Handwritten({ text, speed = 42, startDelay = 0, onDone, className }: TypedProps) {
-  const onDoneRef = useRef(onDone)
-  onDoneRef.current = onDone
-
-  useEffect(() => {
-    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    const total = Array.from(text).length
-    // Last glyph starts at startDelay + (total-1)*speed and takes ~440ms to land.
-    const settle = reduce ? 0 : startDelay + Math.max(0, total - 1) * speed + 440
-    const t = window.setTimeout(() => onDoneRef.current?.(), settle)
-    return () => window.clearTimeout(t)
-  }, [text, speed, startDelay])
-
-  // Split into words (kept whole) then glyphs, carrying a running index so the
-  // ink delay flows continuously across the whole line.
-  const words = text.split(' ')
-  let i = 0
-  return (
-    <span className={className} aria-label={text}>
-      {words.map((word, wi) => {
-        const glyphs = Array.from(word).map((ch) => {
-          const delay = startDelay + i * speed
-          i += 1
-          return (
-            <span
-              className="ic-ink"
-              key={i}
-              style={{ animationDelay: `${delay}ms` }}
-            >
-              {ch}
-            </span>
-          )
-        })
-        // The space lives outside the word span (as a text node sibling) so the
-        // line can wrap between words but never inside one.
-        return (
-          <span key={wi} aria-hidden="true">
-            <span className="ic-word">{glyphs}</span>
-            {wi < words.length - 1 ? ' ' : ''}
-          </span>
-        )
-      })}
     </span>
   )
 }
@@ -386,17 +275,12 @@ const ARROW = (
   </svg>
 )
 
-/** The setup step before the barista chat opens, played as a short sequence:
- *  the time-of-day greeting types in the centre, lifts to the top, then the
- *  party-size question reveals; on Next it fades out and the vegetarian
- *  question takes its place. Proceed creates the session and hands the id up. */
+/** The setup step before the barista chat opens: a simple "Namaste" types in at
+ *  the top, then a single card asks for the party size (adults + children) and
+ *  the vegetarian preference together. Proceed creates the session and hands the
+ *  id up. */
 export default function InitiateChat({ onBack, onViewMenu, onProceed }: Props) {
-  const [greeting] = useState(greetingForNow)
-  const [phase, setPhase] = useState<Phase>('intro')
-  const [movedUp, setMovedUp] = useState(false)
-  const [peopleQDone, setPeopleQDone] = useState(false)
-  const [peopleLeaving, setPeopleLeaving] = useState(false)
-  const [vegQDone, setVegQDone] = useState(false)
+  const [introDone, setIntroDone] = useState(false)
 
   const [adults, setAdults] = useState(1)
   const [children, setChildren] = useState(0)
@@ -404,44 +288,17 @@ export default function InitiateChat({ onBack, onViewMenu, onProceed }: Props) {
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // Once the greeting finishes typing, lift it up and bring in the first card.
-  function onGreetingDone() {
-    window.setTimeout(() => {
-      setMovedUp(true)
-      setPhase('people')
-    }, 550)
-  }
-
-  // Fade the party card out, then swap in the vegetarian question.
-  function goToVeg() {
-    setPeopleLeaving(true)
-    window.setTimeout(() => setPhase('veg'), 430)
-  }
-
   const peopleReady = adults + children > 0
-  const canSubmit = vegOnly !== null && !submitting
+  const canSubmit = peopleReady && vegOnly !== null && !submitting
 
   async function proceed() {
     if (!canSubmit) return
     setSubmitting(true)
     setError(null)
     try {
-      const {
-        chat_context_id,
-        cart_id,
-        resumed,
-        first_message,
-        first_items,
-        first_options,
-      } = await initiateChat(describeParty(adults, children), vegOnly as boolean)
-      onProceed(
-        chat_context_id,
-        cart_id,
-        !resumed,
-        first_message,
-        first_items,
-        first_options,
-      )
+      const { chat_context_id, cart_id, resumed, first_message, first_options } =
+        await initiateChat(describeParty(adults, children), vegOnly as boolean)
+      onProceed(chat_context_id, cart_id, !resumed, first_message, first_options)
     } catch (e) {
       setError((e as Error).message)
       setSubmitting(false)
@@ -460,70 +317,33 @@ export default function InitiateChat({ onBack, onViewMenu, onProceed }: Props) {
       <CafeHeader onBack={onBack} onViewMenu={onViewMenu} />
 
       <div className="ic-stage">
-        {phase !== 'intro' && (
-          <div className="ic-steps" aria-hidden="true">
-            <span className={phase === 'people' ? 'ic-dot ic-dot-on' : 'ic-dot'} />
-            <span className={phase === 'veg' ? 'ic-dot ic-dot-on' : 'ic-dot'} />
-          </div>
-        )}
-
-        <div
-          className="ic-greet-wrap"
-          data-up={movedUp ? 'true' : 'false'}
-          style={{ transform: movedUp ? 'translateY(0)' : 'translateY(30vh)' }}
-        >
+        <div className="ic-greet-wrap">
           <p className="ic-greet">
-            <Handwritten
-              text={`Namaste 🙏 ${greeting}, and a warm welcome to Seoulmate Cafe.`}
-              speed={42}
-              onDone={onGreetingDone}
-            />
+            <Typed text="Namaste 🙏" speed={70} onDone={() => setIntroDone(true)} />
           </p>
         </div>
 
         <div className="ic-cards">
-          {phase === 'people' && (
-            <section className={peopleLeaving ? 'ic-card ic-leaving' : 'ic-card'}>
-              <h2 className="ic-q">
-                <Typed
-                  text="How many guests are joining us today?"
-                  speed={26}
-                  startDelay={500}
-                  onDone={() => setPeopleQDone(true)}
-                />
-              </h2>
-              {peopleQDone && (
-                <div className="ic-counters ic-reveal">
-                  <Counter label="Adults" value={adults} onChange={setAdults} />
-                  <div className="ic-counter-sep" />
-                  <Counter
-                    label="Children"
-                    value={children}
-                    onChange={setChildren}
-                  />
-                </div>
-              )}
-            </section>
-          )}
-
-          {phase === 'veg' && (
+          {introDone && (
             <section className="ic-card">
-              <h2 className="ic-q">
-                <Typed
-                  text="Would you prefer vegetarian only, or both vegetarian and non-vegetarian?"
-                  speed={24}
-                  startDelay={320}
-                  onDone={() => setVegQDone(true)}
-                />
-                {vegQDone && (
+              <div className="ic-counters">
+                <h2 className="ic-q">How many guests are joining us today?</h2>
+                <Counter label="Adults" value={adults} onChange={setAdults} />
+                <div className="ic-counter-sep" />
+                <Counter label="Children" value={children} onChange={setChildren} />
+              </div>
+
+              <div className="ic-group-sep" />
+
+              <div>
+                <h2 className="ic-q">
+                  Vegetarian only, or both veg &amp; non-veg?
                   <span className="ic-q-marks">
                     <img src={vegSymbol} alt="" className="ic-mark" />
                     <img src={nonVegSymbol} alt="" className="ic-mark" />
                   </span>
-                )}
-              </h2>
-              {vegQDone && (
-                <div className="ic-choices ic-reveal">
+                </h2>
+                <div className="ic-choices">
                   <button
                     type="button"
                     className={
@@ -552,7 +372,7 @@ export default function InitiateChat({ onBack, onViewMenu, onProceed }: Props) {
                     <img src={nonVegSymbol} alt="" className="ic-veg-icon" />
                   </button>
                 </div>
-              )}
+              </div>
             </section>
           )}
 
@@ -560,21 +380,7 @@ export default function InitiateChat({ onBack, onViewMenu, onProceed }: Props) {
         </div>
       </div>
 
-      {phase === 'people' && peopleQDone && !peopleLeaving && (
-        <div className="initiate-dock ic-dock">
-          <button
-            type="button"
-            className="candy-btn btn-mint initiate-next"
-            onClick={goToVeg}
-            disabled={!peopleReady}
-          >
-            Next
-            {ARROW}
-          </button>
-        </div>
-      )}
-
-      {phase === 'veg' && vegQDone && (
+      {introDone && (
         <div className="initiate-dock ic-dock">
           <button
             type="button"

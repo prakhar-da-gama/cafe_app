@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import './App.css'
-import { getActiveChatSession, getToken, type ChatItems, type Tag } from './api'
+import { getActiveChatSession, getToken, type Tag } from './api'
 import { useScreen } from './useScreen'
 import Login from './pages/customer/Login'
 import VerifyOtp from './pages/VerifyOtp'
@@ -47,11 +47,10 @@ function App() {
   // Whether the chat being opened is a brand-new session (show the generated
   // opener below) or a resumed one (replay the transcript, no opener items).
   const [chatIsNewSession, setChatIsNewSession] = useState(false)
-  // The barista's generated opening turn for a brand-new session (message +
-  // suggested items), handed from InitiateChat to seed the chat. Null when a
-  // session is resumed — the opener is then replayed from the transcript.
+  // The barista's generated opening message for a brand-new session, handed from
+  // InitiateChat to seed the chat. Null when a session is resumed — the opener
+  // is then replayed from the transcript.
   const [chatFirstMessage, setChatFirstMessage] = useState<string | null>(null)
-  const [chatFirstItems, setChatFirstItems] = useState<ChatItems | null>(null)
   // The opener's quick-action chips (first-person utterances the guest can tap),
   // handed from InitiateChat to seed the chat's in-chat MCQ. Null on resume.
   const [chatFirstOptions, setChatFirstOptions] = useState<string[] | null>(null)
@@ -166,19 +165,11 @@ function App() {
         <InitiateChat
           onBack={goBack}
           onViewMenu={() => navigate('fullmenu')}
-          onProceed={(
-            id,
-            cart,
-            newSession,
-            firstMessage,
-            firstItems,
-            firstOptions,
-          ) => {
+          onProceed={(id, cart, newSession, firstMessage, firstOptions) => {
             setChatContextId(id)
             setChatCartId(cart)
             setChatIsNewSession(newSession)
             setChatFirstMessage(firstMessage)
-            setChatFirstItems(firstItems)
             setChatFirstOptions(firstOptions)
             // Replace the setup step so Back from the chat returns to the
             // dashboard rather than re-opening the (already-answered) form.
@@ -193,7 +184,6 @@ function App() {
           cartId={chatCartId}
           isNewSession={chatIsNewSession}
           firstMessage={chatFirstMessage}
-          firstItems={chatFirstItems}
           firstOptions={chatFirstOptions}
           onRecoverSession={recoverChatSession}
           onBack={goBack}

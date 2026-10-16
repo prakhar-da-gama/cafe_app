@@ -18,10 +18,9 @@ interface Props {
   // opener). Authoritative — comes from the /initiate-chat `resumed` flag.
   isNewSession: boolean
   // The barista's generated opening turn for a brand-new session (from
-  // /initiate-chat): the greeting text and its suggested items. Null when a
-  // session is resumed — the opener is then replayed from the transcript.
+  // /initiate-chat): the greeting text. Null when a session is resumed — the
+  // opener is then replayed from the transcript.
   firstMessage: string | null
-  firstItems: ChatItems | null
   // The opener's quick-action chips (first-person utterances the guest can tap);
   // rendered below the opening message as the in-chat MCQ. Null on resume.
   firstOptions: string[] | null
@@ -79,17 +78,12 @@ const GREETING: Msg = {
 }
 
 // The barista's generated opening turn, as a single chat message (greeting text
-// + the suggested-items table + the quick-action chips).
-function openerMsg(
-  text: string | null,
-  items: ChatItems | null,
-  options: string[] | null,
-): Msg {
+// + the quick-action chips).
+function openerMsg(text: string | null, options: string[] | null): Msg {
   return {
     id: 0,
     from: 'barista',
     text: text ?? undefined,
-    items,
     options,
     animate: true,
   }
@@ -100,7 +94,6 @@ export default function BaristaChat({
   cartId,
   isNewSession,
   firstMessage,
-  firstItems,
   firstOptions,
   onRecoverSession,
   onBack,
@@ -117,11 +110,11 @@ export default function BaristaChat({
     setSessionCartId(cartId)
   }, [chatContextId, cartId])
   // For a brand-new session, seed with the barista's generated opener (text +
-  // suggested items + quick-action chips). For a resumed session, start on the
-  // fallback greeting until the transcript preload (below) loads over it.
+  // quick-action chips). For a resumed session, start on the fallback greeting
+  // until the transcript preload (below) loads over it.
   const [messages, setMessages] = useState<Msg[]>(() =>
-    isNewSession && (firstMessage || firstItems || firstOptions)
-      ? [openerMsg(firstMessage, firstItems, firstOptions)]
+    isNewSession && (firstMessage || firstOptions)
+      ? [openerMsg(firstMessage, firstOptions)]
       : [GREETING],
   )
   const [value, setValue] = useState('')
@@ -133,14 +126,14 @@ export default function BaristaChat({
   // Also seed the opener from an effect, not just the initial state. The opener
   // props can land just after mount (set alongside the navigation) and, in dev,
   // a hot-reload preserves the old message state while skipping the initializer
-  // — this makes the generated greeting + item table show in both cases. The
-  // opener props are fixed for a session's lifetime, so this runs once per
-  // session and never clobbers an ongoing conversation.
+  // — this makes the generated greeting show in both cases. The opener props are
+  // fixed for a session's lifetime, so this runs once per session and never
+  // clobbers an ongoing conversation.
   useEffect(() => {
-    if (isNewSession && (firstMessage || firstItems || firstOptions)) {
-      setMessages([openerMsg(firstMessage, firstItems, firstOptions)])
+    if (isNewSession && (firstMessage || firstOptions)) {
+      setMessages([openerMsg(firstMessage, firstOptions)])
     }
-  }, [isNewSession, firstMessage, firstItems, firstOptions])
+  }, [isNewSession, firstMessage, firstOptions])
 
   // Preload any existing turns so an in-progress chat continues where it left
   // off. The transcript omits item suggestions, so replayed turns are plain

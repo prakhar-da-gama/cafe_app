@@ -1,6 +1,5 @@
 from datetime import datetime
 from decimal import Decimal
-from typing import Any
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
@@ -746,10 +745,9 @@ class InitiateChatResponse(BaseModel):
     the user's open cart (the chatbot builds the order into this cart).
 
     For a brand-new session the barista's opening turn is generated and returned
-    too (``first_message`` text + ``first_items`` resolved suggestion tree), so
-    the chat opens on a real greeting instead of a hardcoded one. Both are null
-    when an existing session is resumed (its opening turn is already in the
-    transcript) or if generating the opener failed."""
+    too (``first_message`` text), so the chat opens on a real greeting instead of
+    a hardcoded one. It is null when an existing session is resumed (its opening
+    turn is already in the transcript) or if generating the opener failed."""
 
     chat_context_id: int
     cart_id: int
@@ -757,11 +755,9 @@ class InitiateChatResponse(BaseModel):
     # one was created. The client uses this (not the presence of an opener) to
     # decide whether to show the generated opening turn below.
     resumed: bool = False
-    # The barista's opening message text, and its resolved item suggestions
-    # (get-full-menu-shaped, like the /message endpoint's items_json). Only set
-    # for a new session (``resumed`` False).
+    # The barista's opening message text. Only set for a new session
+    # (``resumed`` False). The opener no longer carries item suggestions.
     first_message: str | None = None
-    first_items: dict[str, Any] | None = None
     # The opener's quick-action chips: short, first-person utterances the guest
     # can tap, each sent verbatim to /message as their turn. Rendered as the
     # in-chat MCQ. Only set for a new session.

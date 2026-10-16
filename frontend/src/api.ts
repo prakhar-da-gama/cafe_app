@@ -1070,11 +1070,11 @@ export interface InitiateChatResponse {
   // created. Drives whether the chat shows the generated opener (below) or
   // replays the transcript.
   resumed: boolean
-  // The barista's generated opening message and its suggested items, for a
-  // brand-new session. Both null when an existing session is resumed (its
-  // opener is already in the transcript) or if generating the opener failed.
+  // The barista's generated opening message for a brand-new session. Null when
+  // an existing session is resumed (its opener is already in the transcript) or
+  // if generating the opener failed. The opener no longer carries item
+  // suggestions.
   first_message: string | null
-  first_items: ChatItems | null
   // The opener's quick-action chips: short, first-person utterances the guest
   // can tap, each sent verbatim to /message as their turn. Null when a session
   // is resumed or the opener failed to generate.

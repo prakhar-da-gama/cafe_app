@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import {
   getServiceReviewScores,
   type ServiceReviewScores,
@@ -244,17 +244,17 @@ export default function ServiceReviewAnalysis({ onBack }: Props) {
     return counts
   }, [scored])
 
-  // Breakdown: bands in best->worst (or worst->best) order, "No data" always last.
+  // Breakdown: scored bands in best->worst (or worst->best) order. "Not enough
+  // data" aspects are intentionally left out of this section.
   const groups = useMemo(() => {
     const ordered = sort === 'high' ? BANDS : [...BANDS].reverse()
-    const result: { band: Band | typeof NO_DATA; items: Scored[] }[] = []
+    const result: { band: Band; items: Scored[] }[] = []
     for (const band of ordered) {
       const items = sortedRated.filter((a) => bandFor(a.value).id === band.id)
       if (items.length) result.push({ band, items })
     }
-    if (unrated.length) result.push({ band: NO_DATA, items: unrated })
     return result
-  }, [sortedRated, unrated, sort])
+  }, [sortedRated, sort])
 
   return (
     <div className="screen menu-screen mgr-screen">
@@ -419,63 +419,117 @@ export default function ServiceReviewAnalysis({ onBack }: Props) {
             {view === 'radar' && <RadarChart items={scored} />}
           </section>
 
-          {/* ---- Categorised breakdown with read-more ---- */}
+          {/* ---- Categorised breakdown: scroll-reveal dot clouds ---- */}
           <section className="sra-breakdown">
             {groups.map(({ band, items }) => (
-              <div key={band.id} className="sra-band">
-                <div className="sra-band-head">
-                  <span className="sra-band-chip" style={{ background: band.color }}>
-                    {band.label}
-                    <span className="sra-band-count">{items.length}</span>
-                  </span>
-                  <span className="sra-band-hint">{band.hint}</span>
-                </div>
-                {items.map((a) => {
-                  const isOpen = open === a.key
-                  return (
-                    <div key={a.key} className="sra-aspect">
-                      <button
-                        type="button"
-                        className="sra-aspect-top"
-                        onClick={() => setOpen(isOpen ? null : (a.key as string))}
-                        aria-expanded={isOpen}
-                      >
-                        <span className="sra-aspect-name">{a.label}</span>
-                        <span
-                          className="sra-aspect-score"
-                          style={{
-                            color: band.color,
-                            borderColor: `${band.color}55`,
-                            background: `${band.color}14`,
-                          }}
-                        >
-                          {a.value != null ? a.value : '—'}
-                        </span>
-                        <svg
-                          className={`sra-chev${isOpen ? ' is-open' : ''}`}
-                          viewBox="0 0 24 24"
-                          width="16"
-                          height="16"
-                          fill="none"
-                        >
-                          <path
-                            d="M6 9l6 6 6-6"
-                            stroke="currentColor"
-                            strokeWidth="2.2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          />
-                        </svg>
-                      </button>
-                      {isOpen && <p className="sra-aspect-desc">{a.desc}</p>}
-                    </div>
-                  )
-                })}
-              </div>
+              <BandCloud
+                key={band.id}
+                band={band}
+                items={items}
+                open={open}
+                setOpen={setOpen}
+              />
             ))}
           </section>
         </>
       )}
+    </div>
+  )
+}
+
+/** Fires once when the element first scrolls into view. */
+function useInView<T extends HTMLElement>(threshold = 0.25) {
+  const ref = useRef<T | null>(null)
+  const [inView, setInView] = useState(false)
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const ob = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setInView(true)
+          ob.disconnect()
+        }
+      },
+      { threshold },
+    )
+    ob.observe(el)
+    return () => ob.disconnect()
+  }, [threshold])
+  return { ref, inView }
+}
+
+// Deterministic scatter offset for a dot at index `i` — a loose cloud, stable
+// across renders (no Math.random, so no impure-render churn).
+function scatter(i: number): { dx: number; dy: number } {
+  return {
+    dx: Math.round(Math.cos(i * 2.4 + 0.6) * 60),
+    dy: Math.round(Math.sin(i * 1.7 + 1.1) * 30),
+  }
+}
+
+/** One score band rendered as a cloud of coloured dots that, once scrolled to,
+ *  fly into rows and expand into labelled pills. Tapping a pill reveals its
+ *  hardcoded description. */
+function BandCloud({
+  band,
+  items,
+  open,
+  setOpen,
+}: {
+  band: Band
+  items: Scored[]
+  open: string | null
+  setOpen: (key: string | null) => void
+}) {
+  const { ref, inView } = useInView<HTMLDivElement>()
+  const openItem = items.find((a) => a.key === open)
+
+  return (
+    <div ref={ref} className={`sra-band${inView ? ' is-revealed' : ''}`}>
+      <div className="sra-band-head">
+        <span className="sra-band-chip" style={{ background: band.color }}>
+          {band.label}
+          <span className="sra-band-count">{items.length}</span>
+        </span>
+        <span className="sra-band-hint">{band.hint}</span>
+      </div>
+
+      <ul className="sra-cloud">
+        {items.map((a, i) => {
+          const { dx, dy } = scatter(i)
+          const isOpen = open === a.key
+          return (
+            <li
+              key={a.key}
+              className="sra-cloud-item"
+              style={
+                {
+                  '--dx': `${dx}px`,
+                  '--dy': `${dy}px`,
+                  '--d': `${i * 70}ms`,
+                } as CSSProperties
+              }
+            >
+              <button
+                type="button"
+                className={`sra-chip2${isOpen ? ' is-open' : ''}`}
+                style={{ '--tint': `${band.color}1f` } as CSSProperties}
+                onClick={() => setOpen(isOpen ? null : (a.key as string))}
+                aria-expanded={isOpen}
+              >
+                <span className="sra-dot2" style={{ background: band.color }} />
+                <span className="sra-chip2-text">{a.label}</span>
+                <span className="sra-chip2-score" style={{ color: band.color }}>
+                  {a.value}
+                </span>
+              </button>
+            </li>
+          )
+        })}
+      </ul>
+
+      {openItem && <p className="sra-aspect-desc">{openItem.desc}</p>}
     </div>
   )
 }

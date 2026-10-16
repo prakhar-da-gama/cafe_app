@@ -3911,45 +3911,84 @@
   margin-left: auto;
   text-align: right;
 }
-.sra-aspect {
-  border-top: 1px solid var(--line);
-}
-.sra-aspect:first-of-type { border-top: none; }
-.sra-aspect-top {
-  width: 100%;
+/* Dot cloud -> rows-of-pills scroll reveal */
+.sra-cloud {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
   display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.sra-cloud-item {
+  /* Pre-reveal: scattered dot. transform is layout-free, so the resting flex
+     positions (the "rows") are already reserved — the dots just fly into them. */
+  transform: translate(var(--dx), var(--dy)) scale(0.5);
+  transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+  transition-delay: var(--d);
+}
+.sra-band.is-revealed .sra-cloud-item {
+  transform: translate(0, 0) scale(1);
+}
+.sra-chip2 {
+  display: inline-flex;
   align-items: center;
-  gap: 10px;
-  padding: 10px 2px;
-  background: none;
   border: none;
   cursor: pointer;
-  text-align: left;
+  border-radius: 999px;
+  background: var(--tint);
+  padding: 6px 12px;
+  transition:
+    background 0.5s ease,
+    padding 0.5s ease;
+  transition-delay: var(--d);
 }
-.sra-aspect-name {
-  flex: 1;
+/* Pre-reveal the pill collapses to just its dot. */
+.sra-band:not(.is-revealed) .sra-chip2 {
+  background: transparent;
+  padding: 0;
+}
+.sra-dot2 {
+  flex: none;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+}
+.sra-chip2-text,
+.sra-chip2-score {
+  white-space: nowrap;
+  overflow: hidden;
+  max-width: 220px;
+  opacity: 1;
+  transition:
+    max-width 0.5s ease,
+    opacity 0.45s ease,
+    margin 0.45s ease;
+  transition-delay: var(--d);
+}
+.sra-chip2-text {
+  font-size: 0.82rem;
   font-weight: 700;
   color: var(--ink);
-  font-size: 0.9rem;
-  min-width: 0;
+  margin-left: 8px;
 }
-.sra-aspect-score {
-  flex: none;
-  min-width: 26px;
-  text-align: center;
+.sra-chip2-score {
+  font-size: 0.82rem;
   font-weight: 800;
-  font-size: 0.85rem;
-  border: 1px solid;
-  border-radius: 8px;
-  padding: 2px 6px;
+  margin-left: 6px;
 }
-.sra-chev {
-  flex: none;
-  color: var(--ink-soft);
-  transition: transform 0.2s ease;
+.sra-band:not(.is-revealed) .sra-chip2-text,
+.sra-band:not(.is-revealed) .sra-chip2-score {
+  max-width: 0;
+  opacity: 0;
+  margin-left: 0;
 }
-.sra-chev.is-open { transform: rotate(180deg); }
+.sra-chip2.is-open {
+  outline: 2px solid var(--tint);
+  outline-offset: 2px;
+}
 .sra-aspect-desc {
+  margin: 12px 2px 0;
   margin: 0 2px 12px;
   padding: 10px 12px;
   background: var(--cream-2);

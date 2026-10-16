@@ -2650,34 +2650,52 @@
   padding: 6px 13px;
 }
 .mgr-orders { display: flex; flex-direction: column; }
-.mgr-order { padding: 0; overflow: hidden; }
-
-/* Clickable order summary header (the whole row toggles the detail). */
-.mgr-head {
+/* Orders as a table. The wrapper scrolls horizontally on very narrow screens
+   so the phone frame is never widened. */
+.order-table-wrap { overflow-x: auto; }
+.order-table {
   width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  padding: 14px;
-  border: none;
-  background: transparent;
-  text-align: left;
-  cursor: pointer;
-  color: inherit;
+  border-collapse: collapse;
+  font-size: 0.9rem;
 }
-.mgr-head:focus-visible {
+.order-table thead th {
+  text-align: left;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  padding: 8px 10px;
+  border-bottom: 2px solid var(--line);
+  white-space: nowrap;
+}
+.order-table .col-num { text-align: right; white-space: nowrap; }
+.order-table .col-actions { text-align: right; }
+.order-row { cursor: pointer; transition: background 0.12s ease; }
+.order-row:hover { background: rgba(0, 0, 0, 0.03); }
+.order-row > td {
+  padding: 11px 10px;
+  border-bottom: 1px solid var(--line);
+  vertical-align: middle;
+}
+.order-row-open > td { border-bottom: none; }
+.order-row .col-id { font-weight: 800; color: var(--ink); white-space: nowrap; }
+.order-table .col-time {
+  display: none;
+  color: var(--ink-soft);
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+.order-row:focus-visible {
   outline: 3px solid var(--candy-5);
   outline-offset: -3px;
-  border-radius: 18px;
 }
-.mgr-head-right {
+.row-actions-cell {
   display: flex;
   align-items: center;
-  gap: 10px;
-  flex-shrink: 0;
+  justify-content: flex-end;
+  gap: 8px;
 }
-.order-summary { font-weight: 800; color: var(--ink); font-size: 0.86rem; }
 .chev {
   font-size: 1.1rem;
   color: var(--ink-soft);
@@ -2686,13 +2704,10 @@
 }
 .chev-up { transform: rotate(180deg); }
 
-/* Row-level action strip (ready → delivered, payment_pending → paid). */
-.mgr-row-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-  padding: 0 14px 14px;
-}
+/* The expanded detail spans the full table width (the row above drops its
+   bottom border so .mgr-detail's top border is the single divider). */
+.order-detail-row > td { padding: 0; border-bottom: 1px solid var(--line); }
+
 .candy-btn.sm {
   font-size: 0.85rem;
   padding: 9px 16px;
@@ -3261,6 +3276,8 @@
     align-items: start;
     gap: 14px;
   }
+  /* Enough width for the full orders table — reveal the Time column. */
+  .app.dashboard .order-table .col-time { display: table-cell; }
 }
 @media (min-width: 1100px) {
   .app.dashboard .order-list { grid-template-columns: repeat(3, 1fr); }

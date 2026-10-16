@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { Fragment, useCallback, useEffect, useRef, useState } from 'react'
 import {
   getOrder,
   listAllOrders,
@@ -340,160 +340,201 @@ export default function ManagerOrders() {
         <p className="muted center">No {status} orders.</p>
       )}
 
-      <div className="order-list">
-        {orders.map((order) => {
-          const expanded = expandedId === order.id
-          const detail = details[order.id]
-          const prepSet = prepared[order.id] ?? new Set<number>()
-          return (
-            <section key={order.id} className="order-card mgr-order">
-              <button
-                type="button"
-                className="mgr-head"
-                onClick={() => toggleExpand(order.id)}
-                aria-expanded={expanded}
-              >
-                <span className="order-id-wrap">
-                  <span className="order-id">Order #{order.id}</span>
-                  <span className="order-when">
-                    {new Date(order.created_at).toLocaleString()}
-                  </span>
-                </span>
-                <span className="mgr-head-right">
-                  <span className="order-summary">
-                    {order.item_count} drinks · {money(order.total_amount)}
-                  </span>
-                  <span className={`status-badge status-${order.status}`}>
-                    {STATUS_LABELS[order.status]}
-                  </span>
-                  <span className={expanded ? 'chev chev-up' : 'chev'} aria-hidden>
-                    ⌄
-                  </span>
-                </span>
-              </button>
-
-              {/* Row-level actions that don't require expanding. */}
-              {order.status === 'ready' && (
-                <div className="mgr-row-actions">
-                  <button
-                    type="button"
-                    className="candy-btn btn-mint sm"
-                    onClick={() => act(order, { status: 'payment_pending' }, true)}
-                    disabled={busyId === order.id}
-                  >
-                    Mark delivered
-                  </button>
-                </div>
-              )}
-              {order.status === 'payment_pending' && (
-                <div className="mgr-row-actions">
-                  <button
-                    type="button"
-                    className="candy-btn btn-sun sm"
-                    onClick={() => act(order, { status: 'payment_completed' }, true)}
-                    disabled={busyId === order.id}
-                  >
-                    Mark paid
-                  </button>
-                </div>
-              )}
-
-              {expanded && (
-                <div className="mgr-detail">
-                  {!detail ? (
-                    <p className="muted center">Loading…</p>
-                  ) : order.status === 'preparing' ? (
-                    <>
-                      <div className="prep-list">
-                        {detail.order_items.map((line) => {
-                          const done = prepSet.has(line.id)
-                          return (
-                            <div
-                              key={line.id}
-                              className={done ? 'prep-row prep-done' : 'prep-row'}
+      {orders.length > 0 && (
+        <div className="order-table-wrap">
+          <table className="order-table">
+            <thead>
+              <tr>
+                <th>Order</th>
+                <th className="col-time">Time</th>
+                <th className="col-num">Items</th>
+                <th className="col-num">Total</th>
+                <th>Status</th>
+                <th className="col-actions">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {orders.map((order) => {
+                const expanded = expandedId === order.id
+                const detail = details[order.id]
+                const prepSet = prepared[order.id] ?? new Set<number>()
+                return (
+                  <Fragment key={order.id}>
+                    <tr
+                      className={expanded ? 'order-row order-row-open' : 'order-row'}
+                      onClick={() => toggleExpand(order.id)}
+                      aria-expanded={expanded}
+                    >
+                      <td className="col-id">#{order.id}</td>
+                      <td className="col-time">
+                        {new Date(order.created_at).toLocaleString()}
+                      </td>
+                      <td className="col-num">{order.item_count}</td>
+                      <td className="col-num">{money(order.total_amount)}</td>
+                      <td>
+                        <span className={`status-badge status-${order.status}`}>
+                          {STATUS_LABELS[order.status]}
+                        </span>
+                      </td>
+                      <td className="col-actions">
+                        <div className="row-actions-cell">
+                          {order.status === 'ready' && (
+                            <button
+                              type="button"
+                              className="candy-btn btn-mint sm"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                act(order, { status: 'payment_pending' }, true)
+                              }}
+                              disabled={busyId === order.id}
                             >
-                              <div className="prep-info">
-                                <div className="prep-name-row">
-                                  <span
-                                    className={
-                                      line.item.is_veg
-                                        ? 'veg-dot veg'
-                                        : 'veg-dot nonveg'
-                                    }
-                                  />
-                                  <span className="prep-name">
-                                    {line.item.name}
-                                    {line.quantity > 1 && ` ×${line.quantity}`}
-                                  </span>
-                                </div>
-                                {(line.variants.length > 0 ||
-                                  line.toppings.length > 0) && (
-                                  <div className="opt-chips">
-                                    {line.variants.map((v) => (
-                                      <span key={`v${v.id}`} className="opt-chip">
-                                        {v.name}
-                                        <em>{signedMoney(v.price_delta)}</em>
-                                      </span>
-                                    ))}
-                                    {line.toppings.map((t) => (
-                                      <span
-                                        key={`t${t.id}`}
-                                        className="opt-chip opt-topping"
+                              Mark delivered
+                            </button>
+                          )}
+                          {order.status === 'payment_pending' && (
+                            <button
+                              type="button"
+                              className="candy-btn btn-sun sm"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                act(order, { status: 'payment_completed' }, true)
+                              }}
+                              disabled={busyId === order.id}
+                            >
+                              Mark paid
+                            </button>
+                          )}
+                          <span
+                            className={expanded ? 'chev chev-up' : 'chev'}
+                            aria-hidden
+                          >
+                            ⌄
+                          </span>
+                        </div>
+                      </td>
+                    </tr>
+
+                    {expanded && (
+                      <tr className="order-detail-row">
+                        <td colSpan={6}>
+                          <div className="mgr-detail">
+                            {!detail ? (
+                              <p className="muted center">Loading…</p>
+                            ) : order.status === 'preparing' ? (
+                              <>
+                                <div className="prep-list">
+                                  {detail.order_items.map((line) => {
+                                    const done = prepSet.has(line.id)
+                                    return (
+                                      <div
+                                        key={line.id}
+                                        className={
+                                          done ? 'prep-row prep-done' : 'prep-row'
+                                        }
                                       >
-                                        {t.name}
-                                        <em>{signedMoney(t.price)}</em>
-                                      </span>
-                                    ))}
-                                  </div>
-                                )}
+                                        <div className="prep-info">
+                                          <div className="prep-name-row">
+                                            <span
+                                              className={
+                                                line.item.is_veg
+                                                  ? 'veg-dot veg'
+                                                  : 'veg-dot nonveg'
+                                              }
+                                            />
+                                            <span className="prep-name">
+                                              {line.item.name}
+                                              {line.quantity > 1 &&
+                                                ` ×${line.quantity}`}
+                                            </span>
+                                          </div>
+                                          {(line.variants.length > 0 ||
+                                            line.toppings.length > 0) && (
+                                            <div className="opt-chips">
+                                              {line.variants.map((v) => (
+                                                <span
+                                                  key={`v${v.id}`}
+                                                  className="opt-chip"
+                                                >
+                                                  {v.name}
+                                                  <em>
+                                                    {signedMoney(v.price_delta)}
+                                                  </em>
+                                                </span>
+                                              ))}
+                                              {line.toppings.map((t) => (
+                                                <span
+                                                  key={`t${t.id}`}
+                                                  className="opt-chip opt-topping"
+                                                >
+                                                  {t.name}
+                                                  <em>{signedMoney(t.price)}</em>
+                                                </span>
+                                              ))}
+                                            </div>
+                                          )}
+                                        </div>
+                                        <button
+                                          type="button"
+                                          className={
+                                            done ? 'prep-btn prep-on' : 'prep-btn'
+                                          }
+                                          onClick={() =>
+                                            togglePrepared(order.id, line.id)
+                                          }
+                                          aria-pressed={done}
+                                        >
+                                          {done ? 'Prepared ✓' : 'Prepared'}
+                                        </button>
+                                      </div>
+                                    )
+                                  })}
+                                </div>
+
+                                <button
+                                  type="button"
+                                  className="candy-btn btn-grape mgr-full-btn"
+                                  onClick={() =>
+                                    act(order, { status: 'ready' }, true)
+                                  }
+                                  disabled={
+                                    !allPrepared(detail) || busyId === order.id
+                                  }
+                                >
+                                  {allPrepared(detail)
+                                    ? 'Order is Ready'
+                                    : 'Mark every item prepared first'}
+                                </button>
+                              </>
+                            ) : (
+                              <OrderLines lines={detail.order_items} />
+                            )}
+
+                            {(order.status === 'preparing' ||
+                              order.status === 'ready') && (
+                              <div className="mgr-actions">
+                                <button
+                                  type="button"
+                                  className="mgr-cancel"
+                                  onClick={() =>
+                                    act(order, { status: 'cancelled' }, true)
+                                  }
+                                  disabled={busyId === order.id}
+                                >
+                                  Cancel order
+                                </button>
                               </div>
-                              <button
-                                type="button"
-                                className={done ? 'prep-btn prep-on' : 'prep-btn'}
-                                onClick={() => togglePrepared(order.id, line.id)}
-                                aria-pressed={done}
-                              >
-                                {done ? 'Prepared ✓' : 'Prepared'}
-                              </button>
-                            </div>
-                          )
-                        })}
-                      </div>
-
-                      <button
-                        type="button"
-                        className="candy-btn btn-grape mgr-full-btn"
-                        onClick={() => act(order, { status: 'ready' }, true)}
-                        disabled={!allPrepared(detail) || busyId === order.id}
-                      >
-                        {allPrepared(detail)
-                          ? 'Order is Ready'
-                          : 'Mark every item prepared first'}
-                      </button>
-                    </>
-                  ) : (
-                    <OrderLines lines={detail.order_items} />
-                  )}
-
-                  {(order.status === 'preparing' ||
-                    order.status === 'ready') && (
-                    <div className="mgr-actions">
-                      <button
-                        type="button"
-                        className="mgr-cancel"
-                        onClick={() => act(order, { status: 'cancelled' }, true)}
-                        disabled={busyId === order.id}
-                      >
-                        Cancel order
-                      </button>
-                    </div>
-                  )}
-                </div>
-              )}
-            </section>
-          )
-        })}
-      </div>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </Fragment>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
 
       {loading && <p className="muted center">Loading orders…</p>}
       {!loading && hasMore && (

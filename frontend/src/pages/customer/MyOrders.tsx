@@ -25,7 +25,7 @@ const STATUSES: OrderStatus[] = [
 const STATUS_LABELS: Record<OrderStatus, string> = {
   cart: 'cart',
   preparing: 'preparing',
-  ready: 'ready',
+  ready: 'ready to serve',
   payment_pending: 'payment pending',
   payment_completed: 'paid',
   cancelled: 'cancelled',

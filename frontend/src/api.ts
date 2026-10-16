@@ -994,23 +994,14 @@ export interface ServiceReviewScores {
   staff_friendliness: number | null
   speed_of_service: number | null
   order_accuracy: number | null
-  attentiveness: number | null
   atmosphere_ambiance: number | null
   cleanliness: number | null
   value_for_money: number | null
   food_quality: number | null
-  beverage_quality: number | null
   menu_variety: number | null
   seating_comfort: number | null
-  wait_time_queue_management: number | null
-  problem_resolution: number | null
-  staff_knowledge: number | null
   noise_level: number | null
   payment_billing_experience: number | null
-  kid_family_friendliness: number | null
-  pet_friendliness: number | null
-  aesthetic_decor: number | null
-  accessibility: number | null
 }
 
 // Manager: the AI-derived aggregate service-aspect scores for the analysis

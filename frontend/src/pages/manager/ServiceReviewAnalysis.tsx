@@ -33,11 +33,6 @@ const ASPECTS: {
     desc: 'Whether guests receive exactly what they ordered — the right items, made the right way, with no missing extras.',
   },
   {
-    key: 'attentiveness',
-    label: 'Attentiveness',
-    desc: 'How well staff notice and respond to needs — refills, checking in, clearing plates — without having to be flagged down.',
-  },
-  {
     key: 'atmosphere_ambiance',
     label: 'Atmosphere / Ambiance',
     desc: 'The overall mood of the space: lighting, music, warmth and the feeling guests get while they sit.',
@@ -58,11 +53,6 @@ const ASPECTS: {
     desc: 'Taste, freshness, temperature and presentation of the food that comes out of the kitchen.',
   },
   {
-    key: 'beverage_quality',
-    label: 'Beverage Quality',
-    desc: 'Taste and consistency of coffee, tea and other drinks — the core of a cafe’s reputation.',
-  },
-  {
     key: 'menu_variety',
     label: 'Menu Variety',
     desc: 'How wide and appealing the range of food and drink options is, including dietary choices.',
@@ -73,21 +63,6 @@ const ASPECTS: {
     desc: 'Comfort of the chairs and tables and how much room guests have between each other.',
   },
   {
-    key: 'wait_time_queue_management',
-    label: 'Wait Time / Queue Management',
-    desc: 'How well lines and wait times are handled, especially at busy peaks.',
-  },
-  {
-    key: 'problem_resolution',
-    label: 'Problem Resolution',
-    desc: 'How gracefully staff handle complaints, mistakes and special requests when things go wrong.',
-  },
-  {
-    key: 'staff_knowledge',
-    label: 'Staff Knowledge',
-    desc: 'How well staff know the menu and can confidently answer questions and make recommendations.',
-  },
-  {
     key: 'noise_level',
     label: 'Noise Level',
     desc: 'Whether the space is comfortably quiet enough to talk, or too loud for a relaxed visit.',
@@ -96,26 +71,6 @@ const ASPECTS: {
     key: 'payment_billing_experience',
     label: 'Payment & Billing Experience',
     desc: 'How smooth, fast and error-free paying the bill is, including splitting and card options.',
-  },
-  {
-    key: 'kid_family_friendliness',
-    label: 'Kid-Family Friendliness',
-    desc: 'How welcoming the cafe is for children and families — space, patience and suitable options.',
-  },
-  {
-    key: 'pet_friendliness',
-    label: 'Pet Friendliness',
-    desc: 'How welcoming the cafe is for guests arriving with pets.',
-  },
-  {
-    key: 'aesthetic_decor',
-    label: 'Aesthetic / Decor',
-    desc: 'The look and style of the interior — furnishings, colours and the little design touches.',
-  },
-  {
-    key: 'accessibility',
-    label: 'Accessibility',
-    desc: 'How easy the cafe is to enter and use for guests with disabilities or mobility needs.',
   },
 ]
 

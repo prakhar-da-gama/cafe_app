@@ -433,23 +433,14 @@ class ServiceReviewScoresRead(BaseModel):
     staff_friendliness: int | None = None
     speed_of_service: int | None = None
     order_accuracy: int | None = None
-    attentiveness: int | None = None
     atmosphere_ambiance: int | None = None
     cleanliness: int | None = None
     value_for_money: int | None = None
     food_quality: int | None = None
-    beverage_quality: int | None = None
     menu_variety: int | None = None
     seating_comfort: int | None = None
-    wait_time_queue_management: int | None = None
-    problem_resolution: int | None = None
-    staff_knowledge: int | None = None
     noise_level: int | None = None
     payment_billing_experience: int | None = None
-    kid_family_friendliness: int | None = None
-    pet_friendliness: int | None = None
-    aesthetic_decor: int | None = None
-    accessibility: int | None = None
 
 
 # ---- Notifications ----

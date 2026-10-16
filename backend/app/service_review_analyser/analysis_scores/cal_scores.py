@@ -26,30 +26,21 @@ from ...services.gemini import generate_structured
 
 logger = logging.getLogger(__name__)
 
-# The single source of truth for the 20 service aspects: (display name, the
+# The single source of truth for the 11 service aspects: (display name, the
 # ServiceReviewScores column / LlmServiceScores field it maps to). The order
 # here is the order the dashboard chart renders them in.
 TAGS: list[tuple[str, str]] = [
     ("Staff Friendliness", "staff_friendliness"),
     ("Speed of Service", "speed_of_service"),
     ("Order Accuracy", "order_accuracy"),
-    ("Attentiveness", "attentiveness"),
     ("Atmosphere / Ambiance", "atmosphere_ambiance"),
     ("Cleanliness", "cleanliness"),
     ("Value for Money", "value_for_money"),
     ("Food Quality", "food_quality"),
-    ("Beverage Quality", "beverage_quality"),
     ("Menu Variety", "menu_variety"),
     ("Seating Comfort", "seating_comfort"),
-    ("Wait Time / Queue Management", "wait_time_queue_management"),
-    ("Problem Resolution", "problem_resolution"),
-    ("Staff Knowledge", "staff_knowledge"),
     ("Noise Level", "noise_level"),
     ("Payment & Billing Experience", "payment_billing_experience"),
-    ("Kid-Family Friendliness", "kid_family_friendliness"),
-    ("Pet Friendliness", "pet_friendliness"),
-    ("Aesthetic / Decor", "aesthetic_decor"),
-    ("Accessibility", "accessibility"),
 ]
 
 _FIELD_NAMES = [field for _, field in TAGS]
@@ -64,29 +55,16 @@ class LlmServiceScores(BaseModel):
     staff_friendliness: int | None = Field(default=None, description="Staff Friendliness")
     speed_of_service: int | None = Field(default=None, description="Speed of Service")
     order_accuracy: int | None = Field(default=None, description="Order Accuracy")
-    attentiveness: int | None = Field(default=None, description="Attentiveness")
     atmosphere_ambiance: int | None = Field(default=None, description="Atmosphere / Ambiance")
     cleanliness: int | None = Field(default=None, description="Cleanliness")
     value_for_money: int | None = Field(default=None, description="Value for Money")
     food_quality: int | None = Field(default=None, description="Food Quality")
-    beverage_quality: int | None = Field(default=None, description="Beverage Quality")
     menu_variety: int | None = Field(default=None, description="Menu Variety")
     seating_comfort: int | None = Field(default=None, description="Seating Comfort")
-    wait_time_queue_management: int | None = Field(
-        default=None, description="Wait Time / Queue Management"
-    )
-    problem_resolution: int | None = Field(default=None, description="Problem Resolution")
-    staff_knowledge: int | None = Field(default=None, description="Staff Knowledge")
     noise_level: int | None = Field(default=None, description="Noise Level")
     payment_billing_experience: int | None = Field(
         default=None, description="Payment & Billing Experience"
     )
-    kid_family_friendliness: int | None = Field(
-        default=None, description="Kid-Family Friendliness"
-    )
-    pet_friendliness: int | None = Field(default=None, description="Pet Friendliness")
-    aesthetic_decor: int | None = Field(default=None, description="Aesthetic / Decor")
-    accessibility: int | None = Field(default=None, description="Accessibility")
 
     @field_validator("*", mode="before")
     @classmethod

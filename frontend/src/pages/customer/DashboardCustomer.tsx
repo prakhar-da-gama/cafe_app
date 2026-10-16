@@ -9,6 +9,7 @@ interface Props {
   onViewMenu: () => void
   onOpenChat: () => void
   onPlay: () => void
+  onOpenCart: () => void
   onGoAhead: (selected: Tag[]) => void
 }
 
@@ -21,6 +22,7 @@ export default function DashboardCustomer({
   onViewMenu,
   onOpenChat,
   onPlay,
+  onOpenCart,
   onGoAhead,
 }: Props) {
   const [tags, setTags] = useState<Tag[]>([])
@@ -52,7 +54,7 @@ export default function DashboardCustomer({
 
   return (
     <div className="screen dash">
-      <CafeHeader onViewMenu={onViewMenu} onPlay={onPlay} />
+      <CafeHeader onViewMenu={onViewMenu} onPlay={onPlay} onOpenCart={onOpenCart} />
 
       <ChatBar onOpen={onOpenChat} />
 

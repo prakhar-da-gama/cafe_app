@@ -407,6 +407,35 @@
   box-shadow: 0 1px 0 #0e9b72, 0 3px 8px rgba(20, 185, 138, 0.3);
 }
 
+/* ---- Cart button (header) ---- */
+.cart-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  color: #2a2a2a;
+  background: #fff;
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  cursor: pointer;
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.12), 0 4px 10px rgba(0, 0, 0, 0.12);
+  transition: transform 0.1s ease, box-shadow 0.1s ease, filter 0.15s;
+}
+.cart-btn:hover { filter: brightness(0.97); }
+.cart-btn:active { transform: translateY(2px); box-shadow: 0 1px 0 rgba(0, 0, 0, 0.12); }
+.cart-dot {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #e23b3b;
+  border: 2px solid #fff;
+}
+
 /* ---- Chat bar ---- */
 .chatbar-wrap { position: relative; margin: 4px 0 6px; }
 .chatbar {

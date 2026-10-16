@@ -154,6 +154,7 @@ function App() {
           onViewMenu={() => navigate('fullmenu')}
           onOpenChat={openBaristaChat}
           onPlay={() => setShowGamePopup(true)}
+          onOpenCart={openCart}
           onGoAhead={(chosen) => {
             setSelection(chosen)
             navigate('menu')

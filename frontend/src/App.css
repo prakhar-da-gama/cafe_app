@@ -2708,6 +2708,44 @@
    bottom border so .mgr-detail's top border is the single divider). */
 .order-detail-row > td { padding: 0; border-bottom: 1px solid var(--line); }
 
+/* Phone: pin the table to a fixed layout with percentage columns so it always
+   fits the phone width (no horizontal scroll). Fixed layout makes long content
+   — the status badge, the action buttons — wrap instead of widening a column.
+   Desktop (>=760px) keeps the natural auto layout and reveals the Time column. */
+@media (max-width: 759px) {
+  .order-table { table-layout: fixed; font-size: 0.8rem; }
+  .order-table thead th {
+    padding: 7px 5px;
+    font-size: 0.6rem;
+    letter-spacing: 0.02em;
+  }
+  .order-row > td { padding: 8px 5px; }
+  /* col-time (nth-child 2) is hidden on phones; the rest sum to 100%. */
+  .order-table thead th:nth-child(1),
+  .order-row > td:nth-child(1) { width: 13%; }
+  .order-table thead th:nth-child(3),
+  .order-row > td:nth-child(3) { width: 12%; }
+  .order-table thead th:nth-child(4),
+  .order-row > td:nth-child(4) { width: 22%; }
+  .order-table thead th:nth-child(5),
+  .order-row > td:nth-child(5) { width: 29%; }
+  .order-table thead th:nth-child(6),
+  .order-row > td:nth-child(6) { width: 24%; }
+  .order-table .status-badge {
+    letter-spacing: 0;
+    padding: 3px 6px;
+    font-size: 0.58rem;
+    white-space: normal;
+  }
+  .row-actions-cell { gap: 5px; }
+  .row-actions-cell .candy-btn.sm {
+    font-size: 0.66rem;
+    padding: 6px 7px;
+    white-space: normal;
+    line-height: 1.15;
+  }
+}
+
 .candy-btn.sm {
   font-size: 0.85rem;
   padding: 9px 16px;

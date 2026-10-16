@@ -1,25 +1,34 @@
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from .. import crud, schemas
 from ..auth import require_jwt, require_manager
 from ..database import get_db
+from ..service_review_analyser.analysis_scores.cal_scores import run_score_calculation
 
 router = APIRouter(prefix="/api/service-reviews", tags=["service-reviews"])
+
+# Recalculate the aggregate service scores once every this many new reviews.
+_SCORE_RECALC_EVERY = 20
 
 
 @router.post("", response_model=schemas.ServiceReviewRead, status_code=status.HTTP_201_CREATED)
 def create_service_review(
     payload: schemas.ServiceReviewCreate,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     claims: dict[str, Any] = Depends(require_jwt),
 ):
     """Customer: leave the overall service review for one of your completed
     orders — a 0–5 star rating plus an optional note and photos. 400 if the
     order isn't yours or isn't completed; 409 if it's already been reviewed
-    (edit it with PATCH instead). Requires a valid JWT bearer token."""
+    (edit it with PATCH instead). Requires a valid JWT bearer token.
+
+    Each new review bumps the running count on the singleton scores row; every
+    20th review kicks off a background recalculation of the aggregate service
+    scores (so the response isn't held up by the Gemini call)."""
     user_id = int(claims["sub"])
 
     if crud.get_service_review_for_order(db, payload.order_id) is not None:
@@ -33,6 +42,10 @@ def create_service_review(
             status_code=400,
             detail="Order not found, not yours, or not completed yet",
         )
+
+    count = crud.increment_service_review_count(db)
+    if count % _SCORE_RECALC_EVERY == 0:
+        background_tasks.add_task(run_score_calculation)
     return review
 
 
@@ -77,6 +90,22 @@ def service_rating_summary(
     """Manager: the headline service rating (average + count). Requires a
     manager JWT."""
     return crud.get_service_rating_summary(db)
+
+
+@router.get("/scores", response_model=schemas.ServiceReviewScoresRead)
+def service_review_scores(
+    db: Session = Depends(get_db),
+    _claims: dict[str, Any] = Depends(require_manager),
+):
+    """Manager: the AI-derived aggregate 0-10 score for each service aspect
+    (plus the number of reviews they were computed from), for the service-review
+    analysis chart. Any aspect may be null when the reviews gave nothing to
+    score it on. Returns a zeroed/empty row if no scores have been computed yet.
+    Requires a manager JWT."""
+    row = crud.get_service_review_scores(db)
+    if row is None:
+        return schemas.ServiceReviewScoresRead()
+    return row
 
 
 @router.get("", response_model=schemas.PaginatedServiceReviews)

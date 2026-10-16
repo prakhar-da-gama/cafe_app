@@ -1233,3 +1233,110 @@ def list_service_reviews(
         "has_more": offset + len(rows) < total,
         "average_rating": average,
     }
+
+
+# ---- Service review scores (singleton) ----
+
+# The one and only id the service_review_scores row ever uses (the table has a
+# CHECK (id = 1) constraint enforcing the singleton).
+_SCORES_ROW_ID = 1
+
+
+def get_service_review_scores(
+    db: Session,
+) -> models.ServiceReviewScores | None:
+    """The singleton service_review_scores row if it exists yet, else None."""
+    return db.get(models.ServiceReviewScores, _SCORES_ROW_ID)
+
+
+def get_or_create_service_review_scores(
+    db: Session,
+) -> models.ServiceReviewScores:
+    """The singleton service_review_scores row, created (uncommitted) on first
+    access with a zero review count and all aspect scores null."""
+    row = db.get(models.ServiceReviewScores, _SCORES_ROW_ID)
+    if row is None:
+        row = models.ServiceReviewScores(id=_SCORES_ROW_ID, number_of_reviews=0)
+        db.add(row)
+        db.flush()
+    return row
+
+
+def increment_service_review_count(db: Session) -> int:
+    """Bump the singleton row's running review count by one and return the new
+    total. Committed by the caller."""
+    row = get_or_create_service_review_scores(db)
+    row.number_of_reviews = (row.number_of_reviews or 0) + 1
+    db.commit()
+    return row.number_of_reviews
+
+
+# ---- Notifications ----
+
+
+def create_notification(
+    db: Session, *, text: str, notification_for: models.NotificationFor
+) -> models.Notification:
+    """Add a notification for one audience. Flushed (not committed) so it joins
+    the caller's transaction."""
+    note = models.Notification(
+        notification_text=text, notification_for=notification_for
+    )
+    db.add(note)
+    db.flush()
+    return note
+
+
+def list_notifications(
+    db: Session,
+    *,
+    notification_for: models.NotificationFor,
+    resolved: bool | None = None,
+    page: int = 1,
+    page_size: int = 20,
+) -> dict:
+    """A DB-paginated page of notifications for one audience, newest first,
+    optionally filtered by resolved state. Filtering + ordering + the LIMIT/
+    OFFSET all run on the (notification_for, resolved, created_at) index."""
+    conditions = [models.Notification.notification_for == notification_for]
+    if resolved is not None:
+        conditions.append(models.Notification.resolved == resolved)
+
+    base = select(models.Notification).where(*conditions)
+    total = db.execute(
+        select(func.count()).select_from(base.order_by(None).subquery())
+    ).scalar_one()
+
+    offset = (page - 1) * page_size
+    rows = list(
+        db.execute(
+            base.order_by(
+                models.Notification.created_at.desc(),
+                models.Notification.id.desc(),
+            )
+            .limit(page_size)
+            .offset(offset)
+        )
+        .scalars()
+        .all()
+    )
+    return {
+        "items": [schemas.NotificationRead.model_validate(r) for r in rows],
+        "total": total,
+        "page": page,
+        "page_size": page_size,
+        "has_more": offset + len(rows) < total,
+    }
+
+
+def resolve_notification(
+    db: Session, notification_id: int
+) -> models.Notification | None:
+    """Mark a notification resolved. Returns None if it doesn't exist."""
+    note = db.get(models.Notification, notification_id)
+    if note is None:
+        return None
+    note.resolved = True
+    db.commit()
+    db.refresh(note)
+    return note

@@ -18,6 +18,7 @@ from .routers import (
     chatbot,
     game,
     menu,
+    notifications,
     orders,
     service_reviews,
     tags,
@@ -148,6 +149,7 @@ app.include_router(cart.router)
 app.include_router(chatbot.router)
 app.include_router(game.router)
 app.include_router(menu.router)
+app.include_router(notifications.router)
 app.include_router(orders.router)
 app.include_router(service_reviews.router)
 app.include_router(tags.router)

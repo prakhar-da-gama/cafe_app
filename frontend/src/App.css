@@ -3125,6 +3125,11 @@
 }
 .service-reviews-body .item-reviews-list { max-height: none; overflow: visible; }
 
+/* The standalone "Service reviews" manager page lists every review down the
+   whole screen — it must not inherit the 320px scroll-box cap used for the
+   per-item review preview, or it reads as a small box on a wide dashboard. */
+.service-reviews-page-list { max-height: none; overflow: visible; }
+
 /* ============================================================
    Admin console — portal tiles
    ============================================================ */
@@ -3226,7 +3231,8 @@
    order card from stretching its row-mates. */
 @media (min-width: 760px) {
   .app.dashboard .order-list,
-  .app.dashboard .oos-list {
+  .app.dashboard .oos-list,
+  .app.dashboard .service-reviews-page-list {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     align-items: start;
@@ -3235,6 +3241,7 @@
 }
 @media (min-width: 1100px) {
   .app.dashboard .order-list { grid-template-columns: repeat(3, 1fr); }
+  .app.dashboard .service-reviews-page-list { grid-template-columns: repeat(3, 1fr); }
   .app.dashboard .admin-tiles { grid-template-columns: repeat(3, 1fr); }
 }
 

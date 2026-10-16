@@ -141,24 +141,28 @@ const BANDS: Band[] = [
     id: 'good',
     label: 'Good',
     hint: 'Solid, with a little headroom',
-    color: '#38bd9c',
+    color: '#e0a400',
     inRange: (v) => v >= 7 && v < 9,
   },
   {
     id: 'watch',
-    label: 'Needs work',
+    label: 'Needs attention',
     hint: 'Mixed feedback — worth a look',
-    color: '#f0a020',
+    color: '#e24a6e',
     inRange: (v) => v >= 4 && v < 7,
   },
   {
     id: 'critical',
     label: 'Critical',
     hint: 'Hurting the guest experience',
-    color: '#e24a6e',
+    color: '#c01f3c',
     inRange: (v) => v < 4,
   },
 ]
+
+// The order the breakdown lists its bands — "Needs attention" surfaced first so
+// the actionable items lead, then the rest worst-to-best.
+const BREAKDOWN_ORDER = ['watch', 'critical', 'good', 'excellent'] as const
 const NO_DATA = {
   id: 'nodata',
   label: 'Not enough data',
@@ -244,17 +248,18 @@ export default function ServiceReviewAnalysis({ onBack }: Props) {
     return counts
   }, [scored])
 
-  // Breakdown: scored bands in best->worst (or worst->best) order. "Not enough
-  // data" aspects are intentionally left out of this section.
+  // Breakdown: bands in a fixed "needs attention first" order; items within a
+  // band still follow the sort toggle. "Not enough data" is left out entirely.
   const groups = useMemo(() => {
-    const ordered = sort === 'high' ? BANDS : [...BANDS].reverse()
     const result: { band: Band; items: Scored[] }[] = []
-    for (const band of ordered) {
-      const items = sortedRated.filter((a) => bandFor(a.value).id === band.id)
+    for (const id of BREAKDOWN_ORDER) {
+      const band = BANDS.find((b) => b.id === id)
+      if (!band) continue
+      const items = sortedRated.filter((a) => bandFor(a.value).id === id)
       if (items.length) result.push({ band, items })
     }
     return result
-  }, [sortedRated, sort])
+  }, [sortedRated])
 
   return (
     <div className="screen menu-screen mgr-screen">
@@ -439,13 +444,13 @@ export default function ServiceReviewAnalysis({ onBack }: Props) {
   )
 }
 
-/** Tracks whether the element sits inside a centred band of the viewport.
- *  Two-way: reports true once scrolled well into view and false again when it
- *  leaves (so the clouds re-scatter when you scroll back up). The negative
- *  top/bottom margins shrink the trigger zone to the middle of the screen, so
- *  the user has to scroll a bit further before it fires. */
+/** Tracks whether the element has scrolled into view. Two-way: true once its
+ *  top passes the trigger line near the bottom of the viewport, false again
+ *  when it leaves (so the clouds re-scatter when you scroll back up). The
+ *  bottom-only margin keeps the line reachable by *every* band — including the
+ *  last one on the page — which a centred zone could trap out of reach. */
 function useInView<T extends HTMLElement>(
-  rootMargin = '-32% 0px -32% 0px',
+  rootMargin = '0px 0px -10% 0px',
 ) {
   const ref = useRef<T | null>(null)
   const [inView, setInView] = useState(false)

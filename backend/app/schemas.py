@@ -2,9 +2,20 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
 from .models import OrderStatus
+
+# Reviews are limited to this many words, enforced on every endpoint that
+# accepts review text (and mirrored by the frontend).
+MAX_REVIEW_WORDS = 50
+
+
+def validate_review_word_count(value: str | None) -> str | None:
+    """Reject review text longer than MAX_REVIEW_WORDS words."""
+    if value is not None and len(value.split()) > MAX_REVIEW_WORDS:
+        raise ValueError(f"Review must be {MAX_REVIEW_WORDS} words or fewer")
+    return value
 
 
 class ItemBase(BaseModel):
@@ -219,6 +230,8 @@ class AddToCartRequest(BaseModel):
     review: str | None = None
     review_photo_paths: list[str] = []
 
+    _check_review = field_validator("review")(validate_review_word_count)
+
 
 class OrderItemReviewUpdate(BaseModel):
     """Customer review for a single completed order line. Every field is
@@ -227,6 +240,8 @@ class OrderItemReviewUpdate(BaseModel):
     rating: int | None = Field(default=None, ge=0, le=5)
     review: str | None = None
     review_photo_paths: list[str] | None = None
+
+    _check_review = field_validator("review")(validate_review_word_count)
 
 
 class OrderItemRead(BaseModel):
@@ -363,6 +378,8 @@ class ServiceReviewCreate(BaseModel):
     review: str | None = None
     review_images: list[str] = []
 
+    _check_review = field_validator("review")(validate_review_word_count)
+
 
 class ServiceReviewUpdate(BaseModel):
     """Partial edit of a service review; only the fields set are changed."""
@@ -370,6 +387,8 @@ class ServiceReviewUpdate(BaseModel):
     rating: int | None = Field(default=None, ge=0, le=5)
     review: str | None = None
     review_images: list[str] | None = None
+
+    _check_review = field_validator("review")(validate_review_word_count)
 
 
 class ServiceReviewRead(BaseModel):

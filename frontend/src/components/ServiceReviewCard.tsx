@@ -8,6 +8,10 @@ import {
 } from '../api'
 import StarRating from './StarRating'
 
+/** Reviews are capped at this many words (mirrors the backend). */
+const MAX_REVIEW_WORDS = 50
+const countWords = (s: string) => (s.trim() ? s.trim().split(/\s+/).length : 0)
+
 interface Props {
   orderId: number
 }
@@ -71,6 +75,10 @@ export default function ServiceReviewCard({ orderId }: Props) {
   const save = async () => {
     if (rating === 0) {
       setError('Please pick a star rating for the service.')
+      return
+    }
+    if (countWords(text) > MAX_REVIEW_WORDS) {
+      setError(`Please keep your review to ${MAX_REVIEW_WORDS} words or fewer.`)
       return
     }
     setError(null)
@@ -140,6 +148,13 @@ export default function ServiceReviewCard({ orderId }: Props) {
         onChange={(e) => setText(e.target.value)}
         rows={3}
       />
+      <span
+        className={`review-wordcount${
+          countWords(text) > MAX_REVIEW_WORDS ? ' over' : ''
+        }`}
+      >
+        {countWords(text)}/{MAX_REVIEW_WORDS} words
+      </span>
 
       <div className="review-photos">
         {images.map((p) => (

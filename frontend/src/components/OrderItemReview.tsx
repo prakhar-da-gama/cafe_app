@@ -2,6 +2,10 @@ import { useRef, useState } from 'react'
 import { reviewOrderItem, uploadImage, type OrderLine } from '../api'
 import StarRating from './StarRating'
 
+/** Reviews are capped at this many words (mirrors the backend). */
+const MAX_REVIEW_WORDS = 50
+const countWords = (s: string) => (s.trim() ? s.trim().split(/\s+/).length : 0)
+
 interface Props {
   line: OrderLine
   /** Bubble the saved values up so the parent list stays in sync. */
@@ -53,6 +57,10 @@ export default function OrderItemReview({ line, onSaved }: Props) {
   const save = async () => {
     if (rating === 0 && !text.trim() && photos.length === 0) {
       setError('Add a rating, a note, or a photo first.')
+      return
+    }
+    if (countWords(text) > MAX_REVIEW_WORDS) {
+      setError(`Please keep your review to ${MAX_REVIEW_WORDS} words or fewer.`)
       return
     }
     setError(null)
@@ -131,6 +139,13 @@ export default function OrderItemReview({ line, onSaved }: Props) {
         onChange={(e) => setText(e.target.value)}
         rows={3}
       />
+      <span
+        className={`review-wordcount${
+          countWords(text) > MAX_REVIEW_WORDS ? ' over' : ''
+        }`}
+      >
+        {countWords(text)}/{MAX_REVIEW_WORDS} words
+      </span>
 
       <div className="review-photos">
         {photos.map((p) => (

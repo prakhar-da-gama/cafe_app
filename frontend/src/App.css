@@ -2964,6 +2964,14 @@
   border-color: var(--candy-1);
   box-shadow: 0 0 0 4px rgba(255, 111, 181, 0.18);
 }
+.review-wordcount {
+  display: block;
+  text-align: right;
+  margin-top: -4px;
+  font-size: 0.75rem;
+  color: var(--muted, #9a8c7e);
+}
+.review-wordcount.over { color: #d64545; font-weight: 700; }
 .review-photos { display: flex; flex-wrap: wrap; gap: 8px; }
 .review-photo-thumb {
   position: relative;

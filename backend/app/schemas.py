@@ -422,6 +422,60 @@ class ServiceRatingSummary(BaseModel):
     rating_count: int = 0
 
 
+class ServiceReviewScoresRead(BaseModel):
+    """The singleton aggregate of AI-derived 0-10 service-aspect scores. Any
+    aspect may be null when the reviews gave nothing to score it on. Field names
+    mirror the service_review_scores columns and the analyser's TAGS list."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    number_of_reviews: int = 0
+    staff_friendliness: int | None = None
+    speed_of_service: int | None = None
+    order_accuracy: int | None = None
+    attentiveness: int | None = None
+    atmosphere_ambiance: int | None = None
+    cleanliness: int | None = None
+    value_for_money: int | None = None
+    food_quality: int | None = None
+    beverage_quality: int | None = None
+    menu_variety: int | None = None
+    seating_comfort: int | None = None
+    wait_time_queue_management: int | None = None
+    problem_resolution: int | None = None
+    staff_knowledge: int | None = None
+    noise_level: int | None = None
+    payment_billing_experience: int | None = None
+    kid_family_friendliness: int | None = None
+    pet_friendliness: int | None = None
+    aesthetic_decor: int | None = None
+    accessibility: int | None = None
+
+
+# ---- Notifications ----
+
+
+class NotificationRead(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    notification_text: str
+    resolved: bool
+    notification_for: str
+    created_at: datetime
+    updated_at: datetime
+
+
+class PaginatedNotifications(BaseModel):
+    """A DB-paginated page of notifications for one audience, newest first."""
+
+    items: list[NotificationRead]
+    total: int
+    page: int
+    page_size: int
+    has_more: bool
+
+
 # ---- Tags ----
 
 

@@ -5,10 +5,12 @@ from .chat_context import ChatContext
 from .chatbot_transcript import ChatbotTranscript
 from .game_stat import GameStat
 from .item import Item
+from .notification import Notification, NotificationFor
 from .order import Order, OrderStatus
 from .order_item import OrderItem
 from .otp import Otp
 from .service_review import ServiceReview
+from .service_review_scores import ServiceReviewScores
 from .subcategory import Subcategory
 from .tag import Tag
 from .tenant_rights_and_information import TenantRightsAndInformation
@@ -33,6 +35,9 @@ __all__ = [
     "OrderStatus",
     "OrderItem",
     "ServiceReview",
+    "ServiceReviewScores",
+    "Notification",
+    "NotificationFor",
     "TenantRightsAndInformation",
     "Otp",
     "GameStat",

@@ -879,7 +879,7 @@ def list_orders(
 
 
 def place_order(db: Session, user_id: int) -> schemas.OrderRead | None:
-    """Check out the user's cart: stamp its total and flip it to `preparing`.
+    """Check out the user's cart: stamp its total and flip it to `received`.
 
     Returns the placed order, or None if there's no cart or it's empty (so the
     caller can surface a 400 rather than creating an empty order).
@@ -896,7 +896,7 @@ def place_order(db: Session, user_id: int) -> schemas.OrderRead | None:
     cart.total_amount = sum(
         (line.price * line.quantity for line in cart.order_items), Decimal("0")
     )
-    cart.status = models.OrderStatus.preparing
+    cart.status = models.OrderStatus.received
     db.commit()
     db.refresh(cart)
     return _serialize_orders(db, [cart])[0]

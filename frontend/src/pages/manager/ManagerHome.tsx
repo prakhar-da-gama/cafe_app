@@ -37,6 +37,8 @@ export default function ManagerHome({
     null,
   )
   const [unresolved, setUnresolved] = useState(0)
+  // Rapid mode: fast received → ready workflow (see ManagerOrders).
+  const [rapidMode, setRapidMode] = useState(false)
 
   useEffect(() => {
     getServiceRatingSummary()
@@ -164,9 +166,19 @@ export default function ManagerHome({
 
       <div className="menu-head mgr-dash-head">
         <h1 className="menu-title">Orders</h1>
+        <button
+          type="button"
+          className={rapidMode ? 'rapid-toggle rapid-on' : 'rapid-toggle'}
+          onClick={() => setRapidMode((v) => !v)}
+          aria-pressed={rapidMode}
+          title="Skip straight from received to ready"
+        >
+          <span className="rapid-switch" aria-hidden />
+          Rapid mode
+        </button>
       </div>
 
-      <ManagerOrders />
+      <ManagerOrders rapidMode={rapidMode} />
     </div>
   )
 }

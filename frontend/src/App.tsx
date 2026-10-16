@@ -240,7 +240,7 @@ function App() {
 
       {screen === 'orders' && (
         <MyOrders
-          initialStatus="preparing"
+          initialStatus="received"
           onBack={goBack}
           onViewMenu={() => navigate('fullmenu')}
         />

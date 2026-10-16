@@ -159,10 +159,11 @@ export interface OrderItem {
   review_photo_paths: string[]
 }
 
-// The lifecycle of an order. `cart` is the open draft; `preparing` onwards are
+// The lifecycle of an order. `cart` is the open draft; `received` onwards are
 // placed orders moving through the kitchen, then delivery and payment.
 export type OrderStatus =
   | 'cart'
+  | 'received'
   | 'preparing'
   | 'ready'
   | 'payment_pending'
@@ -846,7 +847,7 @@ export function listOrders(
   }).then((r) => handle<PaginatedOrders>(r))
 }
 
-// Check out the cart: stamp its total and move it from `cart` to `preparing`.
+// Check out the cart: stamp its total and move it from `cart` to `received`.
 export function placeOrder(): Promise<Order> {
   return fetch('/api/orders/place', {
     method: 'POST',

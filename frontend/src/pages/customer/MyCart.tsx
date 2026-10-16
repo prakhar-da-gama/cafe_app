@@ -12,7 +12,7 @@ interface Props {
 }
 
 /** The cart: the user's open draft order, laid out in the menu's design
- *  language, with a button to place it (→ preparing) and a way into past orders. */
+ *  language, with a button to place it (→ received) and a way into past orders. */
 export default function MyCart({
   onBack,
   onViewMenu,

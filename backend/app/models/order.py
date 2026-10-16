@@ -18,10 +18,12 @@ if TYPE_CHECKING:
 
 class OrderStatus(str, enum.Enum):
     # A cart is a draft order that hasn't been checked out yet. Checking out
-    # moves it straight into `preparing` (the kitchen starts on it); once made
-    # it's `ready`, then handed over as `payment_pending` (delivered, awaiting
+    # moves it to `received` (the order is in, awaiting the kitchen). From there
+    # it's `preparing` (being made) — or, in the dashboard's rapid mode, straight
+    # to `ready` — then handed over as `payment_pending` (delivered, awaiting
     # payment) and finally `payment_completed` once paid.
     cart = "cart"
+    received = "received"
     preparing = "preparing"
     ready = "ready"
     payment_pending = "payment_pending"
@@ -47,7 +49,7 @@ class Order(Base):
     )
     total_amount: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False, default=0)
     status: Mapped[OrderStatus] = mapped_column(
-        SAEnum(OrderStatus), nullable=False, default=OrderStatus.preparing
+        SAEnum(OrderStatus), nullable=False, default=OrderStatus.received
     )
     extra_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(

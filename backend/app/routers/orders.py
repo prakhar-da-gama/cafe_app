@@ -12,6 +12,12 @@ router = APIRouter(prefix="/api/orders", tags=["orders"])
 # The kitchen workflow a manager may drive an order through. Each status maps to
 # the set it's allowed to move to; anything else is rejected with a 400.
 _ALLOWED_TRANSITIONS: dict[models.OrderStatus, set[models.OrderStatus]] = {
+    models.OrderStatus.received: {
+        models.OrderStatus.preparing,
+        # The dashboard's rapid mode skips `preparing` and jumps straight to ready.
+        models.OrderStatus.ready,
+        models.OrderStatus.cancelled,
+    },
     models.OrderStatus.preparing: {
         models.OrderStatus.ready,
         models.OrderStatus.cancelled,
@@ -27,7 +33,7 @@ _ALLOWED_TRANSITIONS: dict[models.OrderStatus, set[models.OrderStatus]] = {
 @router.get("", response_model=schemas.PaginatedOrders)
 def list_orders(
     status: models.OrderStatus = Query(
-        ..., description="Which order status to list (e.g. cart, preparing, ready)."
+        ..., description="Which order status to list (e.g. cart, received, preparing)."
     ),
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=10, ge=1, le=50),
@@ -106,8 +112,9 @@ def manager_update_order(
     _claims: dict[str, Any] = Depends(require_manager),
 ):
     """Manager: advance an order's status along the kitchen workflow
-    (preparing → ready → payment_pending → payment_completed, or cancel from
-    preparing/ready). Marking an order paid is just the payment_pending →
+    (received → preparing → ready → payment_pending → payment_completed, with
+    rapid mode allowing received → ready, or cancel from received/preparing/
+    ready). Marking an order paid is just the payment_pending →
     payment_completed transition. Rejects invalid status transitions with 400.
     Requires a manager JWT."""
     order = db.get(models.Order, order_id)
@@ -173,7 +180,7 @@ def place_order(
     claims: dict[str, Any] = Depends(require_jwt),
 ):
     """Check out the authenticated user's cart: stamp its total and move it from
-    `cart` to `preparing`. Fails with 400 if the cart is missing or empty.
+    `cart` to `received`. Fails with 400 if the cart is missing or empty.
     Requires a valid JWT bearer token."""
     order = crud.place_order(db, int(claims["sub"]))
     if order is None:

@@ -12,6 +12,7 @@ import {
 import OrderLines from '../../components/OrderLines'
 
 const STATUSES: OrderStatus[] = [
+  'received',
   'preparing',
   'ready',
   'payment_pending',
@@ -24,6 +25,7 @@ const PAGE_SIZE = 10
 // underscores).
 const STATUS_LABELS: Record<OrderStatus, string> = {
   cart: 'cart',
+  received: 'received',
   preparing: 'preparing',
   ready: 'ready to serve',
   payment_pending: 'payment pending',
@@ -36,7 +38,7 @@ const NEW_ORDER_SOUND = '/new-order.mp3'
 // How often to check for newly-arrived orders.
 const POLL_MS = 8000
 // Freshly placed orders land here — the status the new-order alarm watches.
-const INCOMING_STATUS: OrderStatus = 'preparing'
+const INCOMING_STATUS: OrderStatus = 'received'
 
 // A manager action (advance status) returns the full order; fold it back into
 // the summary the list holds.
@@ -48,10 +50,17 @@ const orderToSummary = (o: Order): OrderSummary => ({
   item_count: o.order_items.reduce((s, l) => s + l.quantity, 0),
 })
 
+interface Props {
+  /** Rapid mode: show only `received` orders, each with a one-tap "Ready to
+   *  serve" that skips preparing, and hide the status filter. Driven by the
+   *  toggle beside the "Orders" title in ManagerHome. */
+  rapidMode: boolean
+}
+
 /** The manager dashboard: all orders for a chosen status, newest first, with
  *  the kitchen workflow controls that differ per status. */
-export default function ManagerOrders() {
-  const [status, setStatus] = useState<OrderStatus>('preparing')
+export default function ManagerOrders({ rapidMode }: Props) {
+  const [status, setStatus] = useState<OrderStatus>('received')
   const [orders, setOrders] = useState<OrderSummary[]>([])
   // Full line-item detail for orders the manager has expanded, keyed by id.
   // Fetched lazily so the list itself stays lightweight.
@@ -108,6 +117,12 @@ export default function ManagerOrders() {
     setPrepared({})
     load(status, 1)
   }, [status, load])
+
+  // Entering rapid mode pins the view to received orders (the only status it
+  // works on). Leaving it keeps whatever is showing.
+  useEffect(() => {
+    if (rapidMode) setStatus('received')
+  }, [rapidMode])
 
   // Fetch an order's full line items the first time it's expanded, then cache.
   const ensureDetail = useCallback(
@@ -320,20 +335,22 @@ export default function ManagerOrders() {
 
   return (
     <div className="mgr-orders">
-      <nav className="cat-nav orders-filter" aria-label="Filter by status">
-        {STATUSES.map((s, i) => (
-          <button
-            key={s}
-            type="button"
-            className={s === status ? 'cat-pill cat-on' : 'cat-pill'}
-            data-candy={(i % 8) + 1}
-            onClick={() => setStatus(s)}
-            aria-pressed={s === status}
-          >
-            {STATUS_LABELS[s]}
-          </button>
-        ))}
-      </nav>
+      {!rapidMode && (
+        <nav className="cat-nav orders-filter" aria-label="Filter by status">
+          {STATUSES.map((s, i) => (
+            <button
+              key={s}
+              type="button"
+              className={s === status ? 'cat-pill cat-on' : 'cat-pill'}
+              data-candy={(i % 8) + 1}
+              onClick={() => setStatus(s)}
+              aria-pressed={s === status}
+            >
+              {STATUS_LABELS[s]}
+            </button>
+          ))}
+        </nav>
+      )}
 
       {error && <p className="form-error center">{error}</p>}
       {!loading && !error && orders.length === 0 && (
@@ -378,6 +395,19 @@ export default function ManagerOrders() {
                       </td>
                       <td className="col-actions">
                         <div className="row-actions-cell">
+                          {rapidMode && order.status === 'received' && (
+                            <button
+                              type="button"
+                              className="candy-btn btn-grape sm"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                act(order, { status: 'ready' }, true)
+                              }}
+                              disabled={busyId === order.id}
+                            >
+                              Ready to serve
+                            </button>
+                          )}
                           {order.status === 'ready' && (
                             <button
                               type="button"
@@ -507,6 +537,33 @@ export default function ManagerOrders() {
                               </>
                             ) : (
                               <OrderLines lines={detail.order_items} />
+                            )}
+
+                            {order.status === 'received' && (
+                              <div className="mgr-actions">
+                                <button
+                                  type="button"
+                                  className="mgr-cancel"
+                                  onClick={() =>
+                                    act(order, { status: 'cancelled' }, true)
+                                  }
+                                  disabled={busyId === order.id}
+                                >
+                                  Cancel order
+                                </button>
+                                {!rapidMode && (
+                                  <button
+                                    type="button"
+                                    className="candy-btn btn-mint"
+                                    onClick={() =>
+                                      act(order, { status: 'preparing' }, true)
+                                    }
+                                    disabled={busyId === order.id}
+                                  >
+                                    Prepare
+                                  </button>
+                                )}
+                              </div>
                             )}
 
                             {(order.status === 'preparing' ||

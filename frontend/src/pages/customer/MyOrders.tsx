@@ -14,6 +14,7 @@ interface Props {
 // The placed-order statuses the filter offers (the open cart lives on its own
 // page, so it isn't listed here).
 const STATUSES: OrderStatus[] = [
+  'received',
   'preparing',
   'ready',
   'payment_pending',
@@ -24,6 +25,7 @@ const STATUSES: OrderStatus[] = [
 // Pretty labels for the status pills / badge (raw enum values have underscores).
 const STATUS_LABELS: Record<OrderStatus, string> = {
   cart: 'cart',
+  received: 'received',
   preparing: 'preparing',
   ready: 'ready to serve',
   payment_pending: 'payment pending',
@@ -41,7 +43,7 @@ const PAGE_SIZE = 10
 /** All of the user's placed orders, filterable by status and paged on the
  *  orders table, following the menu's design language. */
 export default function MyOrders({
-  initialStatus = 'preparing',
+  initialStatus = 'received',
   onBack,
   onViewMenu,
 }: Props) {

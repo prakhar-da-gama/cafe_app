@@ -290,7 +290,6 @@ class OrderRead(BaseModel):
     id: int
     status: str
     total_amount: Decimal
-    payment_status: bool
     extra_notes: str | None = None
     created_at: datetime
     updated_at: datetime
@@ -310,14 +309,13 @@ class PaginatedOrders(BaseModel):
 
 class OrderSummary(BaseModel):
     """A lightweight order row for the manager dashboard list — exactly what the
-    collapsed card shows (number, time, drink count, total, status, paid). The
-    line items are deliberately *not* expanded here; fetch them on expand via
+    collapsed card shows (number, time, drink count, total, status). The line
+    items are deliberately *not* expanded here; fetch them on expand via
     GET /api/orders/{order_id}."""
 
     id: int
     status: str
     total_amount: Decimal
-    payment_status: bool
     created_at: datetime
     # Total quantity across the order's lines (the "N drinks" count).
     item_count: int
@@ -335,12 +333,11 @@ class PaginatedOrderSummaries(BaseModel):
 
 
 class OrderManagerUpdate(BaseModel):
-    """Manager-driven changes to an order: advance its status along the kitchen
-    workflow and/or mark it paid. Allowed status transitions are enforced by the
-    router; at least one field should be set."""
+    """Manager-driven change to an order: advance its status along the kitchen
+    workflow (marking paid is the payment_pending → payment_completed step).
+    Allowed status transitions are enforced by the router."""
 
     status: OrderStatus | None = None
-    payment_status: bool | None = None
 
 
 # ---- Item reviews (manager view) ----

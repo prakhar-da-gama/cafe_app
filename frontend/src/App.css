@@ -2494,10 +2494,10 @@
   border-radius: 999px;
   padding: 4px 11px;
 }
-.status-pending { background: #ff9f2e; }
 .status-preparing { background: #4a86ff; }
 .status-ready { background: #14b98a; }
-.status-completed { background: #8a7aa0; }
+.status-payment_pending { background: #ff9f2e; }
+.status-payment_completed { background: #8a7aa0; }
 .status-cancelled { background: var(--danger); }
 
 .load-more { width: 100%; margin-top: 16px; }
@@ -2686,18 +2686,12 @@
 }
 .chev-up { transform: rotate(180deg); }
 
-/* Row-level action strip (ready → completed, completed → paid). */
+/* Row-level action strip (ready → delivered, payment_pending → paid). */
 .mgr-row-actions {
   display: flex;
   justify-content: flex-end;
   gap: 8px;
   padding: 0 14px 14px;
-}
-.paid-tag {
-  font-size: 0.78rem;
-  font-weight: 800;
-  color: #14b98a;
-  align-self: center;
 }
 .candy-btn.sm {
   font-size: 0.85rem;
@@ -3438,10 +3432,10 @@
 
 /* ---- Status badges: subtle tinted boxes instead of bright solids ---- */
 .app.dashboard.theme-pro .status-badge { border-radius: 4px; font-weight: 700; }
-.app.dashboard.theme-pro .status-pending { background: #fff3e0; color: #9a5a00; }
 .app.dashboard.theme-pro .status-preparing { background: #e4efff; color: #0a4fb0; }
 .app.dashboard.theme-pro .status-ready { background: #e3f6ec; color: #156c3b; }
-.app.dashboard.theme-pro .status-completed { background: #eceef2; color: #4a5160; }
+.app.dashboard.theme-pro .status-payment_pending { background: #fff3e0; color: #9a5a00; }
+.app.dashboard.theme-pro .status-payment_completed { background: #eceef2; color: #4a5160; }
 .app.dashboard.theme-pro .status-cancelled { background: #fdecec; color: #b02a24; }
 
 /* ---- Boxy cards: hairline border, no coloured shadow ---- */

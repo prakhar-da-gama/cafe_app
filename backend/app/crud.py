@@ -671,6 +671,14 @@ def create_otp_user(db: Session, email: str) -> models.User:
 
 # ---- Orders ----
 
+# An order is reviewable once it's been handed to the customer, i.e. from
+# `payment_pending` (delivered, awaiting payment) onwards — including after it's
+# been paid (`payment_completed`).
+_REVIEWABLE_STATUSES = (
+    models.OrderStatus.payment_pending,
+    models.OrderStatus.payment_completed,
+)
+
 
 def get_or_create_cart(db: Session, user_id: int) -> models.Order:
     """Return the user's open cart, creating one if none exists.
@@ -819,7 +827,6 @@ def _serialize_orders(
                 id=order.id,
                 status=order.status.value,
                 total_amount=order.total_amount,
-                payment_status=order.payment_status,
                 extra_notes=order.extra_notes,
                 created_at=order.created_at,
                 updated_at=order.updated_at,
@@ -872,7 +879,7 @@ def list_orders(
 
 
 def place_order(db: Session, user_id: int) -> schemas.OrderRead | None:
-    """Check out the user's cart: stamp its total and flip it to `pending`.
+    """Check out the user's cart: stamp its total and flip it to `preparing`.
 
     Returns the placed order, or None if there's no cart or it's empty (so the
     caller can surface a 400 rather than creating an empty order).
@@ -889,7 +896,7 @@ def place_order(db: Session, user_id: int) -> schemas.OrderRead | None:
     cart.total_amount = sum(
         (line.price * line.quantity for line in cart.order_items), Decimal("0")
     )
-    cart.status = models.OrderStatus.pending
+    cart.status = models.OrderStatus.preparing
     db.commit()
     db.refresh(cart)
     return _serialize_orders(db, [cart])[0]
@@ -984,7 +991,6 @@ def list_all_orders_summary(
             id=o.id,
             status=o.status.value,
             total_amount=o.total_amount,
-            payment_status=o.payment_status,
             created_at=o.created_at,
             item_count=counts.get(o.id, 0),
         )
@@ -1014,17 +1020,15 @@ def manager_update_order(
     order: models.Order,
     *,
     status: models.OrderStatus | None = None,
-    payment_status: bool | None = None,
 ) -> schemas.OrderRead:
-    """Apply a manager's changes to an order and return the serialized result.
+    """Apply a manager's status change to an order and return the serialized
+    result.
 
-    Transition validity is enforced by the caller; this just persists whatever
-    fields were provided.
+    Transition validity is enforced by the caller; this just persists the new
+    status when one was provided.
     """
     if status is not None:
         order.status = status
-    if payment_status is not None:
-        order.payment_status = payment_status
     db.commit()
     db.refresh(order)
     return _serialize_orders(db, [order])[0]
@@ -1039,12 +1043,12 @@ def update_order_item_review(
     review: str | None,
     review_photo_paths: list[str] | None,
 ) -> models.OrderItem | None:
-    """Set the review (rating / note / photos) on one of the user's completed
+    """Set the review (rating / note / photos) on one of the user's delivered
     order lines.
 
     Returns the updated line, or None if it doesn't exist, doesn't belong to the
-    user, or its order isn't completed yet (so the caller can 404/400). Only the
-    fields passed in are changed; omit a field to leave it untouched.
+    user, or its order hasn't been delivered yet (so the caller can 404/400).
+    Only the fields passed in are changed; omit a field to leave it untouched.
     """
     line = db.get(models.OrderItem, order_item_id)
     if line is None:
@@ -1052,7 +1056,7 @@ def update_order_item_review(
     order = db.get(models.Order, line.order_id)
     if order is None or order.user_id != user_id:
         return None
-    if order.status != models.OrderStatus.completed:
+    if order.status not in _REVIEWABLE_STATUSES:
         return None
 
     if rating is not None:
@@ -1132,16 +1136,16 @@ def get_service_review_for_order(
 def create_service_review(
     db: Session, *, user_id: int, data: schemas.ServiceReviewCreate
 ) -> models.ServiceReview | None:
-    """Create the overall service review for one of the user's completed orders.
+    """Create the overall service review for one of the user's delivered orders.
 
-    Returns None if the order doesn't exist, isn't the user's, or isn't
-    completed; the caller turns that into a 400. Returns the existing review
+    Returns None if the order doesn't exist, isn't the user's, or hasn't been
+    delivered yet; the caller turns that into a 400. Returns the existing review
     unchanged if one already exists (caller surfaces a 409).
     """
     order = db.get(models.Order, data.order_id)
     if order is None or order.user_id != user_id:
         return None
-    if order.status != models.OrderStatus.completed:
+    if order.status not in _REVIEWABLE_STATUSES:
         return None
 
     review = models.ServiceReview(

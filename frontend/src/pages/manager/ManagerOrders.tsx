@@ -12,26 +12,38 @@ import {
 import OrderLines from '../../components/OrderLines'
 
 const STATUSES: OrderStatus[] = [
-  'pending',
   'preparing',
   'ready',
-  'completed',
+  'payment_pending',
+  'payment_completed',
   'cancelled',
 ]
 const PAGE_SIZE = 10
 
-// Looping chime played while there are new, unopened pending orders.
-const NEW_ORDER_SOUND = '/new-order.mp3'
-// How often to check for newly-arrived pending orders.
-const POLL_MS = 8000
+// Human-readable labels for the status filter pills (the raw enum values have
+// underscores).
+const STATUS_LABELS: Record<OrderStatus, string> = {
+  cart: 'cart',
+  preparing: 'preparing',
+  ready: 'ready',
+  payment_pending: 'payment pending',
+  payment_completed: 'paid',
+  cancelled: 'cancelled',
+}
 
-// A manager action (mark paid/completed) returns the full order; fold it back
-// into the summary the list holds.
+// Looping chime played while there are new, unopened incoming orders.
+const NEW_ORDER_SOUND = '/new-order.mp3'
+// How often to check for newly-arrived orders.
+const POLL_MS = 8000
+// Freshly placed orders land here — the status the new-order alarm watches.
+const INCOMING_STATUS: OrderStatus = 'preparing'
+
+// A manager action (advance status) returns the full order; fold it back into
+// the summary the list holds.
 const orderToSummary = (o: Order): OrderSummary => ({
   id: o.id,
   status: o.status,
   total_amount: o.total_amount,
-  payment_status: o.payment_status,
   created_at: o.created_at,
   item_count: o.order_items.reduce((s, l) => s + l.quantity, 0),
 })
@@ -39,7 +51,7 @@ const orderToSummary = (o: Order): OrderSummary => ({
 /** The manager dashboard: all orders for a chosen status, newest first, with
  *  the kitchen workflow controls that differ per status. */
 export default function ManagerOrders() {
-  const [status, setStatus] = useState<OrderStatus>('pending')
+  const [status, setStatus] = useState<OrderStatus>('preparing')
   const [orders, setOrders] = useState<OrderSummary[]>([])
   // Full line-item detail for orders the manager has expanded, keyed by id.
   // Fetched lazily so the list itself stays lightweight.
@@ -53,12 +65,12 @@ export default function ManagerOrders() {
   // Which line items the manager has ticked "prepared", per order (session only).
   const [prepared, setPrepared] = useState<Record<number, Set<number>>>({})
 
-  // --- New-order alarm (pending only) --------------------------------------
-  // Pending order IDs that arrived this session but the manager hasn't opened
+  // --- New-order alarm (incoming/preparing only) ---------------------------
+  // Incoming order IDs that arrived this session but the manager hasn't opened
   // yet. The chime loops while this set is non-empty and stops once every new
   // order has been opened at least once.
   const [unacked, setUnacked] = useState<Set<number>>(new Set())
-  // Pending IDs already noticed, so a poll only alarms genuinely new arrivals
+  // Incoming IDs already noticed, so a poll only alarms genuinely new arrivals
   // (not the orders already on screen when the dashboard opened).
   const seenRef = useRef<Set<number>>(new Set())
   // Orders opened (expanded) at least once — these never alarm again.
@@ -170,7 +182,7 @@ export default function ManagerOrders() {
     }
   }, [unacked])
 
-  // Poll pending orders in the background (independent of the selected tab) so
+  // Poll incoming orders in the background (independent of the selected tab) so
   // a new order rings even while the manager is viewing another status. One
   // request at a time — `inFlight` stops overlapping polls from piling up.
   useEffect(() => {
@@ -181,9 +193,9 @@ export default function ManagerOrders() {
       if (inFlight) return
       inFlight = true
       try {
-        const res = await listAllOrders('pending', 1, PAGE_SIZE)
+        const res = await listAllOrders(INCOMING_STATUS, 1, PAGE_SIZE)
         if (!alive) return
-        const pendingIds = new Set(res.items.map((o) => o.id))
+        const incomingIds = new Set(res.items.map((o) => o.id))
 
         if (!baselineRef.current) {
           // First poll: remember what's already there without alarming.
@@ -199,9 +211,9 @@ export default function ManagerOrders() {
               toAlert.forEach((o) => next.add(o.id))
               return next
             })
-            // If the manager is on the pending tab, surface the new orders at
+            // If the manager is on the incoming tab, surface the new orders at
             // the top of the list so they can be opened to silence the alarm.
-            if (statusRef.current === 'pending') {
+            if (statusRef.current === INCOMING_STATUS) {
               setOrders((prev) => {
                 const have = new Set(prev.map((o) => o.id))
                 const add = fresh.filter((o) => !have.has(o.id))
@@ -211,14 +223,14 @@ export default function ManagerOrders() {
           }
         }
 
-        // Drop anything no longer pending (advanced or cancelled elsewhere) so
+        // Drop anything no longer incoming (advanced or cancelled elsewhere) so
         // the alarm can't get stuck on an order that left the queue.
         setUnacked((prev) => {
           if (prev.size === 0) return prev
           let changed = false
           const next = new Set<number>()
           prev.forEach((id) => {
-            if (pendingIds.has(id)) next.add(id)
+            if (incomingIds.has(id)) next.add(id)
             else changed = true
           })
           return changed ? next : prev
@@ -264,7 +276,7 @@ export default function ManagerOrders() {
   // (its status moved out of the active filter); otherwise it's updated in place.
   const act = async (
     order: OrderSummary,
-    changes: { status?: OrderStatus; payment_status?: boolean },
+    changes: { status?: OrderStatus },
     remove: boolean,
   ) => {
     setBusyId(order.id)
@@ -318,7 +330,7 @@ export default function ManagerOrders() {
             onClick={() => setStatus(s)}
             aria-pressed={s === status}
           >
-            {s}
+            {STATUS_LABELS[s]}
           </button>
         ))}
       </nav>
@@ -352,7 +364,7 @@ export default function ManagerOrders() {
                     {order.item_count} drinks · {money(order.total_amount)}
                   </span>
                   <span className={`status-badge status-${order.status}`}>
-                    {order.status}
+                    {STATUS_LABELS[order.status]}
                   </span>
                   <span className={expanded ? 'chev chev-up' : 'chev'} aria-hidden>
                     ⌄
@@ -366,27 +378,23 @@ export default function ManagerOrders() {
                   <button
                     type="button"
                     className="candy-btn btn-mint sm"
-                    onClick={() => act(order, { status: 'completed' }, true)}
+                    onClick={() => act(order, { status: 'payment_pending' }, true)}
                     disabled={busyId === order.id}
                   >
-                    Mark completed
+                    Mark delivered
                   </button>
                 </div>
               )}
-              {order.status === 'completed' && (
+              {order.status === 'payment_pending' && (
                 <div className="mgr-row-actions">
-                  {order.payment_status ? (
-                    <span className="paid-tag">Paid ✓</span>
-                  ) : (
-                    <button
-                      type="button"
-                      className="candy-btn btn-sun sm"
-                      onClick={() => act(order, { payment_status: true }, false)}
-                      disabled={busyId === order.id}
-                    >
-                      Mark paid
-                    </button>
-                  )}
+                  <button
+                    type="button"
+                    className="candy-btn btn-sun sm"
+                    onClick={() => act(order, { status: 'payment_completed' }, true)}
+                    disabled={busyId === order.id}
+                  >
+                    Mark paid
+                  </button>
                 </div>
               )}
 
@@ -467,7 +475,8 @@ export default function ManagerOrders() {
                     <OrderLines lines={detail.order_items} />
                   )}
 
-                  {order.status === 'pending' && (
+                  {(order.status === 'preparing' ||
+                    order.status === 'ready') && (
                     <div className="mgr-actions">
                       <button
                         type="button"
@@ -476,14 +485,6 @@ export default function ManagerOrders() {
                         disabled={busyId === order.id}
                       >
                         Cancel order
-                      </button>
-                      <button
-                        type="button"
-                        className="candy-btn btn-mint"
-                        onClick={() => act(order, { status: 'preparing' }, true)}
-                        disabled={busyId === order.id}
-                      >
-                        Prepare
                       </button>
                     </div>
                   )}

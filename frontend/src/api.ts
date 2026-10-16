@@ -159,14 +159,14 @@ export interface OrderItem {
   review_photo_paths: string[]
 }
 
-// The lifecycle of an order. `cart` is the open draft; `pending` onwards are
-// placed orders moving through the kitchen.
+// The lifecycle of an order. `cart` is the open draft; `preparing` onwards are
+// placed orders moving through the kitchen, then delivery and payment.
 export type OrderStatus =
   | 'cart'
-  | 'pending'
   | 'preparing'
   | 'ready'
-  | 'completed'
+  | 'payment_pending'
+  | 'payment_completed'
   | 'cancelled'
 
 // One line of an order, fully expanded: the item plus the specific toppings
@@ -232,7 +232,6 @@ export interface Order {
   id: number
   status: OrderStatus
   total_amount: number | string
-  payment_status: boolean
   extra_notes: string | null
   created_at: string
   updated_at: string
@@ -254,7 +253,6 @@ export interface OrderSummary {
   id: number
   status: OrderStatus
   total_amount: number | string
-  payment_status: boolean
   created_at: string
   // Total quantity across the order's lines (the "N drinks" count).
   item_count: number
@@ -848,7 +846,7 @@ export function listOrders(
   }).then((r) => handle<PaginatedOrders>(r))
 }
 
-// Check out the cart: stamp its total and move it from `cart` to `pending`.
+// Check out the cart: stamp its total and move it from `cart` to `preparing`.
 export function placeOrder(): Promise<Order> {
   return fetch('/api/orders/place', {
     method: 'POST',
@@ -884,11 +882,12 @@ export function getOrder(orderId: number): Promise<Order> {
   }).then((r) => handle<Order>(r))
 }
 
-// Manager action: advance an order's status along the kitchen workflow and/or
-// mark it paid. Returns the updated order. Requires a manager token.
+// Manager action: advance an order's status along the kitchen workflow
+// (marking paid is the payment_pending → payment_completed step). Returns the
+// updated order. Requires a manager token.
 export function updateOrder(
   orderId: number,
-  changes: { status?: OrderStatus; payment_status?: boolean },
+  changes: { status?: OrderStatus },
 ): Promise<Order> {
   return fetch(`/api/orders/${orderId}`, {
     method: 'PATCH',

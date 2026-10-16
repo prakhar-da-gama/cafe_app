@@ -12,19 +12,22 @@ router = APIRouter(prefix="/api/orders", tags=["orders"])
 # The kitchen workflow a manager may drive an order through. Each status maps to
 # the set it's allowed to move to; anything else is rejected with a 400.
 _ALLOWED_TRANSITIONS: dict[models.OrderStatus, set[models.OrderStatus]] = {
-    models.OrderStatus.pending: {
-        models.OrderStatus.preparing,
+    models.OrderStatus.preparing: {
+        models.OrderStatus.ready,
         models.OrderStatus.cancelled,
     },
-    models.OrderStatus.preparing: {models.OrderStatus.ready},
-    models.OrderStatus.ready: {models.OrderStatus.completed},
+    models.OrderStatus.ready: {
+        models.OrderStatus.payment_pending,
+        models.OrderStatus.cancelled,
+    },
+    models.OrderStatus.payment_pending: {models.OrderStatus.payment_completed},
 }
 
 
 @router.get("", response_model=schemas.PaginatedOrders)
 def list_orders(
     status: models.OrderStatus = Query(
-        ..., description="Which order status to list (e.g. cart, pending, preparing)."
+        ..., description="Which order status to list (e.g. cart, preparing, ready)."
     ),
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=10, ge=1, le=50),
@@ -103,8 +106,10 @@ def manager_update_order(
     _claims: dict[str, Any] = Depends(require_manager),
 ):
     """Manager: advance an order's status along the kitchen workflow
-    (pending → preparing/cancelled → ready → completed) and/or mark it paid.
-    Rejects invalid status transitions with 400. Requires a manager JWT."""
+    (preparing → ready → payment_pending → payment_completed, or cancel from
+    preparing/ready). Marking an order paid is just the payment_pending →
+    payment_completed transition. Rejects invalid status transitions with 400.
+    Requires a manager JWT."""
     order = db.get(models.Order, order_id)
     if order is None:
         raise HTTPException(status_code=404, detail="Order not found")
@@ -117,9 +122,7 @@ def manager_update_order(
                 detail=f"Cannot move order from {order.status.value} to {payload.status.value}",
             )
 
-    return crud.manager_update_order(
-        db, order, status=payload.status, payment_status=payload.payment_status
-    )
+    return crud.manager_update_order(db, order, status=payload.status)
 
 
 @router.patch("/items/{order_item_id}", response_model=schemas.OrderItemRead)
@@ -170,7 +173,7 @@ def place_order(
     claims: dict[str, Any] = Depends(require_jwt),
 ):
     """Check out the authenticated user's cart: stamp its total and move it from
-    `cart` to `pending`. Fails with 400 if the cart is missing or empty.
+    `cart` to `preparing`. Fails with 400 if the cart is missing or empty.
     Requires a valid JWT bearer token."""
     order = crud.place_order(db, int(claims["sub"]))
     if order is None:

@@ -5,7 +5,7 @@ import OrderLines from '../../components/OrderLines'
 import ServiceReviewCard from '../../components/ServiceReviewCard'
 
 interface Props {
-  /** Which status the filter opens on (e.g. `pending` from the menus). */
+  /** Which status the filter opens on (e.g. `preparing` from the menus). */
   initialStatus?: OrderStatus
   onBack: () => void
   onViewMenu: () => void
@@ -14,18 +14,34 @@ interface Props {
 // The placed-order statuses the filter offers (the open cart lives on its own
 // page, so it isn't listed here).
 const STATUSES: OrderStatus[] = [
-  'pending',
   'preparing',
   'ready',
-  'completed',
+  'payment_pending',
+  'payment_completed',
   'cancelled',
 ]
+
+// Pretty labels for the status pills / badge (raw enum values have underscores).
+const STATUS_LABELS: Record<OrderStatus, string> = {
+  cart: 'cart',
+  preparing: 'preparing',
+  ready: 'ready',
+  payment_pending: 'payment pending',
+  payment_completed: 'paid',
+  cancelled: 'cancelled',
+}
+
+// An order is reviewable once it's been handed over (delivered), i.e. from
+// payment_pending onwards.
+const isReviewable = (s: OrderStatus) =>
+  s === 'payment_pending' || s === 'payment_completed'
+
 const PAGE_SIZE = 10
 
 /** All of the user's placed orders, filterable by status and paged on the
  *  orders table, following the menu's design language. */
 export default function MyOrders({
-  initialStatus = 'pending',
+  initialStatus = 'preparing',
   onBack,
   onViewMenu,
 }: Props) {
@@ -101,7 +117,7 @@ export default function MyOrders({
               onClick={() => setStatus(s)}
               aria-pressed={s === status}
             >
-              {s}
+              {STATUS_LABELS[s]}
             </button>
           ))}
         </nav>
@@ -123,13 +139,13 @@ export default function MyOrders({
                 </span>
               </div>
               <span className={`status-badge status-${order.status}`}>
-                {order.status}
+                {STATUS_LABELS[order.status]}
               </span>
             </div>
 
             <OrderLines
               lines={order.order_items}
-              reviewable={order.status === 'completed'}
+              reviewable={isReviewable(order.status)}
               onLineReviewed={(lineId, changes) =>
                 handleLineReviewed(order.id, lineId, changes)
               }
@@ -140,7 +156,7 @@ export default function MyOrders({
               <span className="cart-total">{money(order.total_amount)}</span>
             </div>
 
-            {order.status === 'completed' && (
+            {isReviewable(order.status) && (
               <ServiceReviewCard orderId={order.id} />
             )}
           </section>

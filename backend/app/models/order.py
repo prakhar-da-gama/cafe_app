@@ -5,7 +5,7 @@ from datetime import datetime
 from decimal import Decimal
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Boolean, DateTime
+from sqlalchemy import DateTime
 from sqlalchemy import Enum as SAEnum
 from sqlalchemy import ForeignKey, Index, Numeric, Text, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -17,12 +17,15 @@ if TYPE_CHECKING:
 
 
 class OrderStatus(str, enum.Enum):
-    # A cart is a draft order that hasn't been checked out yet.
+    # A cart is a draft order that hasn't been checked out yet. Checking out
+    # moves it straight into `preparing` (the kitchen starts on it); once made
+    # it's `ready`, then handed over as `payment_pending` (delivered, awaiting
+    # payment) and finally `payment_completed` once paid.
     cart = "cart"
-    pending = "pending"
     preparing = "preparing"
     ready = "ready"
-    completed = "completed"
+    payment_pending = "payment_pending"
+    payment_completed = "payment_completed"
     cancelled = "cancelled"
 
 
@@ -44,9 +47,8 @@ class Order(Base):
     )
     total_amount: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False, default=0)
     status: Mapped[OrderStatus] = mapped_column(
-        SAEnum(OrderStatus), nullable=False, default=OrderStatus.pending
+        SAEnum(OrderStatus), nullable=False, default=OrderStatus.preparing
     )
-    payment_status: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     extra_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime, server_default=func.now(), nullable=False

@@ -135,26 +135,49 @@
   .motto{
     font-family:var(--f-display);
     font-weight:800;
-    font-size:clamp(1.95rem,3.9vw,3.2rem);
+    font-size:clamp(1.56rem,3.12vw,2.56rem);
     line-height:1.12;
     letter-spacing:-.025em;
     color:#141414;
     margin:0;
   }
   .motto + .motto{margin-top:18px;}
+  .motto-list{list-style:none;margin:0;padding:0;}
+  .motto-list .motto{padding-left:1.1em;}
+  .motto-list .motto::before{
+    content:'';
+    position:absolute;
+    left:0;
+    top:.42em;
+    width:.36em;
+    height:.36em;
+    border-radius:50%;
+    background:var(--accent);
+  }
+  .motto-list .motto .tw-live{left:1.1em;}
 
-  /* hero theme types in large, then settles smaller while the mottos open up beneath it */
+  /* hero theme: each line types in large, then slides up and settles smaller before the next one */
   .hero-theme{
     font-family:var(--f-display);
     font-weight:800;
-    font-size:clamp(2.3rem,4.9vw,4.1rem);
     line-height:1.08;
     letter-spacing:-.03em;
     color:#141414;
     margin:0;
+  }
+  .theme-line{
+    display:block;
+    font-size:clamp(2.3rem,4.9vw,4.1rem);
     transition:font-size .9s cubic-bezier(.22,.61,.36,1);
   }
-  .hero.settled .hero-theme{font-size:clamp(1.45rem,2.5vw,2.05rem);}
+  .theme-line.small{font-size:clamp(1.45rem,2.5vw,2.05rem);}
+  .theme-next{
+    display:grid;
+    grid-template-rows:0fr;
+    transition:grid-template-rows .9s cubic-bezier(.22,.61,.36,1);
+  }
+  .theme-next.open{grid-template-rows:1fr;}
+  .theme-next-in{display:block;min-height:0;overflow:hidden;padding-top:8px;}
   .hero-rest{
     display:grid;
     grid-template-rows:0fr;
@@ -164,7 +187,7 @@
   .hero.settled .hero-rest{grid-template-rows:1fr;opacity:1;}
   .hero-rest-in{min-height:0;overflow:hidden;}
   .hero.open .hero-rest-in{overflow:visible;}
-  .hero-rest-in > .motto:first-child{margin-top:30px;}
+  .hero-rest-in > .motto-list:first-child{margin-top:30px;}
 
   .knowmore{
     display:inline-block;
@@ -794,12 +817,19 @@
 <section class="hero" id="hero">
   <div class="wrap hero-grid">
     <div class="hero-copy">
-      <h1 class="hero-theme tw" data-text="“Do more with fewer people! OrdersBuddy runs the restaurant alongside you.”"></h1>
+      <h1 class="hero-theme">
+        <span class="theme-line tw" data-text="“Do more with fewer people!"></span>
+        <span class="theme-next"><span class="theme-next-in">
+          <span class="theme-line tw" data-text="OrdersBuddy runs the restaurant alongside you.”"></span>
+        </span></span>
+      </h1>
       <div class="hero-rest">
         <div class="hero-rest-in">
-          <p class="motto tw" data-text="OrdersBuddy is the AI-first POS for your restaurant."></p>
-          <p class="motto motto-2 tw" data-text="One AI agent that works as your barista, your consultant, and your manager."></p>
-          <p class="motto motto-3 tw" data-text="Helping you grow sales and quality while saving your time."></p>
+          <ul class="motto-list">
+            <li class="motto tw" data-text="OrdersBuddy is an AI-first POS, thoughtfully built for your restaurant."></li>
+            <li class="motto tw" data-text="One friendly AI agent that gladly serves as your barista, your consultant, and your manager."></li>
+            <li class="motto tw" data-text="Here to help you grow your sales and quality, while giving you back your time."></li>
+          </ul>
           <a class="knowmore" href="404.html">Know more</a>
           <div class="scroll-cue">scroll to see how</div>
         </div>
@@ -1549,21 +1579,32 @@
   route();
 
   var hero = document.getElementById('hero');
-  var heroTheme = hero.querySelector('.hero-theme');
+  var themeLines = hero.querySelectorAll('.theme-line');
+  var themeNext = hero.querySelector('.theme-next');
   var heroMottos = hero.querySelectorAll('.motto');
   var heroChart = hero.querySelector('[data-chart]');
   window.addEventListener('load', function(){
     setTimeout(function(){
       hero.classList.add('done');   // reveal chart right away
       runChart(heroChart);          // graph animates right away
-      typeEl(heroTheme, function(){
-        // hold the theme, then shrink it and open the mottos underneath
+      typeEl(themeLines[0], function(){
+        // hold line one, then shrink it and slide the second line in beneath
         setTimeout(function(){
-          hero.classList.add('settled');
+          themeLines[0].classList.add('small');
+          themeNext.classList.add('open');
           setTimeout(function(){
-            hero.classList.add('open');  // know-more and cue fade in
-            typeSeq(Array.prototype.slice.call(heroMottos), 0); // motto lines type in sequence
-          }, reduce ? 0 : 950);
+            typeEl(themeLines[1], function(){
+              // hold line two, then shrink it and open the mottos underneath
+              setTimeout(function(){
+                themeLines[1].classList.add('small');
+                hero.classList.add('settled');
+                setTimeout(function(){
+                  hero.classList.add('open');  // know-more and cue fade in
+                  typeSeq(Array.prototype.slice.call(heroMottos), 0); // motto lines type in sequence
+                }, reduce ? 0 : 950);
+              }, reduce ? 0 : 900);
+            });
+          }, reduce ? 0 : 900);
         }, reduce ? 0 : 900);
       });
     }, 250);

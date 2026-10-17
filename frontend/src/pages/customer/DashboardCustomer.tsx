@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { listTags, type Tag } from '../../api'
 import CafeHeader from '../../components/CafeHeader'
 import ChatBar from '../../components/ChatBar'
+import TagLinks from '../../components/TagLinks'
 import TypingText from '../../components/TypingText'
 
 interface Props {
@@ -30,6 +31,10 @@ export default function DashboardCustomer({
   const [error, setError] = useState<string | null>(null)
   // Ordered: a tag's candy colour comes from its position here.
   const [selected, setSelected] = useState<number[]>([])
+  const screenRef = useRef<HTMLDivElement>(null)
+  const cloudRef = useRef<HTMLDivElement>(null)
+  const goRef = useRef<HTMLButtonElement>(null)
+  const tagEls = useRef(new Map<number, HTMLElement>()).current
 
   useEffect(() => {
     let alive = true
@@ -53,7 +58,16 @@ export default function DashboardCustomer({
     .filter((t): t is Tag => Boolean(t))
 
   return (
-    <div className="screen dash">
+    <div className="screen dash" ref={screenRef}>
+      <TagLinks
+        hostRef={screenRef}
+        cloudRef={cloudRef}
+        targetRef={goRef}
+        tagEls={tagEls}
+        ids={tags.map((t) => t.id)}
+        selected={selected}
+      />
+
       <CafeHeader onViewMenu={onViewMenu} onPlay={onPlay} onOpenCart={onOpenCart} />
 
       <ChatBar onOpen={onOpenChat} />
@@ -68,13 +82,17 @@ export default function DashboardCustomer({
       {loading && <p className="muted center">Gathering today's flavours…</p>}
       {error && <p className="form-error center">{error}</p>}
 
-      <div className="tag-cloud">
+      <div className="tag-cloud" ref={cloudRef}>
         {tags.map((t, i) => {
           const on = selected.includes(t.id)
           return (
             <button
               type="button"
               key={t.id}
+              ref={(el) => {
+                if (el) tagEls.set(t.id, el)
+                else tagEls.delete(t.id)
+              }}
               className={on ? 'tag-bubble tag-on' : 'tag-bubble'}
               data-candy={(i % CANDY_COUNT) + 1}
               style={{ ['--i']: i } as React.CSSProperties}
@@ -95,6 +113,7 @@ export default function DashboardCustomer({
         </div>
         <button
           type="button"
+          ref={goRef}
           className="candy-btn go-btn btn-sun"
           onClick={() => onGoAhead(chosen)}
           disabled={chosen.length === 0}

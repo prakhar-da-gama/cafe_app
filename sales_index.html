@@ -34,7 +34,7 @@
   }
 
   *{box-sizing:border-box;}
-  html{scroll-behavior:smooth;scroll-padding-top:84px;}
+  html{scroll-behavior:smooth;scroll-padding-top:84px;overflow-x:clip;}
   body{
     margin:0;
     background:var(--bg);
@@ -636,6 +636,76 @@
     .bm-chart .tag{font-size:10.5px;}
   }
 
+  /* ---------- imagery: 3D stickers, polaroids, photo strip ----------
+     Photos are CC0 (sales_assets/photos), stickers are Fluent 3D emoji
+     (sales_assets/icons). Everything decorative is aria-hidden. */
+  .sticker{position:absolute;z-index:3;width:var(--s,72px);height:auto;pointer-events:none;filter:drop-shadow(0 10px 16px rgba(20,20,20,.18));animation:bob var(--d,5s) ease-in-out infinite;animation-delay:var(--dl,0s);}
+  @keyframes bob{0%,100%{transform:translateY(0) rotate(var(--r,0deg));}50%{transform:translateY(-12px) rotate(calc(var(--r,0deg) + 6deg));}}
+  .polaroid{position:absolute;z-index:0;margin:0;background:#fff;padding:10px 10px 34px;border-radius:6px;box-shadow:var(--shadow-md);transform:rotate(var(--r,-6deg));transition:transform .5s cubic-bezier(.22,.61,.36,1);}
+  .polaroid img{display:block;width:100%;height:auto;border-radius:3px;}
+  .polaroid figcaption{position:absolute;left:0;right:0;bottom:8px;text-align:center;font-family:var(--f-mono);font-size:11px;letter-spacing:.06em;color:var(--muted);}
+  .polaroid::before{content:'';position:absolute;top:-11px;left:50%;width:74px;height:22px;transform:translateX(-50%) rotate(-3deg);background:rgba(255,159,28,.55);border-radius:2px;}
+
+  .hero-chart{position:relative;}
+  .hero-photo{z-index:2;width:30%;max-width:150px;left:-22%;bottom:-24%;--r:-8deg;}
+  .hero-chart .square{position:relative;z-index:1;}
+  .hero.done .hero-photo{animation:drop .9s cubic-bezier(.22,.61,.36,1) .5s both;}
+  @keyframes drop{from{opacity:0;transform:translateY(-30px) rotate(4deg);}to{opacity:1;transform:rotate(var(--r));}}
+
+  .strip{padding:56px 0 64px;overflow:hidden;background:var(--ink);}
+  .strip-head{display:flex;align-items:baseline;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:26px;}
+  .strip-title{font-family:var(--f-display);font-weight:700;font-size:clamp(1.3rem,2.4vw,1.8rem);letter-spacing:-.02em;color:#fff;margin:0;}
+  .strip-title em{font-style:normal;color:var(--accent);}
+  .strip-note{font-family:var(--f-mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:rgba(255,255,255,.5);margin:0;}
+  .strip-track{display:flex;gap:18px;width:max-content;animation:marquee 60s linear infinite;padding:10px 0;}
+  .strip:hover .strip-track{animation-play-state:paused;}
+  .strip-track figure{margin:0;flex:none;width:280px;border-radius:16px;overflow:hidden;position:relative;transform:rotate(var(--r,0deg));transition:transform .35s ease;box-shadow:0 14px 30px rgba(0,0,0,.35);}
+  .strip-track figure:nth-child(odd){--r:-2deg;}
+  .strip-track figure:nth-child(even){--r:2deg;}
+  .strip-track figure:hover{transform:rotate(0) scale(1.04);}
+  .strip-track img{display:block;width:100%;height:auto;aspect-ratio:16/11;object-fit:cover;}
+  .strip-track figcaption{position:absolute;left:10px;bottom:10px;font-size:12px;font-weight:600;color:var(--ink);background:rgba(255,255,255,.92);padding:4px 10px;border-radius:999px;}
+  @keyframes marquee{to{transform:translateX(-50%);}}
+
+  .phone-wrap{position:relative;}
+  .phone{position:relative;z-index:1;}
+  .bot-photo{width:50%;max-width:240px;left:-14%;top:20%;--r:-7deg;}
+  .reviews-wrap,.trends-wrap{position:relative;}
+  .rev-card,.trends-card{position:relative;z-index:1;}
+  .rev-photo{width:42%;max-width:230px;right:-12%;top:-30%;--r:6deg;}
+
+  .feat{display:flex;flex-direction:column;gap:12px;}
+  .feat img{width:46px;height:46px;transition:transform .3s cubic-bezier(.34,1.56,.64,1);}
+  .feat:hover img{transform:scale(1.18) rotate(-8deg);}
+
+  .quote{padding-top:0;overflow:hidden;}
+  .quote-photo{display:block;width:calc(100% + 56px);max-width:none;height:auto;margin:0 -28px 22px;aspect-ratio:16/9;object-fit:cover;}
+
+  .plan{position:relative;}
+  .plan-icon{position:absolute;top:-26px;right:24px;width:74px;height:74px;filter:drop-shadow(0 8px 14px rgba(20,20,20,.18));animation:bob 5s ease-in-out infinite;}
+
+  .bm-hero .wrap{position:relative;}
+  .bm-photo{width:300px;right:20px;top:40px;--r:5deg;}
+  .move-num{display:inline-flex;align-items:center;gap:10px;}
+  .move-num img{width:38px;height:38px;}
+
+  @media(max-width:1180px){ .bm-photo{width:240px;right:0;} }
+  @media(max-width:980px){
+    .hero-photo{left:auto;right:-2%;bottom:-12%;width:30%;}
+    .bot-photo{left:0;width:42%;top:auto;bottom:-4%;}
+    .rev-photo{right:0;width:34%;top:-12%;}
+    .bm-photo{position:relative;right:auto;top:auto;width:260px;margin:20px 0 34px 10px;}
+  }
+  @media(max-width:600px){
+    .sticker{--s:52px!important;}
+    .hero-chart .sticker,.phone-wrap .sticker,.reviews-wrap .sticker,.trends-wrap .sticker{right:auto!important;}
+    .hero-chart .sticker[src$="chart.png"],.trends-wrap .sticker[src$="fire.png"],.phone-wrap .sticker[src$="robot.png"]{left:auto!important;right:-6px!important;}
+    .hero-chart .sticker[src$="money.png"]{left:auto!important;right:-4px!important;}
+    .hero-chart .sticker[src$="sparkles.png"],.trends-wrap .sticker[src$="eyes.png"],.phone-wrap .sticker[src$="wave.png"]{display:none;}
+    .hero-photo,.bot-photo,.rev-photo{display:none;}
+    .strip-track figure{width:220px;}
+  }
+
   /* ---------- reveal ---------- */
   .reveal{opacity:0;transform:translateY(24px);transition:opacity .9s ease,transform .9s cubic-bezier(.22,.61,.36,1);}
   .reveal.in{opacity:1;transform:none;}
@@ -675,6 +745,8 @@
 
   @media(prefers-reduced-motion:reduce){
     *{animation:none!important;transition:none!important;}
+    .strip-track{flex-wrap:wrap;width:auto;justify-content:center;}
+    .strip-track figure[aria-hidden]{display:none;}
     .reveal{opacity:1;transform:none;}
     .hero-chart{opacity:1;transform:none;}
     .knowmore{opacity:1;}
@@ -706,6 +778,14 @@
     </div>
 
     <div class="hero-chart">
+      <figure class="polaroid hero-photo" aria-hidden="true">
+        <img src="sales_assets/photos/hero-counter.jpg" alt="" width="720" height="900">
+        <figcaption>on autopilot</figcaption>
+      </figure>
+      <img class="sticker" src="sales_assets/icons/robot.png" alt="" aria-hidden="true" style="--s:88px;top:-34px;left:-26px;--r:-10deg;--d:5.5s">
+      <img class="sticker" src="sales_assets/icons/chart.png" alt="" aria-hidden="true" style="--s:70px;top:-26px;right:-18px;--r:8deg;--d:6s;--dl:-2s">
+      <img class="sticker" src="sales_assets/icons/money.png" alt="" aria-hidden="true" style="--s:76px;bottom:-30px;right:-22px;--r:-6deg;--d:4.8s;--dl:-1s">
+      <img class="sticker" src="sales_assets/icons/sparkles.png" alt="" aria-hidden="true" style="--s:46px;top:40%;right:-40px;--d:3.8s;--dl:-.5s">
       <div class="square">
         <div class="chart" data-chart>
           <div class="plot">
@@ -726,6 +806,34 @@
   </div>
 </section>
 
+<!-- ============ PHOTO STRIP ============ -->
+<section class="strip" aria-label="The kinds of places OrdersBuddy runs">
+  <div class="wrap strip-head">
+    <p class="strip-title">Built for <em>every kind</em> of place that pours, plates &amp; serves.</p>
+    <p class="strip-note">cafés · bistros · dining rooms · coffee bars</p>
+  </div>
+  <div class="strip-track">
+      <figure><img src="sales_assets/photos/strip-1.jpg" alt="Coffee bar" loading="lazy" width="640" height="440"><figcaption>Coffee bar</figcaption></figure>
+      <figure><img src="sales_assets/photos/strip-2.jpg" alt="Morning rush" loading="lazy" width="640" height="440"><figcaption>Morning rush</figcaption></figure>
+      <figure><img src="sales_assets/photos/strip-4.jpg" alt="Bistro" loading="lazy" width="640" height="440"><figcaption>Bistro</figcaption></figure>
+      <figure><img src="sales_assets/photos/strip-6.jpg" alt="Neighbourhood café" loading="lazy" width="640" height="440"><figcaption>Neighbourhood café</figcaption></figure>
+      <figure><img src="sales_assets/photos/strip-8.jpg" alt="Family restaurant" loading="lazy" width="640" height="440"><figcaption>Family restaurant</figcaption></figure>
+      <figure><img src="sales_assets/photos/strip-5.jpg" alt="All-day café" loading="lazy" width="640" height="440"><figcaption>All-day café</figcaption></figure>
+      <figure><img src="sales_assets/photos/strip-9.jpg" alt="Corner café" loading="lazy" width="640" height="440"><figcaption>Corner café</figcaption></figure>
+      <figure><img src="sales_assets/photos/strip-7.jpg" alt="Lounge" loading="lazy" width="640" height="440"><figcaption>Lounge</figcaption></figure>
+      <figure><img src="sales_assets/photos/strip-10.jpg" alt="Brew house" loading="lazy" width="640" height="440"><figcaption>Brew house</figcaption></figure>
+      <figure aria-hidden="true"><img src="sales_assets/photos/strip-1.jpg" alt="" loading="lazy" width="640" height="440"><figcaption>Coffee bar</figcaption></figure>
+      <figure aria-hidden="true"><img src="sales_assets/photos/strip-2.jpg" alt="" loading="lazy" width="640" height="440"><figcaption>Morning rush</figcaption></figure>
+      <figure aria-hidden="true"><img src="sales_assets/photos/strip-4.jpg" alt="" loading="lazy" width="640" height="440"><figcaption>Bistro</figcaption></figure>
+      <figure aria-hidden="true"><img src="sales_assets/photos/strip-6.jpg" alt="" loading="lazy" width="640" height="440"><figcaption>Neighbourhood café</figcaption></figure>
+      <figure aria-hidden="true"><img src="sales_assets/photos/strip-8.jpg" alt="" loading="lazy" width="640" height="440"><figcaption>Family restaurant</figcaption></figure>
+      <figure aria-hidden="true"><img src="sales_assets/photos/strip-5.jpg" alt="" loading="lazy" width="640" height="440"><figcaption>All-day café</figcaption></figure>
+      <figure aria-hidden="true"><img src="sales_assets/photos/strip-9.jpg" alt="" loading="lazy" width="640" height="440"><figcaption>Corner café</figcaption></figure>
+      <figure aria-hidden="true"><img src="sales_assets/photos/strip-7.jpg" alt="" loading="lazy" width="640" height="440"><figcaption>Lounge</figcaption></figure>
+      <figure aria-hidden="true"><img src="sales_assets/photos/strip-10.jpg" alt="" loading="lazy" width="640" height="440"><figcaption>Brew house</figcaption></figure>
+  </div>
+</section>
+
 <!-- ============ BARISTA BOT ============ -->
 <section class="alt" id="barista" data-seq>
   <div class="wrap split">
@@ -738,6 +846,12 @@
     </div>
 
     <div class="phone-wrap reveal" data-botchat>
+      <figure class="polaroid bot-photo" aria-hidden="true">
+        <img src="sales_assets/photos/guest-phone.jpg" alt="" width="1200" height="800" loading="lazy">
+        <figcaption>table 7</figcaption>
+      </figure>
+      <img class="sticker" src="sales_assets/icons/robot.png" alt="" aria-hidden="true" style="--s:84px;top:-30px;right:8%;--r:10deg;--d:5s">
+      <img class="sticker" src="sales_assets/icons/wave.png" alt="" aria-hidden="true" style="--s:58px;bottom:16%;right:4%;--r:-8deg;--d:3.6s;--dl:-1s">
       <div class="phone">
         <div class="phone-screen">
           <div class="phone-top">
@@ -765,6 +879,12 @@
     </div>
 
     <div class="reviews-wrap reveal" data-reviews>
+      <figure class="polaroid rev-photo" aria-hidden="true">
+        <img src="sales_assets/photos/owner-laptop.jpg" alt="" width="1200" height="800" loading="lazy">
+        <figcaption>no more doom-scrolling</figcaption>
+      </figure>
+      <img class="sticker" src="sales_assets/icons/star.png" alt="" aria-hidden="true" style="--s:64px;bottom:-24px;left:-22px;--r:-12deg;--d:4.6s">
+      <img class="sticker" src="sales_assets/icons/speech.png" alt="" aria-hidden="true" style="--s:58px;top:34%;left:-34px;--r:6deg;--d:5.4s;--dl:-2s">
       <div class="rev-card">
         <div class="rev-head">
           <span class="rev-live"><i></i> Review inbox</span>
@@ -787,6 +907,9 @@
     </div>
 
     <div class="trends-wrap reveal" data-trends>
+      <img class="sticker" src="sales_assets/icons/fire.png" alt="" aria-hidden="true" style="--s:72px;top:-32px;right:-18px;--r:8deg;--d:4.2s">
+      <img class="sticker" src="sales_assets/icons/phone.png" alt="" aria-hidden="true" style="--s:62px;bottom:-26px;left:-24px;--r:-10deg;--d:5.2s;--dl:-1.5s">
+      <img class="sticker" src="sales_assets/icons/eyes.png" alt="" aria-hidden="true" style="--s:48px;top:44%;right:-30px;--d:3.4s;--dl:-.8s">
       <div class="trends-card">
         <div class="tr-head">
           <span class="tr-live"><i></i> Trending now</span>
@@ -812,18 +935,18 @@
     </div>
 
     <div class="feature-grid reveal">
-      <div class="feat">AI order prioritization</div>
-      <div class="feat">Kitchen display system</div>
-      <div class="feat">Customizations on every item</div>
-      <div class="feat">Special instructions to kitchen</div>
-      <div class="feat">Smart restock reminders</div>
-      <div class="feat">Complaint &amp; issue tracking</div>
-      <div class="feat">Sales &amp; revenue reports</div>
-      <div class="feat">QR ordering &amp; reservations</div>
-      <div class="feat">Order tracking &amp; reorder</div>
-      <div class="feat">Billing, taxes &amp; receipts</div>
-      <div class="feat">Works offline in outages</div>
-      <div class="feat">Role-based access control</div>
+      <div class="feat"><img src="sales_assets/icons/bolt.png" alt="" aria-hidden="true" width="46" height="46" loading="lazy"><span>AI order prioritization</span></div>
+      <div class="feat"><img src="sales_assets/icons/screen.png" alt="" aria-hidden="true" width="46" height="46" loading="lazy"><span>Kitchen display system</span></div>
+      <div class="feat"><img src="sales_assets/icons/palette.png" alt="" aria-hidden="true" width="46" height="46" loading="lazy"><span>Customizations on every item</span></div>
+      <div class="feat"><img src="sales_assets/icons/memo.png" alt="" aria-hidden="true" width="46" height="46" loading="lazy"><span>Special instructions to kitchen</span></div>
+      <div class="feat"><img src="sales_assets/icons/package.png" alt="" aria-hidden="true" width="46" height="46" loading="lazy"><span>Smart restock reminders</span></div>
+      <div class="feat"><img src="sales_assets/icons/megaphone.png" alt="" aria-hidden="true" width="46" height="46" loading="lazy"><span>Complaint &amp; issue tracking</span></div>
+      <div class="feat"><img src="sales_assets/icons/barchart.png" alt="" aria-hidden="true" width="46" height="46" loading="lazy"><span>Sales &amp; revenue reports</span></div>
+      <div class="feat"><img src="sales_assets/icons/calendar.png" alt="" aria-hidden="true" width="46" height="46" loading="lazy"><span>QR ordering &amp; reservations</span></div>
+      <div class="feat"><img src="sales_assets/icons/truck.png" alt="" aria-hidden="true" width="46" height="46" loading="lazy"><span>Order tracking &amp; reorder</span></div>
+      <div class="feat"><img src="sales_assets/icons/receipt.png" alt="" aria-hidden="true" width="46" height="46" loading="lazy"><span>Billing, taxes &amp; receipts</span></div>
+      <div class="feat"><img src="sales_assets/icons/plug.png" alt="" aria-hidden="true" width="46" height="46" loading="lazy"><span>Works offline in outages</span></div>
+      <div class="feat"><img src="sales_assets/icons/key.png" alt="" aria-hidden="true" width="46" height="46" loading="lazy"><span>Role-based access control</span></div>
     </div>
   </div>
 </section>
@@ -838,6 +961,7 @@
 
     <div class="quotes reveal">
       <figure class="quote">
+        <img class="quote-photo" src="sales_assets/photos/venue-family.jpg" alt="" aria-hidden="true" width="800" height="450" loading="lazy">
         <p>"At peak hours my waiters had no time to suggest anything. Now the AI pairs something with every order and our average bill is noticeably higher."</p>
         <figcaption class="person">
           <span class="avatar a1">R</span>
@@ -845,6 +969,7 @@
         </figcaption>
       </figure>
       <figure class="quote">
+        <img class="quote-photo" src="sales_assets/photos/venue-multicuisine.jpg" alt="" aria-hidden="true" width="800" height="450" loading="lazy">
         <p>"Guests used to say 'I asked for less spice!' Now every instruction goes straight to the kitchen screen. Remakes have dropped sharply."</p>
         <figcaption class="person">
           <span class="avatar a2">S</span>
@@ -852,6 +977,7 @@
         </figcaption>
       </figure>
       <figure class="quote">
+        <img class="quote-photo" src="sales_assets/photos/venue-citycafe.jpg" alt="" aria-hidden="true" width="800" height="450" loading="lazy">
         <p>"We only found out about unhappy guests from a 2-star review. Now a low rating alerts my manager while the guest is still seated."</p>
         <figcaption class="person">
           <span class="avatar a3">A</span>
@@ -873,6 +999,7 @@
 
     <div class="plans reveal">
       <div class="plan">
+        <img class="plan-icon" src="sales_assets/icons/seedling.png" alt="" aria-hidden="true" loading="lazy">
         <div class="plan-tag">Base</div>
         <div class="price">&#8377;5,000 <span>/ year</span></div>
         <div class="gst">+ GST</div>
@@ -884,6 +1011,7 @@
         </ul>
       </div>
       <div class="plan featured">
+        <img class="plan-icon" src="sales_assets/icons/rocket.png" alt="" aria-hidden="true" loading="lazy">
         <div class="plan-tag">With AI</div>
         <div class="price">&#8377;12,000 <span>/ year</span></div>
         <div class="gst">+ GST</div>
@@ -922,6 +1050,10 @@
   <section class="bm-hero" data-seq>
     <div class="wrap">
       <a class="bm-back" href="#barista">&larr; Back to overview</a>
+      <figure class="polaroid bm-photo" aria-hidden="true">
+        <img src="sales_assets/photos/guest-phone.jpg" alt="" width="1200" height="800" loading="lazy">
+        <figcaption>scan, chat, order</figcaption>
+      </figure>
       <p class="eyebrow reveal">Barista Bot · the full story</p>
       <h1 class="bm-title">The waiter who <em>never forgets</em> to upsell.</h1>
       <p class="bm-lede">Barista Bot turns your QR menu into a warm, guided conversation. It greets every guest, helps them decide, and suggests the perfect pairing — every single time. The result is a bigger bill on every table, without a single pushy moment.</p>
@@ -971,7 +1103,7 @@
 
       <div class="bm-moves reveal">
         <article class="move">
-          <div class="move-top"><span class="move-num">01</span><span class="move-lift">0% drop-off</span></div>
+          <div class="move-top"><span class="move-num"><img src="sales_assets/icons/wave.png" alt="" aria-hidden="true" width="38" height="38" loading="lazy">01</span><span class="move-lift">0% drop-off</span></div>
           <h3>A welcome that lands instantly</h3>
           <p>The moment a guest scans the QR, a friendly barista greets them by time of day. No spinner, no plain-text wall.</p>
           <div class="mock"><span class="q">☀️ <b>Good afternoon!</b> I'm your barista today. What are you in the mood for?</span></div>
@@ -979,7 +1111,7 @@
         </article>
 
         <article class="move">
-          <div class="move-top"><span class="move-num">02</span><span class="move-lift">Zero wrong-diet orders</span></div>
+          <div class="move-top"><span class="move-num"><img src="sales_assets/icons/leaf.png" alt="" aria-hidden="true" width="38" height="38" loading="lazy">02</span><span class="move-lift">Zero wrong-diet orders</span></div>
           <h3>Filters that respect every diet</h3>
           <p>Clear Veg only and Non-veg only filters, plus a simple Back button to change the party size anytime.</p>
           <div class="mock"><span class="pill">&larr; Back</span><span class="pill">All</span><span class="pill on">Veg only</span><span class="pill">Non-veg only</span></div>
@@ -987,7 +1119,7 @@
         </article>
 
         <article class="move">
-          <div class="move-top"><span class="move-num">03</span><span class="move-lift">+25% engagement</span></div>
+          <div class="move-top"><span class="move-num"><img src="sales_assets/icons/wand.png" alt="" aria-hidden="true" width="38" height="38" loading="lazy">03</span><span class="move-lift">+25% engagement</span></div>
           <h3>One tap instead of a blank box</h3>
           <p>Guests never stare at an empty text field. Ready-made prompts get them to a decision in a single tap.</p>
           <div class="mock"><span class="pill">🍽️ Suggest a full meal combo</span><span class="pill">🌶️ Something spicy</span><span class="pill">⭐ Today's special?</span></div>
@@ -995,7 +1127,7 @@
         </article>
 
         <article class="move">
-          <div class="move-top"><span class="move-num">04</span><span class="move-lift">+30% full combos</span></div>
+          <div class="move-top"><span class="move-num"><img src="sales_assets/icons/plate.png" alt="" aria-hidden="true" width="38" height="38" loading="lazy">04</span><span class="move-lift">+30% full combos</span></div>
           <h3>A full meal, one easy "yes" at a time</h3>
           <p>Instead of a giant combo menu, Barista Bot builds the meal step by step: starters, then the main, then the bread.</p>
           <div class="mock"><span class="q">Let's start with starters?</span><span class="pill acc">Yes</span><span class="arrow">&rarr;</span><span class="q" style="width:auto">Paneer dish?</span><span class="pill acc">Yes</span><span class="arrow">&rarr;</span><span class="pill">Butter Naan</span></div>
@@ -1003,7 +1135,7 @@
         </article>
 
         <article class="move">
-          <div class="move-top"><span class="move-num">05</span><span class="move-lift">+40% pick rate</span></div>
+          <div class="move-top"><span class="move-num"><img src="sales_assets/icons/fire.png" alt="" aria-hidden="true" width="38" height="38" loading="lazy">05</span><span class="move-lift">+40% pick rate</span></div>
           <h3>Badges that show what's popular</h3>
           <p>Live badges from your own sales data sit on every dish card, so guests see what everyone else is loving right now.</p>
           <div class="mock"><span class="pill green">🔥 50+ ordered today</span><span class="pill green">👍 Top choice</span><span class="pill green">⭐ Highly rated</span><span class="pill green">🏆 Best in category</span></div>
@@ -1011,7 +1143,7 @@
         </article>
 
         <article class="move">
-          <div class="move-top"><span class="move-num">06</span><span class="move-lift">+18% drinks attached</span></div>
+          <div class="move-top"><span class="move-num"><img src="sales_assets/icons/sparkles.png" alt="" aria-hidden="true" width="38" height="38" loading="lazy">06</span><span class="move-lift">+18% drinks attached</span></div>
           <h3>The pairing your best waiter would suggest</h3>
           <p>Barista Bot learns what's ordered together at your place and recommends the right bread, then a drink or sweet to finish.</p>
           <div class="mock"><span class="pill">🫓 Most ordered with Paneer Butter Masala</span><span class="q">80+ guests completed their combo with a drink. Add one?</span><span class="pill acc">Yes</span><span class="pill">No</span></div>
@@ -1019,7 +1151,7 @@
         </article>
 
         <article class="move">
-          <div class="move-top"><span class="move-num">07</span><span class="move-lift">+15% extra add-ons</span></div>
+          <div class="move-top"><span class="move-num"><img src="sales_assets/icons/speech.png" alt="" aria-hidden="true" width="38" height="38" loading="lazy">07</span><span class="move-lift">+15% extra add-ons</span></div>
           <h3>The conversation never shuts the door</h3>
           <p>After items go into the cart, the chat stays open and gently asks if there's anything else, like beverages or sweets.</p>
           <div class="mock"><span class="pill on">✓ Items added to cart · View cart</span><span class="q">Awesome! Looking for beverages, sweets, or anything else?</span></div>
@@ -1027,7 +1159,7 @@
         </article>
 
         <article class="move">
-          <div class="move-top"><span class="move-num">08</span><span class="move-lift">&minus;35% abandoned carts</span></div>
+          <div class="move-top"><span class="move-num"><img src="sales_assets/icons/cart.png" alt="" aria-hidden="true" width="38" height="38" loading="lazy">08</span><span class="move-lift">&minus;35% abandoned carts</span></div>
           <h3>Pick up right where they left off</h3>
           <p>The cart invites guests to continue the chat or browse more, with all their history kept intact.</p>
           <div class="mock"><span class="pill acc">Continue from where you left</span><span class="pill">+ Add more items</span><span class="pill">💬 Ask our barista</span></div>

@@ -679,6 +679,19 @@ _REVIEWABLE_STATUSES = (
     models.OrderStatus.payment_completed,
 )
 
+# The customer's orders split in two: "my orders" are the still-active ones,
+# "my past orders" are the terminal ones (paid or cancelled).
+_CURRENT_STATUSES = (
+    models.OrderStatus.received,
+    models.OrderStatus.preparing,
+    models.OrderStatus.ready,
+    models.OrderStatus.payment_pending,
+)
+_PAST_STATUSES = (
+    models.OrderStatus.payment_completed,
+    models.OrderStatus.cancelled,
+)
+
 
 def get_or_create_cart(db: Session, user_id: int) -> models.Order:
     """Return the user's open cart, creating one if none exists.
@@ -849,6 +862,86 @@ def list_orders(
     Pagination is applied on the orders table (one `cart` at most, so the cart
     status simply returns a single-element page). Line items are expanded by
     `_serialize_orders`; the (user_id, status) index backs the filter + sort.
+    """
+    base = select(models.Order).where(
+        models.Order.user_id == user_id,
+        models.Order.status == status,
+    )
+    total = db.execute(
+        select(func.count()).select_from(base.order_by(None).subquery())
+    ).scalar_one()
+
+    offset = (page - 1) * page_size
+    orders = list(
+        db.execute(
+            base.order_by(models.Order.created_at.desc(), models.Order.id.desc())
+            .limit(page_size)
+            .offset(offset)
+        )
+        .scalars()
+        .all()
+    )
+
+    return {
+        "items": _serialize_orders(db, orders),
+        "total": total,
+        "page": page,
+        "page_size": page_size,
+        "has_more": offset + len(orders) < total,
+    }
+
+
+def list_current_orders(
+    db: Session, *, user_id: int, page: int = 1, page_size: int = 10
+) -> dict:
+    """A page of the user's current (active) orders — received, preparing, ready
+    or payment_pending — newest first.
+
+    Takes no status filter; the active set is fixed. Pagination and the
+    newest-first sort are pushed to the database, and the (user_id, status)
+    index covers the filter. Line items are expanded by `_serialize_orders`.
+    """
+    base = select(models.Order).where(
+        models.Order.user_id == user_id,
+        models.Order.status.in_(_CURRENT_STATUSES),
+    )
+    total = db.execute(
+        select(func.count()).select_from(base.order_by(None).subquery())
+    ).scalar_one()
+
+    offset = (page - 1) * page_size
+    orders = list(
+        db.execute(
+            base.order_by(models.Order.created_at.desc(), models.Order.id.desc())
+            .limit(page_size)
+            .offset(offset)
+        )
+        .scalars()
+        .all()
+    )
+
+    return {
+        "items": _serialize_orders(db, orders),
+        "total": total,
+        "page": page,
+        "page_size": page_size,
+        "has_more": offset + len(orders) < total,
+    }
+
+
+def list_past_orders(
+    db: Session,
+    *,
+    user_id: int,
+    status: models.OrderStatus,
+    page: int = 1,
+    page_size: int = 10,
+) -> dict:
+    """A page of the user's past orders for one terminal status (paid or
+    cancelled), newest first.
+
+    The caller restricts `status` to a terminal one. Pagination and the sort are
+    pushed to the database; the (user_id, status) index covers the filter.
     """
     base = select(models.Order).where(
         models.Order.user_id == user_id,

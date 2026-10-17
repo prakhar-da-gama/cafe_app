@@ -1,28 +1,42 @@
 import { useCallback, useEffect, useState } from 'react'
-import { listOrders, money, type Order, type OrderStatus } from '../../api'
+import {
+  listCurrentOrders,
+  listPastOrders,
+  money,
+  type Order,
+  type OrderStatus,
+  type PaginatedOrders,
+} from '../../api'
 import CafeHeader from '../../components/CafeHeader'
 import OrderLines from '../../components/OrderLines'
 import ServiceReviewCard from '../../components/ServiceReviewCard'
 
+// The three views: current (active) orders, past paid orders, and cancelled
+// orders. Current comes from /api/orders/current; the other two from
+// /api/orders/past filtered to the matching terminal status.
+type OrdersTab = 'current' | 'past' | 'cancelled'
+
 interface Props {
-  /** Which status the filter opens on (e.g. `preparing` from the menus). */
-  initialStatus?: OrderStatus
+  /** Which tab to open on. */
+  initialTab?: OrdersTab
   onBack: () => void
   onViewMenu: () => void
 }
 
-// The placed-order statuses the filter offers (the open cart lives on its own
-// page, so it isn't listed here).
-const STATUSES: OrderStatus[] = [
-  'received',
-  'preparing',
-  'ready',
-  'payment_pending',
-  'payment_completed',
-  'cancelled',
+const TABS: { key: OrdersTab; label: string }[] = [
+  { key: 'current', label: 'current orders' },
+  { key: 'past', label: 'past orders' },
+  { key: 'cancelled', label: 'cancelled' },
 ]
 
-// Pretty labels for the status pills / badge (raw enum values have underscores).
+// Fetch one page for a tab from its backing endpoint.
+const fetchTab = (tab: OrdersTab, page: number): Promise<PaginatedOrders> => {
+  if (tab === 'current') return listCurrentOrders(page, PAGE_SIZE)
+  if (tab === 'past') return listPastOrders('payment_completed', page, PAGE_SIZE)
+  return listPastOrders('cancelled', page, PAGE_SIZE)
+}
+
+// Pretty labels for the per-order status badge (raw enum values have underscores).
 const STATUS_LABELS: Record<OrderStatus, string> = {
   cart: 'cart',
   received: 'received',
@@ -40,25 +54,25 @@ const isReviewable = (s: OrderStatus) =>
 
 const PAGE_SIZE = 10
 
-/** All of the user's placed orders, filterable by status and paged on the
- *  orders table, following the menu's design language. */
+/** The user's orders across three tabs (current / past / cancelled), each paged
+ *  on the orders table, following the menu's design language. */
 export default function MyOrders({
-  initialStatus = 'received',
+  initialTab = 'current',
   onBack,
   onViewMenu,
 }: Props) {
-  const [status, setStatus] = useState<OrderStatus>(initialStatus)
+  const [tab, setTab] = useState<OrdersTab>(initialTab)
   const [orders, setOrders] = useState<Order[]>([])
   const [page, setPage] = useState(1)
   const [hasMore, setHasMore] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const load = useCallback(async (which: OrderStatus, next: number) => {
+  const load = useCallback(async (which: OrdersTab, next: number) => {
     setLoading(true)
     setError(null)
     try {
-      const res = await listOrders(which, next, PAGE_SIZE)
+      const res = await fetchTab(which, next)
       setOrders((prev) => (next === 1 ? res.items : [...prev, ...res.items]))
       setPage(res.page)
       setHasMore(res.has_more)
@@ -69,11 +83,11 @@ export default function MyOrders({
     }
   }, [])
 
-  // Reset and refetch the first page whenever the status filter changes.
+  // Reset and refetch the first page whenever the tab changes.
   useEffect(() => {
     setOrders([])
-    load(status, 1)
-  }, [status, load])
+    load(tab, 1)
+  }, [tab, load])
 
   // Fold a saved line review back into local state so the card stays in sync
   // without a refetch.
@@ -109,17 +123,17 @@ export default function MyOrders({
 
       <div className="menu-head">
         <h1 className="menu-title">My orders</h1>
-        <nav className="cat-nav orders-filter" aria-label="Filter by status">
-          {STATUSES.map((s, i) => (
+        <nav className="cat-nav orders-filter" aria-label="Filter orders">
+          {TABS.map((t, i) => (
             <button
-              key={s}
+              key={t.key}
               type="button"
-              className={s === status ? 'cat-pill cat-on' : 'cat-pill'}
+              className={t.key === tab ? 'cat-pill cat-on' : 'cat-pill'}
               data-candy={(i % 8) + 1}
-              onClick={() => setStatus(s)}
-              aria-pressed={s === status}
+              onClick={() => setTab(t.key)}
+              aria-pressed={t.key === tab}
             >
-              {STATUS_LABELS[s]}
+              {t.label}
             </button>
           ))}
         </nav>
@@ -127,7 +141,9 @@ export default function MyOrders({
 
       {error && <p className="form-error center">{error}</p>}
       {!loading && !error && orders.length === 0 && (
-        <p className="muted center">No {status} orders yet.</p>
+        <p className="muted center">
+          No {TABS.find((t) => t.key === tab)?.label} yet.
+        </p>
       )}
 
       <div className="order-list">
@@ -170,7 +186,7 @@ export default function MyOrders({
         <button
           type="button"
           className="candy-btn btn-grape load-more"
-          onClick={() => load(status, page + 1)}
+          onClick={() => load(tab, page + 1)}
         >
           Load more
         </button>

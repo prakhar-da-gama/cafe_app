@@ -847,6 +847,38 @@ export function listOrders(
   }).then((r) => handle<PaginatedOrders>(r))
 }
 
+// A page of the user's current (active) orders — received, preparing, ready or
+// payment_pending — newest first. Takes no status filter.
+export function listCurrentOrders(
+  page = 1,
+  pageSize = 10,
+): Promise<PaginatedOrders> {
+  const params = new URLSearchParams({
+    page: String(page),
+    page_size: String(pageSize),
+  })
+  return fetch(`/api/orders/current?${params.toString()}`, {
+    headers: authHeaders(),
+  }).then((r) => handle<PaginatedOrders>(r))
+}
+
+// A page of the user's past orders for one terminal status — 'payment_completed'
+// (paid) or 'cancelled' — newest first.
+export function listPastOrders(
+  status: 'payment_completed' | 'cancelled',
+  page = 1,
+  pageSize = 10,
+): Promise<PaginatedOrders> {
+  const params = new URLSearchParams({
+    status,
+    page: String(page),
+    page_size: String(pageSize),
+  })
+  return fetch(`/api/orders/past?${params.toString()}`, {
+    headers: authHeaders(),
+  }).then((r) => handle<PaginatedOrders>(r))
+}
+
 // Check out the cart: stamp its total and move it from `cart` to `received`.
 export function placeOrder(): Promise<Order> {
   return fetch('/api/orders/place', {

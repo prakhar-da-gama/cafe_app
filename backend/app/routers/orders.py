@@ -88,6 +88,50 @@ def list_all_orders_summary(
     )
 
 
+@router.get("/current", response_model=schemas.PaginatedOrders)
+def list_my_current_orders(
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=10, ge=1, le=50),
+    db: Session = Depends(get_db),
+    claims: dict[str, Any] = Depends(require_jwt),
+):
+    """The authenticated user's current (active) orders — received, preparing,
+    ready or payment_pending — newest first. Takes no status filter; line items
+    are fully expanded and the page is served from the orders table. Requires a
+    valid JWT bearer token."""
+    return crud.list_current_orders(
+        db, user_id=int(claims["sub"]), page=page, page_size=page_size
+    )
+
+
+@router.get("/past", response_model=schemas.PaginatedOrders)
+def list_my_past_orders(
+    status: models.OrderStatus = Query(
+        ...,
+        description="Terminal status to browse: payment_completed or cancelled.",
+    ),
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=10, ge=1, le=50),
+    db: Session = Depends(get_db),
+    claims: dict[str, Any] = Depends(require_jwt),
+):
+    """The authenticated user's past orders for one terminal status — paid
+    (payment_completed) or cancelled — newest first, line items fully expanded,
+    paged on the orders table. Rejects any non-terminal status with 400.
+    Requires a valid JWT bearer token."""
+    if status not in (
+        models.OrderStatus.payment_completed,
+        models.OrderStatus.cancelled,
+    ):
+        raise HTTPException(
+            status_code=400,
+            detail="Past orders are only 'payment_completed' or 'cancelled'",
+        )
+    return crud.list_past_orders(
+        db, user_id=int(claims["sub"]), status=status, page=page, page_size=page_size
+    )
+
+
 @router.get("/{order_id}", response_model=schemas.OrderRead)
 def get_order(
     order_id: int,

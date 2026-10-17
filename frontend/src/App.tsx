@@ -54,6 +54,11 @@ function App() {
   // The opener's quick-action chips (first-person utterances the guest can tap),
   // handed from InitiateChat to seed the chat's in-chat MCQ. Null on resume.
   const [chatFirstOptions, setChatFirstOptions] = useState<string[] | null>(null)
+  // True while a slow /initiate-chat call is still in flight but we've already
+  // opened the chat on the barista's thinking dots (the setup took >3s).
+  const [chatPreparing, setChatPreparing] = useState(false)
+  // Set when that slow setup call ultimately failed after the chat was opened.
+  const [chatPrepareError, setChatPrepareError] = useState<string | null>(null)
   // The Play button in the header opens the game lobby popup over any screen.
   const [showGamePopup, setShowGamePopup] = useState(false)
   const openCart = () => navigate('cart')
@@ -75,6 +80,8 @@ function App() {
         setChatIsNewSession(false)
         setChatFirstMessage(null)
         setChatFirstOptions(null)
+        setChatPreparing(false)
+        setChatPrepareError(null)
         navigate('chat')
         return
       }
@@ -164,15 +171,33 @@ function App() {
         <InitiateChat
           onBack={goBack}
           onViewMenu={() => navigate('fullmenu')}
-          onProceed={(id, cart, newSession, firstMessage, firstOptions) => {
+          onReady={(id, cart, newSession, firstMessage, firstOptions) => {
             setChatContextId(id)
             setChatCartId(cart)
             setChatIsNewSession(newSession)
             setChatFirstMessage(firstMessage)
             setChatFirstOptions(firstOptions)
+            setChatPreparing(false)
+            setChatPrepareError(null)
             // Replace the setup step so Back from the chat returns to the
             // dashboard rather than re-opening the (already-answered) form.
             navigate('chat', { replace: true })
+          }}
+          onPreparing={() => {
+            // The setup call is slow (>3s): open the chat now on the thinking
+            // dots; onReady/onPrepareError will fill it in once the call lands.
+            setChatContextId(null)
+            setChatCartId(null)
+            setChatIsNewSession(true)
+            setChatFirstMessage(null)
+            setChatFirstOptions(null)
+            setChatPrepareError(null)
+            setChatPreparing(true)
+            navigate('chat', { replace: true })
+          }}
+          onPrepareError={(message) => {
+            setChatPreparing(false)
+            setChatPrepareError(message)
           }}
         />
       )}
@@ -184,6 +209,8 @@ function App() {
           isNewSession={chatIsNewSession}
           firstMessage={chatFirstMessage}
           firstOptions={chatFirstOptions}
+          preparing={chatPreparing}
+          prepareError={chatPrepareError}
           onRecoverSession={recoverChatSession}
           onBack={goBack}
           onViewMenu={() => navigate('fullmenu')}
@@ -229,7 +256,7 @@ function App() {
 
       {screen === 'orders' && (
         <MyOrders
-          initialStatus="received"
+          initialTab="current"
           onBack={goBack}
           onViewMenu={() => navigate('fullmenu')}
         />

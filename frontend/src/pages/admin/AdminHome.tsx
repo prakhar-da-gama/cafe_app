@@ -6,6 +6,8 @@ interface Props {
   onManagerDashboard: () => void
   /** Open the admin-only menu authoring page (add categories, dishes, etc.). */
   onManageMenu: () => void
+  /** Open the sales / menu / customer analytics page. */
+  onAnalytics: () => void
   /** Open a dummy placeholder screen for the not-yet-built tools. */
   onDummy: (title: string) => void
 }
@@ -38,7 +40,7 @@ const TILES: {
     title: 'Analytics',
     blurb: 'Sales & order trends',
     candy: 3,
-    dummy: true,
+    dummy: false,
   },
   {
     key: 'blogs',
@@ -69,6 +71,7 @@ export default function AdminHome({
   onSignedOut,
   onManagerDashboard,
   onManageMenu,
+  onAnalytics,
   onDummy,
 }: Props) {
   const [user, setUser] = useState<User | null>(null)
@@ -140,6 +143,7 @@ export default function AdminHome({
             onClick={() => {
               if (t.dummy) onDummy(t.title)
               else if (t.key === 'add-menu') onManageMenu()
+              else if (t.key === 'analytics') onAnalytics()
               else onManagerDashboard()
             }}
           >

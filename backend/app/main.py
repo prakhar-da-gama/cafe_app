@@ -13,6 +13,7 @@ from .config import get_settings
 from .database import Base, SessionLocal, engine, ensure_database_exists
 from .routers import (
     ai_menu_creation,
+    analyticsadmin,
     auth,
     cart,
     chatbot,
@@ -144,6 +145,7 @@ app.add_middleware(
 )
 
 app.include_router(ai_menu_creation.router)
+app.include_router(analyticsadmin.router)
 app.include_router(auth.router)
 app.include_router(cart.router)
 app.include_router(chatbot.router)

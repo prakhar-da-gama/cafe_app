@@ -5,6 +5,7 @@ import { useScreen } from './useScreen'
 import Login from './pages/admin/Login'
 import VerifyOtp from './pages/VerifyOtp'
 import AdminHome from './pages/admin/AdminHome'
+import AdminAnalytics from './pages/admin/AdminAnalytics'
 import ComingSoon from './pages/admin/ComingSoon'
 import ManagerHome from './pages/manager/ManagerHome'
 import ManagerMenu from './pages/manager/ManagerMenu'
@@ -20,6 +21,7 @@ type Screen =
   | 'otp'
   | 'portal'
   | 'dummy'
+  | 'analytics'
   | 'manager-home'
   | 'menu'
   | 'manage-menu'
@@ -72,6 +74,7 @@ export default function AdminApp() {
           onSignedOut={() => navigate('login')}
           onManagerDashboard={() => navigate('manager-home')}
           onManageMenu={() => navigate('manage-menu')}
+          onAnalytics={() => navigate('analytics')}
           onDummy={(title) => {
             setDummyTitle(title)
             navigate('dummy')
@@ -80,6 +83,8 @@ export default function AdminApp() {
       )}
 
       {screen === 'dummy' && <ComingSoon title={dummyTitle} onBack={goBack} />}
+
+      {screen === 'analytics' && <AdminAnalytics onBack={goBack} />}
 
       {screen === 'manager-home' && (
         <ManagerHome

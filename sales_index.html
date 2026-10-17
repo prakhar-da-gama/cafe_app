@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>OrdersBuddy — run your cafe, not the chaos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Sora:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --bg:#FAF5EC;
+    --bg-alt:#F3EBD9;
+    --surface:#FFFFFF;
+    --ink:#141414;
+    --ink-2:#1A1A1A;
+    --muted:#77726a;
+    --faint:#9A948A;
+    --accent:#FF6A2C;
+    --accent-ink:#C8500F;
+    --accent-tint:rgba(255,106,44,.10);
+    --border:rgba(20,20,20,.10);
+    --border-strong:rgba(20,20,20,.16);
+    --shadow-sm:0 1px 2px rgba(20,20,20,.04),0 3px 10px rgba(20,20,20,.05);
+    --shadow-md:0 2px 4px rgba(20,20,20,.04),0 16px 44px rgba(20,20,20,.09);
+    --c1:#FF5A5F;
+    --c2:#15B86B;
+    --c3:#2D6CDF;
+    --c4:#FF9F1C;
+    --c5:#8E5CFF;
+    --f-display:'Sora',system-ui,sans-serif;
+    --f-body:'Inter',system-ui,sans-serif;
+    --f-mono:'Space Mono',ui-monospace,monospace;
+  }
+
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;scroll-padding-top:84px;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:var(--f-body);
+    font-size:17px;
+    line-height:1.7;
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+  }
+  ::selection{background:var(--accent);color:#fff;}
+
+  /* ---------- header ---------- */
+  .nav{position:sticky;top:0;z-index:50;background:rgba(250,245,236,.82);backdrop-filter:saturate(1.6) blur(12px);-webkit-backdrop-filter:saturate(1.6) blur(12px);border-bottom:1px solid var(--border);}
+  .nav-inner{display:flex;align-items:center;justify-content:space-between;height:66px;}
+  .nav-brand{display:inline-flex;align-items:center;gap:9px;font-family:var(--f-display);font-weight:700;font-size:17px;letter-spacing:-.02em;color:var(--ink);text-decoration:none;}
+  .nav-brand .dot{width:10px;height:10px;border-radius:50%;background:var(--accent);display:inline-block;}
+  .nav-actions{display:flex;align-items:center;gap:12px;}
+  .btn-ghost,.btn-solid{font-family:var(--f-body);font-weight:600;font-size:14px;text-decoration:none;padding:10px 20px;border-radius:999px;transition:background .2s ease,color .2s ease,border-color .2s ease,transform .2s ease;}
+  .btn-ghost{color:var(--ink);border:1px solid var(--border-strong);background:transparent;}
+  .btn-ghost:hover,.btn-ghost:focus-visible{background:var(--bg-alt);border-color:var(--ink);}
+  .btn-solid{color:#fff;background:var(--ink);border:1px solid var(--ink);}
+  .btn-solid:hover,.btn-solid:focus-visible{background:var(--accent);border-color:var(--accent);transform:translateY(-1px);}
+
+  /* ---------- layout ---------- */
+  .wrap{max-width:1180px;margin:0 auto;padding:0 40px;}
+  section{padding:112px 0;position:relative;}
+  section.alt{background:var(--bg-alt);}
+
+  .split{display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:center;}
+  .split.flip .copy{order:2;}
+  .split.flip .chart{order:1;}
+  .copy{max-width:520px;}
+  .copy-wide{max-width:640px;margin-bottom:8px;}
+
+  .eyebrow{
+    display:inline-block;
+    font-family:var(--f-mono);
+    font-size:11px;
+    letter-spacing:.2em;
+    text-transform:uppercase;
+    color:var(--accent-ink);
+    background:var(--accent-tint);
+    border:1px solid rgba(255,106,44,.22);
+    padding:6px 15px;
+    border-radius:999px;
+    margin:0 0 24px;
+  }
+
+  h2.head{
+    font-family:var(--f-display);
+    font-weight:700;
+    font-size:clamp(1.9rem,3.6vw,3rem);
+    line-height:1.1;
+    letter-spacing:-.025em;
+    color:var(--ink);
+    margin:0 0 20px;
+  }
+  .body-copy{
+    font-size:clamp(1rem,1.3vw,1.16rem);
+    line-height:1.75;
+    color:var(--muted);
+    margin:0;
+    max-width:46ch;
+  }
+
+  /* ---------- typewriter ---------- */
+  .tw{position:relative;}
+  .tw-ghost{display:block;visibility:hidden;}
+  .tw-live{position:absolute;top:0;left:0;right:0;display:block;}
+  .tw-live.typing::after{
+    content:'';
+    display:inline-block;
+    width:.055em;
+    height:1em;
+    margin-left:.05em;
+    background:var(--accent);
+    transform:translateY(.12em);
+    animation:blink .9s steps(1) infinite;
+  }
+  @keyframes blink{50%{opacity:0;}}
+
+  /* ---------- hero ---------- */
+  .hero{min-height:calc(100vh - 66px);display:flex;align-items:center;padding:90px 0 70px;}
+  .hero-grid{display:grid;grid-template-columns:1.08fr .92fr;gap:64px;align-items:center;width:100%;}
+  .brand{
+    display:inline-flex;
+    align-items:center;
+    gap:9px;
+    font-family:var(--f-display);
+    font-weight:700;
+    font-size:15px;
+    letter-spacing:-.01em;
+    color:var(--ink);
+    margin-bottom:40px;
+  }
+  .brand .dot{width:10px;height:10px;border-radius:50%;background:var(--accent);display:inline-block;}
+  .motto{
+    font-family:var(--f-display);
+    font-weight:800;
+    font-size:clamp(1.7rem,3.1vw,2.7rem);
+    line-height:1.14;
+    letter-spacing:-.02em;
+    color:#141414;
+    margin:0;
+  }
+
+  .knowmore{
+    display:inline-block;
+    margin-top:36px;
+    font-family:var(--f-display);
+    font-weight:700;
+    font-size:15px;
+    letter-spacing:.01em;
+    color:#fff;
+    background:var(--accent);
+    border:2px solid var(--accent);
+    padding:13px 32px;
+    border-radius:12px;
+    text-decoration:none;
+    opacity:0;
+    animation:flash 1.15s ease-in-out infinite;
+    transition:opacity .6s ease .35s,transform .2s ease;
+  }
+  .hero.done .knowmore{opacity:1;}
+  .knowmore:hover,.knowmore:focus-visible{animation-play-state:paused;transform:translateY(-2px);box-shadow:0 12px 30px rgba(255,106,44,.4);}
+  @keyframes flash{
+    0%,100%{box-shadow:0 0 0 0 rgba(255,106,44,.55);}
+    50%{box-shadow:0 0 0 13px rgba(255,106,44,0);}
+  }
+
+  .hero-chart{
+    opacity:0;
+    transform:translateY(28px);
+    transition:opacity 1s ease .2s, transform 1s cubic-bezier(.22,.61,.36,1) .2s;
+  }
+  .hero.done .hero-chart{opacity:1;transform:none;}
+  .square{width:100%;max-width:480px;aspect-ratio:1/1;margin-left:auto;}
+  .square .chart{height:100%;display:flex;flex-direction:column;}
+  .square .plot{flex:1;}
+
+  .scroll-cue{
+    margin-top:34px;
+    font-family:var(--f-mono);
+    font-size:11px;
+    letter-spacing:.26em;
+    text-transform:uppercase;
+    color:var(--faint);
+    opacity:0;
+    transition:opacity .8s ease .6s;
+  }
+  .hero.done .scroll-cue{opacity:1;}
+
+  /* ---------- chart card ---------- */
+  .chart{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:22px;
+    box-shadow:var(--shadow-md);
+    padding:28px 26px 22px;
+    width:100%;
+  }
+  .plot{
+    position:relative;
+    display:flex;
+    align-items:stretch;
+    gap:16px;
+    height:260px;
+    padding-top:40px;
+    border-bottom:1px solid var(--border-strong);
+    background-image:repeating-linear-gradient(to top,transparent,transparent 43px,rgba(20,20,20,.05) 43px,rgba(20,20,20,.05) 44px);
+  }
+  .col{flex:1;display:flex;flex-direction:column;justify-content:flex-end;}
+  .bar{
+    position:relative;
+    width:min(58px,68%);
+    margin:0 auto;
+    height:0;
+    border-radius:7px 7px 0 0;
+    border:1px solid rgba(20,20,20,.28);
+    border-bottom:none;
+    transition:height 1.5s cubic-bezier(.22,.61,.36,1);
+  }
+  .bar::after{content:'';position:absolute;inset:0;border-radius:inherit;background:linear-gradient(180deg,rgba(255,255,255,.28),transparent 58%);}
+  .in .bar{height:var(--h);}
+  .c1{background:var(--c1);}
+  .c2{background:var(--c2);}
+  .c3{background:var(--c3);}
+  .c4{background:var(--c4);}
+  .c5{background:var(--c5);}
+  .val{
+    position:absolute;
+    top:-30px;
+    left:50%;
+    transform:translateX(-50%);
+    font-family:var(--f-mono);
+    font-size:13px;
+    font-weight:700;
+    color:var(--ink);
+    white-space:nowrap;
+    opacity:0;
+    transition:opacity .5s ease 1.1s;
+  }
+  .in .val{opacity:1;}
+
+  .legend{display:flex;gap:14px;margin-top:16px;}
+  .leg{flex:1;display:flex;flex-direction:column;align-items:center;text-align:center;}
+  .tag{
+    font-family:var(--f-body);
+    font-size:12.5px;
+    font-weight:500;
+    letter-spacing:.005em;
+    color:var(--ink);
+    line-height:1.3;
+  }
+
+  /* ---------- problem line ---------- */
+  .problem{
+    font-family:var(--f-display);
+    font-weight:600;
+    font-size:clamp(1.2rem,2vw,1.6rem);
+    letter-spacing:-.02em;
+    color:var(--ink);
+    margin:0 0 18px;
+    line-height:1.3;
+  }
+
+  /* ---------- features ---------- */
+  .feature-grid{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:16px;
+    margin-top:48px;
+  }
+  .feat{
+    border:1px solid var(--border);
+    border-radius:16px;
+    padding:24px 20px;
+    font-size:14.5px;
+    font-weight:500;
+    color:var(--ink);
+    background:var(--surface);
+    box-shadow:var(--shadow-sm);
+    transition:transform .25s ease,box-shadow .25s ease,border-color .25s ease;
+  }
+  .feat:hover{transform:translateY(-4px);box-shadow:var(--shadow-md);border-color:var(--border-strong);}
+
+  /* ---------- testimonials ---------- */
+  .quotes{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:22px;
+    margin-top:48px;
+  }
+  .quote{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:20px;
+    box-shadow:var(--shadow-sm);
+    padding:30px 28px;
+    margin:0;
+    display:flex;
+    flex-direction:column;
+    transition:transform .25s ease,box-shadow .25s ease;
+  }
+  .quote:hover{transform:translateY(-4px);box-shadow:var(--shadow-md);}
+  .quote p{font-size:15.5px;line-height:1.65;color:var(--ink);margin:0;flex:1;}
+  .person{display:flex;align-items:center;gap:13px;margin-top:24px;}
+  .avatar{
+    width:44px;height:44px;flex:none;
+    border-radius:50%;
+    color:#fff;
+    font-family:var(--f-display);
+    font-weight:700;
+    font-size:16px;
+    display:grid;
+    place-items:center;
+  }
+  .avatar.a1{background:var(--c1);}
+  .avatar.a2{background:var(--c2);}
+  .avatar.a3{background:var(--c3);}
+  .pmeta{display:flex;flex-direction:column;line-height:1.35;}
+  .pname{font-weight:600;font-size:14px;color:var(--ink);}
+  .prole{font-size:12.5px;color:var(--muted);}
+
+  /* ---------- pricing ---------- */
+  .plans{display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-top:48px;}
+  .plan{
+    border:1px solid var(--border);
+    border-radius:24px;
+    padding:36px 32px;
+    background:var(--surface);
+    box-shadow:var(--shadow-sm);
+    display:flex;
+    flex-direction:column;
+  }
+  .plan.featured{border:1.5px solid var(--accent);box-shadow:var(--shadow-md);}
+  .plan-tag{display:inline-block;align-self:flex-start;font-family:var(--f-mono);font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);background:var(--bg-alt);border:1px solid var(--border);padding:5px 12px;border-radius:999px;margin-bottom:18px;}
+  .plan.featured .plan-tag{color:var(--accent-ink);background:var(--accent-tint);border-color:rgba(255,106,44,.25);}
+  .price{font-family:var(--f-display);font-size:2.4rem;font-weight:700;letter-spacing:-.03em;line-height:1;margin-bottom:5px;}
+  .price span{font-family:var(--f-body);font-size:.92rem;color:var(--muted);font-weight:400;letter-spacing:0;}
+  .gst{font-size:12.5px;color:var(--faint);margin-bottom:22px;}
+  .plan p.desc{font-size:14.5px;color:var(--muted);margin:0 0 20px;line-height:1.6;}
+  .plan ul{list-style:none;padding:0;margin:0 0 4px;flex:1;}
+  .plan li{font-size:14px;color:var(--ink);padding:9px 0 9px 24px;position:relative;border-top:1px solid var(--border);}
+  .plan li:first-child{border-top:none;}
+  .plan li::before{content:'';position:absolute;left:2px;top:15px;width:8px;height:8px;border-radius:50%;background:var(--accent);}
+
+  .addons{
+    margin-top:22px;
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:22px;
+  }
+  .addon{border:1px dashed var(--border-strong);border-radius:20px;padding:26px 28px;background:var(--surface);}
+  .addon h4{font-family:var(--f-display);font-weight:700;letter-spacing:-.02em;font-size:1.18rem;margin:0 0 8px;}
+  .addon .a-price{font-family:var(--f-mono);font-size:15px;color:var(--accent-ink);margin-bottom:10px;}
+  .addon .a-price span{color:var(--faint);font-size:12px;}
+  .addon p{font-size:13.5px;color:var(--muted);margin:0;line-height:1.6;}
+
+  .pricing-foot{display:flex;align-items:center;gap:28px;flex-wrap:wrap;margin-top:34px;}
+  .note{font-size:13px;color:var(--faint);font-family:var(--f-mono);letter-spacing:.01em;margin:0;}
+
+  .cta{
+    display:inline-block;
+    background:var(--ink);
+    color:#fff;
+    font-family:var(--f-body);
+    font-weight:600;
+    font-size:16px;
+    letter-spacing:.005em;
+    padding:16px 42px;
+    border-radius:999px;
+    text-decoration:none;
+    transition:transform .25s ease,box-shadow .25s ease,background .25s ease;
+  }
+  .cta:hover{transform:translateY(-2px);box-shadow:0 14px 34px rgba(20,20,20,.18);background:var(--accent);}
+
+  footer{padding:60px 0;border-top:1px solid var(--border);}
+  footer .wrap{display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap;}
+  footer .fmark{display:inline-flex;align-items:center;gap:9px;font-family:var(--f-display);font-weight:700;font-size:14px;color:var(--ink);}
+  footer .fmark .dot{width:9px;height:9px;border-radius:50%;background:var(--accent);}
+  footer .fnote{font-size:13px;color:var(--faint);}
+
+  /* ---------- reveal ---------- */
+  .reveal{opacity:0;transform:translateY(24px);transition:opacity .9s ease,transform .9s cubic-bezier(.22,.61,.36,1);}
+  .reveal.in{opacity:1;transform:none;}
+
+  /* ---------- responsive ---------- */
+  @media(max-width:980px){
+    .hero-grid{grid-template-columns:1fr;gap:44px;}
+    .split{grid-template-columns:1fr;gap:38px;}
+    .split.flip .copy{order:1;}
+    .split.flip .chart{order:2;}
+    .copy{max-width:600px;}
+    .square{margin:0;max-width:440px;}
+    .feature-grid{grid-template-columns:repeat(3,1fr);}
+  }
+  @media(max-width:720px){
+    section{padding:78px 0;}
+    .wrap{padding:0 24px;}
+    .nav-inner{height:60px;}
+    .nav-actions{gap:8px;}
+    .btn-ghost,.btn-solid{padding:9px 15px;font-size:13px;}
+  }
+  @media(max-width:460px){
+    .nav-brand{font-size:15px;}
+    .btn-ghost{display:none;}
+    .feature-grid{grid-template-columns:repeat(2,1fr);}
+    .quotes{grid-template-columns:1fr;}
+    .plans{grid-template-columns:1fr;}
+    .addons{grid-template-columns:1fr;}
+    .plot{height:220px;gap:9px;}
+    .bar{width:min(40px,76%);}
+    .val{font-size:11px;top:-26px;}
+    .tag{font-size:11px;}
+  }
+  @media(max-width:440px){
+    .feature-grid{grid-template-columns:1fr 1fr;}
+  }
+
+  @media(prefers-reduced-motion:reduce){
+    *{animation:none!important;transition:none!important;}
+    .reveal{opacity:1;transform:none;}
+    .hero-chart{opacity:1;transform:none;}
+    .knowmore{opacity:1;}
+    .val{opacity:1;}
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ HEADER ============ -->
+<header class="nav">
+  <div class="wrap nav-inner">
+    <a class="nav-brand" href="#hero"><span class="dot"></span>OrdersBuddy</a>
+    <nav class="nav-actions">
+      <a class="btn-ghost" href="#pricing">Know pricing</a>
+      <a class="btn-solid" href="404.html">Book a demo</a>
+    </nav>
+  </div>
+</header>
+
+<!-- ============ HERO ============ -->
+<section class="hero" id="hero">
+  <div class="wrap hero-grid">
+    <div class="hero-copy">
+      <p class="motto tw" data-text="While your customers are engaged and ordering more, your managers are running your place efficiently and actually responding to your reviews — your business grows."></p>
+      <a class="knowmore" href="404.html">Know more</a>
+      <div class="scroll-cue">scroll to see how</div>
+    </div>
+
+    <div class="hero-chart">
+      <div class="square">
+        <div class="chart" data-chart>
+          <div class="plot">
+            <div class="col"><div class="bar c1" style="--h:92%"><span class="val" data-prefix="" data-value="94" data-suffix="%"></span></div></div>
+            <div class="col"><div class="bar c2" style="--h:70%"><span class="val" data-prefix="&#8377;" data-value="145000" data-suffix=" /mo"></span></div></div>
+            <div class="col"><div class="bar c3" style="--h:80%"><span class="val" data-prefix="" data-value="89" data-suffix="%"></span></div></div>
+            <div class="col"><div class="bar c4" style="--h:86%"><span class="val" data-prefix="" data-value="91" data-suffix="%"></span></div></div>
+          </div>
+          <div class="legend">
+            <div class="leg"><span class="tag">Customer happiness</span></div>
+            <div class="leg"><span class="tag">Your profits</span></div>
+            <div class="leg"><span class="tag">Business efficiency</span></div>
+            <div class="leg"><span class="tag">Owner's independence</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ BARISTA BOT ============ -->
+<section class="alt" data-seq>
+  <div class="wrap split">
+    <div class="copy">
+      <p class="eyebrow reveal">At the counter</p>
+      <h2 class="head tw" data-text="Barista Bot"></h2>
+      <p class="problem tw" data-text="Your baristas don't always respond. Sometimes they're rude, sometimes guests simply don't want to ask — and your menu goes unexplored."></p>
+      <p class="body-copy tw" data-text="Barista Bot steps in to answer every question and order for each customer in the best possible way — so nothing on your menu stays a secret."></p>
+    </div>
+
+    <div class="chart reveal" data-chart>
+      <div class="plot">
+        <div class="col"><div class="bar c1" style="--h:78%"><span class="val" data-prefix="+" data-value="68" data-suffix="%"></span></div></div>
+        <div class="col"><div class="bar c2" style="--h:66%"><span class="val" data-prefix="+" data-value="57" data-suffix="%"></span></div></div>
+        <div class="col"><div class="bar c3" style="--h:58%"><span class="val" data-prefix="+" data-value="44" data-suffix="%"></span></div></div>
+        <div class="col"><div class="bar c4" style="--h:88%"><span class="val" data-prefix="+&#8377;" data-value="34000" data-suffix=" /mo"></span></div></div>
+      </div>
+      <div class="legend">
+        <div class="leg"><span class="tag">Customer engagement</span></div>
+        <div class="leg"><span class="tag">Menu explored</span></div>
+        <div class="leg"><span class="tag">Customer happiness</span></div>
+        <div class="leg"><span class="tag">Profits</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ ORDERS BUDDY — REVIEWS ============ -->
+<section data-seq>
+  <div class="wrap split flip">
+    <div class="copy">
+      <p class="eyebrow reveal">In your reviews</p>
+      <h2 class="head tw" data-text="OrdersBuddy reads every review"></h2>
+      <p class="problem tw" data-text="You don't have the time to read every review, and you can't always trust your managers to respond."></p>
+      <p class="body-copy tw" data-text="OrdersBuddy parses your reviews, uses AI to analyze them, and tells you exactly what to do — with clear ticket visibility for both you and your managers."></p>
+    </div>
+
+    <div class="chart reveal" data-chart>
+      <div class="plot">
+        <div class="col"><div class="bar c1" style="--h:90%"><span class="val" data-prefix="" data-value="96" data-suffix="%"></span></div></div>
+        <div class="col"><div class="bar c2" style="--h:70%"><span class="val" data-prefix="+" data-value="52" data-suffix="%"></span></div></div>
+        <div class="col"><div class="bar c3" style="--h:80%"><span class="val" data-prefix="+" data-value="74" data-suffix="%"></span></div></div>
+        <div class="col"><div class="bar c4" style="--h:62%"><span class="val" data-prefix="+&#8377;" data-value="26000" data-suffix=" /mo"></span></div></div>
+      </div>
+      <div class="legend">
+        <div class="leg"><span class="tag">Review resolution</span></div>
+        <div class="leg"><span class="tag">Customer satisfaction</span></div>
+        <div class="leg"><span class="tag">Response speed</span></div>
+        <div class="leg"><span class="tag">Profits</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ ORDERS BUDDY — TRENDS ============ -->
+<section class="alt" data-seq>
+  <div class="wrap split">
+    <div class="copy">
+      <p class="eyebrow reveal">Ahead of the curve</p>
+      <h2 class="head tw" data-text="OrdersBuddy follows the trends for you"></h2>
+      <p class="problem tw" data-text="You don't have time to chase the latest trends — the extra profits, the new menu items that were easy to add. You miss out."></p>
+      <p class="body-copy tw" data-text="OrdersBuddy analyzes the trends automatically and tells you exactly what to do for your place — so you move first, not last."></p>
+    </div>
+
+    <div class="chart reveal" data-chart>
+      <div class="plot">
+        <div class="col"><div class="bar c1" style="--h:84%"><span class="val" data-prefix="+" data-value="81" data-suffix="%"></span></div></div>
+        <div class="col"><div class="bar c2" style="--h:60%"><span class="val" data-prefix="" data-value="12" data-suffix=" /season"></span></div></div>
+        <div class="col"><div class="bar c3" style="--h:70%"><span class="val" data-prefix="+" data-value="43" data-suffix="%"></span></div></div>
+        <div class="col"><div class="bar c4" style="--h:92%"><span class="val" data-prefix="+&#8377;" data-value="48000" data-suffix=" /mo"></span></div></div>
+      </div>
+      <div class="legend">
+        <div class="leg"><span class="tag">Trend adoption</span></div>
+        <div class="leg"><span class="tag">New menu items</span></div>
+        <div class="leg"><span class="tag">Repeat visits</span></div>
+        <div class="leg"><span class="tag">Profits</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FEATURES ============ -->
+<section data-seq>
+  <div class="wrap">
+    <div class="copy-wide">
+      <p class="eyebrow reveal">And plenty more</p>
+      <h2 class="head tw" data-text="Everything else to run the place"></h2>
+      <p class="body-copy tw" data-text="Along with all of this, dozens of features help you run your cafe or restaurant efficiently — every single day."></p>
+    </div>
+
+    <div class="feature-grid reveal">
+      <div class="feat">AI order prioritization</div>
+      <div class="feat">Kitchen display system</div>
+      <div class="feat">Customizations on every item</div>
+      <div class="feat">Special instructions to kitchen</div>
+      <div class="feat">Smart restock reminders</div>
+      <div class="feat">Complaint &amp; issue tracking</div>
+      <div class="feat">Sales &amp; revenue reports</div>
+      <div class="feat">QR ordering &amp; reservations</div>
+      <div class="feat">Order tracking &amp; reorder</div>
+      <div class="feat">Billing, taxes &amp; receipts</div>
+      <div class="feat">Works offline in outages</div>
+      <div class="feat">Role-based access control</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ TESTIMONIALS ============ -->
+<section class="alt" data-seq>
+  <div class="wrap">
+    <div class="copy-wide">
+      <p class="eyebrow reveal">Testimonials</p>
+      <h2 class="head tw" data-text="Loved by closers"></h2>
+    </div>
+
+    <div class="quotes reveal">
+      <figure class="quote">
+        <p>"At peak hours my waiters had no time to suggest anything. Now the AI pairs something with every order and our average bill is noticeably higher."</p>
+        <figcaption class="person">
+          <span class="avatar a1">R</span>
+          <span class="pmeta"><span class="pname">Rakesh M.</span><span class="prole">Owner, family restaurant</span></span>
+        </figcaption>
+      </figure>
+      <figure class="quote">
+        <p>"Guests used to say 'I asked for less spice!' Now every instruction goes straight to the kitchen screen. Remakes have dropped sharply."</p>
+        <figcaption class="person">
+          <span class="avatar a2">S</span>
+          <span class="pmeta"><span class="pname">Sneha P.</span><span class="prole">Manager, multi-cuisine restaurant</span></span>
+        </figcaption>
+      </figure>
+      <figure class="quote">
+        <p>"We only found out about unhappy guests from a 2-star review. Now a low rating alerts my manager while the guest is still seated."</p>
+        <figcaption class="person">
+          <span class="avatar a3">A</span>
+          <span class="pmeta"><span class="pname">Arjun S.</span><span class="prole">Owner, city café</span></span>
+        </figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<!-- ============ PRICING ============ -->
+<section id="pricing" data-seq>
+  <div class="wrap">
+    <div class="copy-wide">
+      <p class="eyebrow reveal">Simple pricing</p>
+      <h2 class="head tw" data-text="Priced for your place"></h2>
+      <p class="body-copy tw" data-text="Start with the core app, add AI when you're ready, and shape the look to match your brand."></p>
+    </div>
+
+    <div class="plans reveal">
+      <div class="plan">
+        <div class="plan-tag">Base</div>
+        <div class="price">&#8377;5,000 <span>/ year</span></div>
+        <div class="gst">+ GST</div>
+        <p class="desc">The full app to run orders, billing and your floor — without AI features.</p>
+        <ul>
+          <li>Live orders &amp; billing with GST</li>
+          <li>Digital menu &amp; QR ordering</li>
+          <li>Staff, tables &amp; daily reports</li>
+        </ul>
+      </div>
+      <div class="plan featured">
+        <div class="plan-tag">With AI</div>
+        <div class="price">&#8377;12,000 <span>/ year</span></div>
+        <div class="gst">+ GST</div>
+        <p class="desc">Everything in Base, plus the AI that engages guests, reads reviews and catches trends.</p>
+        <ul>
+          <li>Everything in Base</li>
+          <li>Barista Bot &amp; OrdersBuddy AI</li>
+          <li>Review analysis &amp; trend insights</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="addons reveal">
+      <div class="addon">
+        <h4>Introductory website</h4>
+        <div class="a-price">&#8377;1,000 &ndash; &#8377;5,000</div>
+        <p>A custom one-page site built for your cafe, priced by what you need.</p>
+      </div>
+      <div class="addon">
+        <h4>Customer-window theming</h4>
+        <div class="a-price">&#8377;5,000 &ndash; &#8377;10,000 <span>one time</span></div>
+        <p>We style the customer-facing app to match your brand and theme.</p>
+      </div>
+    </div>
+
+    <div class="pricing-foot reveal">
+      <a class="cta" href="mailto:prakhaxr@gmail.com?subject=OrdersBuddy%20walkthrough">Request a walkthrough</a>
+      <p class="note">Chatbot is credit-based and charged separately.</p>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="fmark"><span class="dot"></span>OrdersBuddy</div>
+    <div class="fnote">Built for cafe and restaurant owners across India.</div>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var reduce = window.matchMedia('(prefers-reduced-motion:reduce)').matches;
+
+  function fmt(n){ return Math.round(n).toLocaleString('en-IN'); }
+
+  function buildTW(el){
+    if(el.dataset.built) return;
+    var text = el.getAttribute('data-text') || '';
+    el.textContent = '';
+    var ghost = document.createElement('span'); ghost.className='tw-ghost'; ghost.textContent = text;
+    var live  = document.createElement('span'); live.className='tw-live';
+    el.appendChild(ghost); el.appendChild(live);
+    el.dataset.built = '1';
+  }
+  document.querySelectorAll('.tw').forEach(buildTW);
+
+  function typeEl(el, done){
+    var text = el.getAttribute('data-text') || '';
+    var live = el.querySelector('.tw-live');
+    if(reduce){ live.textContent = text; done && done(); return; }
+    live.classList.add('typing');
+    var i = 0;
+    (function step(){
+      live.textContent = text.slice(0, i);
+      if(i < text.length){
+        var ch = text.charAt(i);
+        var delay = 17;
+        if(ch === ' ') delay = 24;
+        if('.,;:—'.indexOf(ch) > -1) delay = 190;
+        i++;
+        setTimeout(step, delay);
+      } else {
+        live.classList.remove('typing');
+        done && done();
+      }
+    })();
+  }
+
+  function typeSeq(list, idx){
+    if(idx >= list.length) return;
+    typeEl(list[idx], function(){ typeSeq(list, idx+1); });
+  }
+
+  function runChart(chart){
+    if(chart.dataset.ran) return;
+    chart.dataset.ran = '1';
+    chart.classList.add('in');
+    chart.querySelectorAll('.val').forEach(function(v){
+      var target = parseFloat(v.getAttribute('data-value')) || 0;
+      var prefix = v.getAttribute('data-prefix') || '';
+      var suffix = v.getAttribute('data-suffix') || '';
+      if(reduce){ v.innerHTML = prefix + fmt(target) + suffix; return; }
+      var dur = 1500, start = null;
+      function tick(ts){
+        if(!start) start = ts;
+        var p = Math.min((ts - start) / dur, 1);
+        var eased = 1 - Math.pow(1 - p, 3);
+        v.innerHTML = prefix + fmt(target * eased) + suffix;
+        if(p < 1) requestAnimationFrame(tick);
+        else v.innerHTML = prefix + fmt(target) + suffix;
+      }
+      requestAnimationFrame(tick);
+    });
+  }
+
+  var hero = document.getElementById('hero');
+  var heroMotto = hero.querySelector('.motto');
+  var heroChart = hero.querySelector('[data-chart]');
+  window.addEventListener('load', function(){
+    setTimeout(function(){
+      hero.classList.add('done');   // reveal chart, know-more and cue instantly
+      runChart(heroChart);          // graph animates right away
+      typeEl(heroMotto);            // motto types in parallel
+    }, 250);
+  });
+
+  var io = new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      if(!e.isIntersecting) return;
+      var sec = e.target;
+      io.unobserve(sec);
+      sec.querySelectorAll('.reveal').forEach(function(r){ r.classList.add('in'); });
+      var tws = sec.querySelectorAll('.tw');
+      if(tws.length) typeSeq(Array.prototype.slice.call(tws), 0);
+      sec.querySelectorAll('[data-chart]').forEach(function(c){ runChart(c); });
+    });
+  }, { threshold:0.22 });
+
+  document.querySelectorAll('section[data-seq]').forEach(function(s){ io.observe(s); });
+})();
+</script>
+</body>
+</html>

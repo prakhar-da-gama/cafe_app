@@ -11,13 +11,20 @@ interface Props {
   // cart id, whether this is a brand-new session (vs a resumed one), and the
   // barista's generated opening turn (message + quick-action chips) to seed the
   // chat with. The opener is only shown for a new session.
-  onProceed: (
+  onReady: (
     chatContextId: number,
     cartId: number,
     newSession: boolean,
     firstMessage: string | null,
     firstOptions: string[] | null,
   ) => void
+  // Called when the setup call has been running for more than 3s: the chat is
+  // opened immediately on the barista's thinking dots, and `onReady` (or
+  // `onPrepareError`) follows once the call finally lands.
+  onPreparing: () => void
+  // Called when a slow setup call ultimately failed *after* `onPreparing` had
+  // already opened the chat, so the chat can show the error instead of spinning.
+  onPrepareError: (message: string) => void
 }
 
 // Turn the adult/child counts into the free-text party description the backend
@@ -279,7 +286,13 @@ const ARROW = (
  *  the top, then a single card asks for the party size (adults + children) and
  *  the vegetarian preference together. Proceed creates the session and hands the
  *  id up. */
-export default function InitiateChat({ onBack, onViewMenu, onProceed }: Props) {
+export default function InitiateChat({
+  onBack,
+  onViewMenu,
+  onReady,
+  onPreparing,
+  onPrepareError,
+}: Props) {
   const [introDone, setIntroDone] = useState(false)
 
   const [adults, setAdults] = useState(1)
@@ -295,13 +308,32 @@ export default function InitiateChat({ onBack, onViewMenu, onProceed }: Props) {
     if (!canSubmit) return
     setSubmitting(true)
     setError(null)
+
+    // If the setup call runs long, open the chat immediately on the barista's
+    // thinking dots after 3s rather than leaving the user on a spinning button;
+    // onReady/onPrepareError then fill it in once the call lands.
+    let openedEarly = false
+    const slowTimer = setTimeout(() => {
+      openedEarly = true
+      onPreparing()
+    }, 3000)
+
     try {
       const { chat_context_id, cart_id, resumed, first_message, first_options } =
         await initiateChat(describeParty(adults, children), vegOnly as boolean)
-      onProceed(chat_context_id, cart_id, !resumed, first_message, first_options)
+      clearTimeout(slowTimer)
+      onReady(chat_context_id, cart_id, !resumed, first_message, first_options)
     } catch (e) {
-      setError((e as Error).message)
-      setSubmitting(false)
+      clearTimeout(slowTimer)
+      const message = (e as Error).message
+      if (openedEarly) {
+        // The chat is already open on the thinking dots, so surface the error
+        // there instead of on the (now-replaced) setup form.
+        onPrepareError(message)
+      } else {
+        setError(message)
+        setSubmitting(false)
+      }
     }
   }
 

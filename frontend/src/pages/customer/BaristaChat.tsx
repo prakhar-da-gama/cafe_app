@@ -24,6 +24,13 @@ interface Props {
   // The opener's quick-action chips (first-person utterances the guest can tap);
   // rendered below the opening message as the in-chat MCQ. Null on resume.
   firstOptions: string[] | null
+  // True while /initiate-chat is still in flight but we've already opened the
+  // chat (the setup call took too long). The chat shows only the barista's
+  // thinking dots until the session + opener arrive, then seeds them as usual.
+  preparing?: boolean
+  // Set when the (slow) /initiate-chat call ultimately failed after we'd already
+  // opened the chat on the thinking dots — shown as an error turn.
+  prepareError?: string | null
   // Recover the session when a /message call fails because its chat context is
   // gone (ended elsewhere, DB reset, …). Returns the user's current active
   // session ids so the chat can retry transparently, or null if there's no
@@ -95,6 +102,8 @@ export default function BaristaChat({
   isNewSession,
   firstMessage,
   firstOptions,
+  preparing = false,
+  prepareError = null,
   onRecoverSession,
   onBack,
   onViewMenu,
@@ -111,11 +120,15 @@ export default function BaristaChat({
   }, [chatContextId, cartId])
   // For a brand-new session, seed with the barista's generated opener (text +
   // quick-action chips). For a resumed session, start on the fallback greeting
-  // until the transcript preload (below) loads over it.
+  // until the transcript preload (below) loads over it. While still preparing
+  // (the setup call is slow and we opened the chat early) start empty — only the
+  // thinking dots show until the opener lands.
   const [messages, setMessages] = useState<Msg[]>(() =>
-    isNewSession && (firstMessage || firstOptions)
-      ? [openerMsg(firstMessage, firstOptions)]
-      : [GREETING],
+    preparing
+      ? []
+      : isNewSession && (firstMessage || firstOptions)
+        ? [openerMsg(firstMessage, firstOptions)]
+        : [GREETING],
   )
   const [value, setValue] = useState('')
   const [typing, setTyping] = useState(false)
@@ -126,14 +139,29 @@ export default function BaristaChat({
   // Also seed the opener from an effect, not just the initial state. The opener
   // props can land just after mount (set alongside the navigation) and, in dev,
   // a hot-reload preserves the old message state while skipping the initializer
-  // — this makes the generated greeting show in both cases. The opener props are
-  // fixed for a session's lifetime, so this runs once per session and never
-  // clobbers an ongoing conversation.
+  // — this makes the generated greeting show in both cases. It also drives the
+  // slow-path handoff: while `preparing` only the thinking dots show, and once
+  // it flips false the session + opener (or a fallback / error) have arrived.
   useEffect(() => {
+    if (preparing) return
+    if (prepareError) {
+      setMessages([
+        {
+          id: 0,
+          from: 'barista',
+          text: `Sorry — I couldn't get things started. ${prepareError}`,
+        },
+      ])
+      return
+    }
     if (isNewSession && (firstMessage || firstOptions)) {
       setMessages([openerMsg(firstMessage, firstOptions)])
+    } else if (isNewSession) {
+      // New session but the opener failed to generate — fall back to the generic
+      // greeting rather than leaving the chat empty.
+      setMessages((m) => (m.length === 0 ? [GREETING] : m))
     }
-  }, [isNewSession, firstMessage, firstOptions])
+  }, [preparing, prepareError, isNewSession, firstMessage, firstOptions])
 
   // Preload any existing turns so an in-progress chat continues where it left
   // off. The transcript omits item suggestions, so replayed turns are plain
@@ -207,7 +235,7 @@ export default function BaristaChat({
   // and whenever the keyboard resizes the visual viewport.
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages, typing, viewport?.height])
+  }, [messages, typing, preparing, viewport?.height])
 
   const screenStyle: CSSProperties = pinned
     ? {
@@ -383,8 +411,8 @@ export default function BaristaChat({
             </div>
           )
         })}
-        {typing && (
-          <div className="bubble bubble-barista bubble-typing" aria-label="Barista is typing">
+        {(typing || preparing) && (
+          <div className="bubble bubble-barista bubble-typing" aria-label="Barista is thinking">
             <span className="dot" />
             <span className="dot" />
             <span className="dot" />

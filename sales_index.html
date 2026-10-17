@@ -251,6 +251,209 @@
     line-height:1.3;
   }
 
+  /* ---------- barista bot chat animation (pulled from the AI-waiter demo) ---------- */
+  .phone-wrap{width:100%;display:flex;justify-content:center;}
+  .phone{
+    background:var(--ink);
+    border-radius:40px;
+    padding:12px;
+    box-shadow:var(--shadow-md);
+    width:100%;
+    max-width:338px;
+  }
+  .phone-screen{
+    background:var(--bg);
+    border-radius:30px;
+    overflow:hidden;
+    height:530px;
+    display:flex;
+    flex-direction:column;
+  }
+  .phone-top{
+    background:var(--accent);
+    color:#fff;
+    padding:15px 18px;
+    display:flex;
+    align-items:center;
+    gap:11px;
+  }
+  .phone-top .av{
+    width:38px;height:38px;flex:none;
+    border-radius:12px;
+    background:rgba(255,255,255,.22);
+    display:grid;place-items:center;
+    font-family:var(--f-display);font-weight:700;font-size:14px;
+  }
+  .phone-top .pt-name{font-family:var(--f-display);font-weight:600;font-size:.95rem;line-height:1.2;}
+  .phone-top .st{font-size:.72rem;opacity:.92;display:flex;align-items:center;gap:6px;}
+  .phone-top .st::before{content:'';width:7px;height:7px;border-radius:50%;background:#8ff0bc;}
+  .chat{
+    flex:1;
+    overflow-y:auto;
+    padding:16px;
+    display:flex;
+    flex-direction:column;
+    gap:11px;
+    scrollbar-width:none;
+    scroll-behavior:smooth;
+  }
+  .chat::-webkit-scrollbar{display:none;}
+  .bubble{
+    max-width:85%;
+    padding:11px 14px;
+    border-radius:16px;
+    font-size:.9rem;
+    line-height:1.45;
+    animation:pop .35s ease;
+  }
+  @keyframes pop{from{opacity:0;transform:translateY(8px) scale(.98);}to{opacity:1;transform:none;}}
+  .bubble.ai{background:#fff;border:1px solid var(--border);border-bottom-left-radius:5px;align-self:flex-start;box-shadow:var(--shadow-sm);color:var(--ink);}
+  .bubble.me{background:var(--c2);color:#fff;border-bottom-right-radius:5px;align-self:flex-end;}
+  .typing{display:inline-flex;gap:4px;padding:3px 0;}
+  .typing i{width:7px;height:7px;border-radius:50%;background:var(--faint);animation:tblink 1.2s infinite;}
+  .typing i:nth-child(2){animation-delay:.2s;}
+  .typing i:nth-child(3){animation-delay:.4s;}
+  @keyframes tblink{0%,60%,100%{opacity:.25;transform:translateY(0);}30%{opacity:1;transform:translateY(-3px);}}
+  .mc-wrap{margin-top:8px;display:flex;flex-direction:column;gap:8px;}
+  .mini-card{border:1px solid var(--border);border-radius:14px;overflow:hidden;background:#fff;box-shadow:var(--shadow-sm);}
+  .mini-card .thumb{height:72px;position:relative;}
+  .mini-card .food-img{position:absolute;inset:0;display:grid;place-items:center;font-size:2.3rem;filter:drop-shadow(0 4px 9px rgba(0,0,0,.26));}
+  .mini-card .mc-body{padding:9px 12px 11px;}
+  .mini-card .mc-row{display:flex;justify-content:space-between;align-items:center;gap:8px;}
+  .mini-card h4{font-family:var(--f-display);font-weight:600;font-size:.9rem;margin:0;}
+  .mini-card .mc-price{font-family:var(--f-mono);font-weight:700;color:var(--accent-ink);font-size:.86rem;}
+  .add-btn{width:100%;margin-top:9px;background:var(--ink);color:#fff;border:0;border-radius:9px;padding:8px;font-family:var(--f-body);font-weight:600;font-size:.82rem;cursor:default;}
+
+  /* ---------- trends radar animation ---------- */
+  .trends-wrap{width:100%;}
+  .trends-card{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:22px;
+    box-shadow:var(--shadow-md);
+    padding:24px 24px 20px;
+    width:100%;
+  }
+  .tr-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px;}
+  .tr-live{display:inline-flex;align-items:center;gap:8px;font-family:var(--f-mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);}
+  .tr-live i{width:8px;height:8px;border-radius:50%;background:var(--c1);box-shadow:0 0 0 0 rgba(255,90,95,.5);animation:trpulse 1.8s infinite;}
+  @keyframes trpulse{0%{box-shadow:0 0 0 0 rgba(255,90,95,.5);}70%{box-shadow:0 0 0 9px rgba(255,90,95,0);}100%{box-shadow:0 0 0 0 rgba(255,90,95,0);}}
+  .tr-sources{display:flex;gap:6px;}
+  .tr-sources .tr-badge{width:24px;height:24px;border-radius:7px;opacity:.45;animation:trglow 4.4s ease-in-out infinite;}
+  .tr-sources .tr-badge svg{width:14px;height:14px;}
+  .tr-sources .tr-badge:nth-child(2){animation-delay:1.1s;}
+  .tr-sources .tr-badge:nth-child(3){animation-delay:2.2s;}
+  .tr-sources .tr-badge:nth-child(4){animation-delay:3.3s;}
+  @keyframes trglow{0%,100%{opacity:.4;transform:translateY(0);}50%{opacity:1;transform:translateY(-2px);}}
+
+  .tr-badge{flex:none;border-radius:8px;display:grid;place-items:center;}
+  .tr-badge svg{width:16px;height:16px;}
+  .tr-badge.ig{background:linear-gradient(135deg,#feda75,#fa7e1e 28%,#d62976 58%,#962fbf 78%,#4f5bd5);}
+  .tr-badge.tk{background:#111;}
+  .tr-badge.fb{background:#1877f2;}
+  .tr-badge.xx{background:#111;}
+
+  .tr-feed{display:flex;flex-direction:column;}
+  .tr-item{
+    position:relative;
+    padding:11px 0;
+    border-top:1px solid var(--border);
+    opacity:0;transform:translateY(16px);
+    transition:opacity .5s ease,transform .6s cubic-bezier(.22,.61,.36,1),background .4s ease;
+  }
+  .tr-item:first-child{border-top:none;}
+  .tr-item.show{opacity:1;transform:none;}
+  .tr-row{display:flex;align-items:center;gap:11px;}
+  .tr-row .tr-badge{width:28px;height:28px;}
+  .tr-emoji{font-size:1.3rem;flex:none;line-height:1;}
+  .tr-name{font-family:var(--f-display);font-weight:600;font-size:.96rem;letter-spacing:-.01em;color:var(--ink);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .tr-rise{font-family:var(--f-mono);font-weight:700;font-size:.85rem;color:var(--c2);display:inline-flex;align-items:center;gap:3px;flex:none;}
+  .tr-rise svg{width:12px;height:12px;}
+  .tr-chip{display:none;flex:none;font-family:var(--f-mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:#fff;background:var(--accent);padding:4px 9px;border-radius:999px;}
+  .tr-item.picked{background:var(--accent-tint);border-radius:13px;margin:0 -12px;padding-left:12px;padding-right:12px;}
+  .tr-item.picked .tr-chip{display:inline-flex;animation:pop .4s ease;}
+  .tr-track{height:5px;border-radius:999px;background:var(--bg-alt);margin-top:10px;overflow:hidden;}
+  .tr-track i{display:block;height:100%;width:0;border-radius:inherit;background:linear-gradient(90deg,var(--accent),var(--c4));transition:width 1.2s cubic-bezier(.22,.61,.36,1);}
+  .tr-item.show .tr-track i{width:var(--w);}
+
+  .tr-foot{display:flex;align-items:center;gap:9px;margin-top:16px;padding-top:14px;border-top:1px solid var(--border-strong);}
+  .tr-foot .tr-ai{font-size:1.15rem;line-height:1;flex:none;}
+  .tr-foot .tr-msg{font-size:.86rem;color:var(--muted);line-height:1.4;}
+  .tr-foot .tr-pick{color:var(--accent-ink);font-weight:700;}
+
+  /* ---------- review triage animation ---------- */
+  .reviews-wrap{width:100%;}
+  .rev-card{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:22px;
+    box-shadow:var(--shadow-md);
+    padding:22px 22px 20px;
+    width:100%;
+  }
+  .rev-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:15px;}
+  .rev-live{display:inline-flex;align-items:center;gap:8px;font-family:var(--f-mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);}
+  .rev-live i{width:8px;height:8px;border-radius:50%;background:var(--c1);box-shadow:0 0 0 0 rgba(255,90,95,.5);animation:trpulse 1.8s infinite;}
+  .rev-badge{font-family:var(--f-mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent-ink);background:var(--accent-tint);border:1px solid rgba(255,106,44,.22);padding:4px 10px;border-radius:999px;}
+
+  .rev-stage{display:flex;flex-direction:column;}
+  .rev-item{
+    position:relative;
+    border:1px solid var(--border);
+    border-radius:16px;
+    padding:14px;
+    background:var(--bg);
+    overflow:hidden;
+    opacity:0;transform:translateY(14px);
+    transition:opacity .5s ease,transform .6s cubic-bezier(.22,.61,.36,1);
+  }
+  .rev-item.show{opacity:1;transform:none;}
+  .rev-scan{position:absolute;left:0;right:0;top:0;height:46%;pointer-events:none;background:linear-gradient(180deg,rgba(255,106,44,.22),transparent);transform:translateY(-130%);}
+  .rev-item.scanning .rev-scan{animation:revscan 1.05s cubic-bezier(.5,0,.5,1);}
+  @keyframes revscan{0%{transform:translateY(-130%);}100%{transform:translateY(300%);}}
+  .rev-top{display:flex;align-items:center;gap:11px;}
+  .rev-av{width:40px;height:40px;border-radius:50%;object-fit:cover;flex:none;background:var(--bg-alt);}
+  .rev-who{flex:1;min-width:0;}
+  .rev-name{font-family:var(--f-display);font-weight:600;font-size:.92rem;color:var(--ink);line-height:1.2;}
+  .rev-src{display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--muted);margin-top:2px;}
+  .rev-src svg{width:13px;height:13px;}
+  .rev-src .zdot{width:11px;height:11px;border-radius:3px;background:#e23744;display:inline-block;}
+  .rev-stars{display:flex;gap:1px;flex:none;}
+  .rev-stars svg{width:15px;height:15px;}
+  .rev-text{font-size:.88rem;line-height:1.55;color:var(--ink);margin-top:11px;}
+
+  .rev-ai{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin:14px 2px;opacity:0;transform:translateY(8px);transition:opacity .45s ease,transform .5s cubic-bezier(.22,.61,.36,1);}
+  .rev-ai.show{opacity:1;transform:none;}
+  .rev-ai .lead{font-size:.82rem;color:var(--muted);display:inline-flex;align-items:center;gap:6px;width:100%;margin-bottom:2px;}
+  .chipx{font-family:var(--f-mono);font-size:11px;font-weight:700;padding:5px 10px;border-radius:999px;border:1px solid var(--border);animation:pop .4s ease;}
+  .chipx.neg{background:#fde8e8;color:#c0392b;border-color:#f3c4c4;}
+  .chipx.pos{background:#e3f6ec;color:#15894f;border-color:#bfe6cf;}
+  .chipx.topic{background:var(--bg-alt);color:var(--ink);}
+  .chipx.pri-high{background:#fff0e0;color:#c8500f;border-color:#f6d2ac;}
+  .chipx.pri-low{background:var(--bg-alt);color:var(--muted);}
+
+  .rev-ticket{
+    border:1px solid var(--border-strong);
+    border-left:3px solid var(--accent);
+    border-radius:14px;
+    padding:13px 15px;
+    background:var(--surface);
+    box-shadow:var(--shadow-sm);
+    opacity:0;transform:translateY(12px);
+    transition:opacity .5s ease,transform .6s cubic-bezier(.22,.61,.36,1);
+  }
+  .rev-ticket.show{opacity:1;transform:none;}
+  .tk-top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px;}
+  .tk-id{font-family:var(--f-mono);font-size:12px;color:var(--muted);}
+  .tk-status{font-family:var(--f-mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;padding:4px 9px;border-radius:999px;transition:background .3s ease,color .3s ease;}
+  .tk-status.open{background:#fff0e0;color:#c8500f;}
+  .tk-status.resolved{background:#e3f6ec;color:#15894f;animation:pop .4s ease;}
+  .tk-action{font-size:.88rem;color:var(--ink);line-height:1.5;}
+  .tk-foot{display:flex;align-items:center;gap:8px;margin-top:11px;padding-top:11px;border-top:1px solid var(--border);}
+  .tk-mgr-av{width:26px;height:26px;border-radius:50%;object-fit:cover;flex:none;background:var(--bg-alt);}
+  .tk-mgr{font-size:.8rem;color:var(--muted);}
+  .tk-mgr b{color:var(--ink);font-weight:600;}
+
   /* ---------- problem line ---------- */
   .problem{
     font-family:var(--f-display);
@@ -478,18 +681,18 @@
       <p class="body-copy tw" data-text="Barista Bot steps in to answer every question and order for each customer in the best possible way — so nothing on your menu stays a secret."></p>
     </div>
 
-    <div class="chart reveal" data-chart>
-      <div class="plot">
-        <div class="col"><div class="bar c1" style="--h:78%"><span class="val" data-prefix="+" data-value="68" data-suffix="%"></span></div></div>
-        <div class="col"><div class="bar c2" style="--h:66%"><span class="val" data-prefix="+" data-value="57" data-suffix="%"></span></div></div>
-        <div class="col"><div class="bar c3" style="--h:58%"><span class="val" data-prefix="+" data-value="44" data-suffix="%"></span></div></div>
-        <div class="col"><div class="bar c4" style="--h:88%"><span class="val" data-prefix="+&#8377;" data-value="34000" data-suffix=" /mo"></span></div></div>
-      </div>
-      <div class="legend">
-        <div class="leg"><span class="tag">Customer engagement</span></div>
-        <div class="leg"><span class="tag">Menu explored</span></div>
-        <div class="leg"><span class="tag">Customer happiness</span></div>
-        <div class="leg"><span class="tag">Profits</span></div>
+    <div class="phone-wrap reveal" data-botchat>
+      <div class="phone">
+        <div class="phone-screen">
+          <div class="phone-top">
+            <span class="av">BB</span>
+            <div>
+              <div class="pt-name">Barista Bot</div>
+              <div class="st">Table 7 · online</div>
+            </div>
+          </div>
+          <div class="chat" aria-live="polite"></div>
+        </div>
       </div>
     </div>
   </div>
@@ -505,18 +708,13 @@
       <p class="body-copy tw" data-text="OrdersBuddy parses your reviews, uses AI to analyze them, and tells you exactly what to do — with clear ticket visibility for both you and your managers."></p>
     </div>
 
-    <div class="chart reveal" data-chart>
-      <div class="plot">
-        <div class="col"><div class="bar c1" style="--h:90%"><span class="val" data-prefix="" data-value="96" data-suffix="%"></span></div></div>
-        <div class="col"><div class="bar c2" style="--h:70%"><span class="val" data-prefix="+" data-value="52" data-suffix="%"></span></div></div>
-        <div class="col"><div class="bar c3" style="--h:80%"><span class="val" data-prefix="+" data-value="74" data-suffix="%"></span></div></div>
-        <div class="col"><div class="bar c4" style="--h:62%"><span class="val" data-prefix="+&#8377;" data-value="26000" data-suffix=" /mo"></span></div></div>
-      </div>
-      <div class="legend">
-        <div class="leg"><span class="tag">Review resolution</span></div>
-        <div class="leg"><span class="tag">Customer satisfaction</span></div>
-        <div class="leg"><span class="tag">Response speed</span></div>
-        <div class="leg"><span class="tag">Profits</span></div>
+    <div class="reviews-wrap reveal" data-reviews>
+      <div class="rev-card">
+        <div class="rev-head">
+          <span class="rev-live"><i></i> Review inbox</span>
+          <span class="rev-badge">AI triage</span>
+        </div>
+        <div class="rev-stage"></div>
       </div>
     </div>
   </div>
@@ -532,18 +730,17 @@
       <p class="body-copy tw" data-text="OrdersBuddy analyzes the trends automatically and tells you exactly what to do for your place — so you move first, not last."></p>
     </div>
 
-    <div class="chart reveal" data-chart>
-      <div class="plot">
-        <div class="col"><div class="bar c1" style="--h:84%"><span class="val" data-prefix="+" data-value="81" data-suffix="%"></span></div></div>
-        <div class="col"><div class="bar c2" style="--h:60%"><span class="val" data-prefix="" data-value="12" data-suffix=" /season"></span></div></div>
-        <div class="col"><div class="bar c3" style="--h:70%"><span class="val" data-prefix="+" data-value="43" data-suffix="%"></span></div></div>
-        <div class="col"><div class="bar c4" style="--h:92%"><span class="val" data-prefix="+&#8377;" data-value="48000" data-suffix=" /mo"></span></div></div>
-      </div>
-      <div class="legend">
-        <div class="leg"><span class="tag">Trend adoption</span></div>
-        <div class="leg"><span class="tag">New menu items</span></div>
-        <div class="leg"><span class="tag">Repeat visits</span></div>
-        <div class="leg"><span class="tag">Profits</span></div>
+    <div class="trends-wrap reveal" data-trends>
+      <div class="trends-card">
+        <div class="tr-head">
+          <span class="tr-live"><i></i> Trending now</span>
+          <div class="tr-sources" aria-hidden="true"></div>
+        </div>
+        <div class="tr-feed"></div>
+        <div class="tr-foot">
+          <span class="tr-ai">🤖</span>
+          <span class="tr-msg">OrdersBuddy says add <b class="tr-pick">—</b> to your menu</span>
+        </div>
       </div>
     </div>
   </div>
@@ -736,6 +933,236 @@
     });
   }
 
+  /* ---------- barista bot chat animation ----------
+     A looping, auto-playing version of the AI-waiter conversation from the
+     product demo: AI + guest bubbles type in with a typing indicator, and the
+     recommended dishes render as mini menu cards. */
+  var BOT_MENU = {
+    biryani:{name:'Chicken Biryani', price:'₹320', img:'🍚', grad:'linear-gradient(135deg,#e8c45c,#b4702a)'},
+    naan:{name:'Garlic Naan', price:'₹60', img:'🫓', grad:'linear-gradient(135deg,#f0dcb0,#d8b877)'},
+    lassi:{name:'Masala Lassi', price:'₹90', img:'🥤', grad:'linear-gradient(135deg,#f3ead0,#e6d08a)'},
+    paneer:{name:'Paneer Butter Masala', price:'₹260', img:'🍛', grad:'linear-gradient(135deg,#e8a35c,#c7592f)'}
+  };
+  var BOT_SCRIPT = [
+    {who:'ai', text:"Hi! I'm your Barista Bot 👋 I can recommend dishes, build a combo, and take your order. What are you in the mood for?"},
+    {who:'me', text:"Suggest a combo for two people."},
+    {who:'ai', text:"A great combo for two: a Chicken Biryani to share, Garlic Naan on the side, and two Masala Lassis to cool it down. 🍽️", cards:['biryani','naan','lassi']},
+    {who:'me', text:"Nice! I'll take a Paneer Butter Masala with a Garlic Naan."},
+    {who:'ai', text:"Great choice! I've added <b>Paneer Butter Masala</b> and <b>Garlic Naan</b> to your order. 🍛 Want a cooling Masala Lassi to go with it?", cards:['paneer']}
+  ];
+  function botCard(k){
+    var it = BOT_MENU[k]; if(!it) return '';
+    return '<div class="mini-card"><div class="thumb" style="background:'+it.grad+'">'+
+      '<span class="food-img">'+it.img+'</span></div><div class="mc-body">'+
+      '<div class="mc-row"><h4>'+it.name+'</h4><span class="mc-price">'+it.price+'</span></div>'+
+      '<button class="add-btn" type="button" tabindex="-1">+ Add to order</button></div></div>';
+  }
+  function botBubble(chat, step){
+    var b = document.createElement('div');
+    b.className = 'bubble '+step.who;
+    b.innerHTML = step.text;
+    if(step.cards){
+      var wrap = document.createElement('div'); wrap.className = 'mc-wrap';
+      step.cards.forEach(function(k){ wrap.innerHTML += botCard(k); });
+      b.appendChild(wrap);
+    }
+    chat.appendChild(b);
+    chat.scrollTop = chat.scrollHeight;
+  }
+  function runBotChat(phone){
+    if(phone.dataset.ran) return;
+    phone.dataset.ran = '1';
+    var chat = phone.querySelector('.chat');
+    if(reduce){ BOT_SCRIPT.forEach(function(s){ botBubble(chat, s); }); return; }
+    var i = 0;
+    function next(){
+      if(i >= BOT_SCRIPT.length){
+        setTimeout(function(){ chat.innerHTML = ''; i = 0; next(); }, 3400); // loop
+        return;
+      }
+      var step = BOT_SCRIPT[i];
+      if(step.who === 'ai'){
+        var t = document.createElement('div');
+        t.className = 'bubble ai';
+        t.innerHTML = '<span class="typing"><i></i><i></i><i></i></span>';
+        chat.appendChild(t); chat.scrollTop = chat.scrollHeight;
+        setTimeout(function(){
+          t.remove(); botBubble(chat, step); i++; setTimeout(next, 950);
+        }, 850);
+      } else {
+        botBubble(chat, step); i++; setTimeout(next, 760);
+      }
+    }
+    next();
+  }
+
+  /* ---------- trends radar animation ----------
+     Trending dishes stream in from social platforms (Instagram, TikTok,
+     Facebook, X) with a rising % and a growing trend bar; OrdersBuddy then
+     highlights the hottest one as "add to your menu". Loops. */
+  var TR_BADGE = {
+    ig:'<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5.5"/><circle cx="12" cy="12" r="4"/><circle cx="17.2" cy="6.8" r="1.1" fill="#fff" stroke="none"/></svg>',
+    tk:'<svg viewBox="0 0 24 24" fill="#fff"><path d="M14 3c.3 2.2 1.8 3.9 4 4.2v2.6c-1.4 0-2.8-.4-4-1.1v5.9c0 3-2.4 5.4-5.4 5.4S3.2 17.6 3.2 14.6 5.6 9.2 8.6 9.2c.3 0 .6 0 .9.1v2.7c-.3-.1-.6-.2-.9-.2-1.5 0-2.7 1.2-2.7 2.7s1.2 2.7 2.7 2.7 2.7-1.2 2.7-2.7V3H14z"/></svg>',
+    fb:'<svg viewBox="0 0 24 24" fill="#fff"><path d="M13.5 21v-7h2.3l.4-2.8h-2.7V9.4c0-.8.2-1.4 1.4-1.4h1.4V5.5c-.7-.1-1.4-.1-2.1-.1-2.1 0-3.5 1.3-3.5 3.6v2.2H8.3V14h2.3v7h2.9z"/></svg>',
+    xx:'<svg viewBox="0 0 24 24" fill="#fff"><path d="M17.2 4h2.6l-5.7 6.5L21 20h-5.3l-3.7-5-4.3 5H5.1l6.1-7L4 4h5.4l3.4 4.6L17.2 4zm-.9 14.3h1.4L8.2 5.6H6.7l9.6 12.7z"/></svg>'
+  };
+  var TR_ARROW = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M9 7h8v8"/></svg>';
+  var TRENDS = [
+    {plat:'ig', emoji:'🍫', name:'Dubai Chocolate', rise:320, w:'100%'},
+    {plat:'tk', emoji:'🌭', name:'Korean Corn Dog', rise:240, w:'80%'},
+    {plat:'ig', emoji:'🍵', name:'Matcha Latte', rise:180, w:'62%'},
+    {plat:'xx', emoji:'🧋', name:'Brown Sugar Boba', rise:120, w:'44%'}
+  ];
+
+  function countRise(el, target){
+    var txt = el.firstChild;
+    if(reduce){ txt.nodeValue = '+' + target + '%'; return; }
+    var dur = 1100, start = null;
+    function tick(ts){
+      if(!start) start = ts;
+      var p = Math.min((ts - start) / dur, 1), e = 1 - Math.pow(1 - p, 3);
+      txt.nodeValue = '+' + Math.round(target * e) + '%';
+      if(p < 1) requestAnimationFrame(tick); else txt.nodeValue = '+' + target + '%';
+    }
+    requestAnimationFrame(tick);
+  }
+
+  function runTrends(wrap){
+    if(wrap.dataset.ran) return;
+    wrap.dataset.ran = '1';
+    var feed = wrap.querySelector('.tr-feed');
+    var pickEl = wrap.querySelector('.tr-pick');
+    var sources = wrap.querySelector('.tr-sources');
+    ['ig','tk','fb','xx'].forEach(function(p){
+      var s = document.createElement('span'); s.className = 'tr-badge ' + p; s.innerHTML = TR_BADGE[p];
+      sources.appendChild(s);
+    });
+
+    function build(){
+      pickEl.textContent = '—';
+      feed.innerHTML = '';
+      TRENDS.forEach(function(t){
+        var d = document.createElement('div');
+        d.className = 'tr-item';
+        d.style.setProperty('--w', t.w);
+        d.innerHTML =
+          '<div class="tr-row">' +
+            '<span class="tr-badge ' + t.plat + '">' + TR_BADGE[t.plat] + '</span>' +
+            '<span class="tr-emoji">' + t.emoji + '</span>' +
+            '<span class="tr-name">' + t.name + '</span>' +
+            '<span class="tr-rise">+0%' + TR_ARROW + '</span>' +
+            '<span class="tr-chip">➕ menu</span>' +
+          '</div>' +
+          '<div class="tr-track"><i></i></div>';
+        feed.appendChild(d);
+      });
+      var items = feed.querySelectorAll('.tr-item');
+      if(reduce){
+        items.forEach(function(it, ix){ it.classList.add('show'); countRise(it.querySelector('.tr-rise'), TRENDS[ix].rise); });
+        items[0].classList.add('picked'); pickEl.textContent = TRENDS[0].name;
+        return;
+      }
+      var i = 0;
+      (function step(){
+        if(i >= items.length){
+          setTimeout(function(){ items[0].classList.add('picked'); pickEl.textContent = TRENDS[0].name; }, 500);
+          setTimeout(build, 5400); // loop
+          return;
+        }
+        var it = items[i];
+        it.classList.add('show');
+        countRise(it.querySelector('.tr-rise'), TRENDS[i].rise);
+        i++;
+        setTimeout(step, 780);
+      })();
+    }
+    build();
+  }
+
+  /* ---------- review triage animation ----------
+     A guest review (photo + stars + source) arrives, OrdersBuddy's AI "reads"
+     it (scan + sentiment/topic/priority tags), then spawns a manager ticket
+     that flips Open -> Resolved. Cycles through a critical + a glowing review. */
+  var GOOGLE_G = '<svg viewBox="0 0 24 24"><path fill="#4285F4" d="M21.6 12.2c0-.6-.1-1.2-.2-1.8H12v3.5h5.4a4.6 4.6 0 0 1-2 3v2.5h3.2c1.9-1.7 3-4.3 3-7.2z"/><path fill="#34A853" d="M12 22c2.7 0 5-.9 6.6-2.4l-3.2-2.5c-.9.6-2 1-3.4 1-2.6 0-4.8-1.7-5.6-4.1H3.1v2.6A10 10 0 0 0 12 22z"/><path fill="#FBBC05" d="M6.4 14c-.2-.6-.3-1.3-.3-2s.1-1.4.3-2V7.4H3.1a10 10 0 0 0 0 9.2L6.4 14z"/><path fill="#EA4335" d="M12 5.9c1.5 0 2.8.5 3.8 1.5l2.8-2.8A10 10 0 0 0 3.1 7.4L6.4 10c.8-2.4 3-4.1 5.6-4.1z"/></svg>';
+  var REV_SRC = {
+    google:GOOGLE_G + '<span>Google review</span>',
+    zomato:'<span class="zdot"></span><span>Zomato review</span>'
+  };
+  var REVIEWS = [
+    {
+      id:'1042', name:'Aarav Shah', img:'https://randomuser.me/api/portraits/men/32.jpg',
+      src:'google', stars:2,
+      text:'Coffee was lovely, but we waited 25 minutes for a table and nobody updated us. Felt ignored.',
+      sentiment:'Negative', kind:'neg', topic:'Wait time', priority:'High',
+      mgr:'Priya', mgrImg:'https://randomuser.me/api/portraits/women/68.jpg',
+      action:'Apologise to the guest and offer a complimentary dessert on their next visit.'
+    },
+    {
+      id:'1043', name:'Meera Nair', img:'https://randomuser.me/api/portraits/women/44.jpg',
+      src:'zomato', stars:5,
+      text:'The new matcha latte is incredible and the staff were so warm. Easily my favourite café now!',
+      sentiment:'Positive', kind:'pos', topic:'Staff & menu', priority:'Low',
+      mgr:'Rohan', mgrImg:'https://randomuser.me/api/portraits/men/75.jpg',
+      action:'Thank the guest and feature the matcha latte on this week’s specials board.'
+    }
+  ];
+  function revStars(n){
+    var out = '';
+    for(var s = 0; s < 5; s++){
+      var on = s < n;
+      out += '<svg viewBox="0 0 24 24" fill="' + (on ? '#FF9F1C' : 'none') + '" stroke="' + (on ? '#FF9F1C' : '#cdc6ba') +
+        '" stroke-width="1.6" stroke-linejoin="round"><path d="M12 3.2l2.6 5.6 6 .6-4.5 4.1 1.3 6-5.4-3.1L6.6 19.5l1.3-6L3.4 9.4l6-.6z"/></svg>';
+    }
+    return out;
+  }
+  function runReviews(wrap){
+    if(wrap.dataset.ran) return;
+    wrap.dataset.ran = '1';
+    var stage = wrap.querySelector('.rev-stage');
+    var idx = 0;
+    var timers = [];
+    function build(){
+      timers.forEach(clearTimeout); timers = [];
+      var r = REVIEWS[idx];
+      stage.innerHTML =
+        '<div class="rev-item"><div class="rev-scan"></div>' +
+          '<div class="rev-top">' +
+            '<img class="rev-av" src="' + r.img + '" alt="" loading="lazy">' +
+            '<div class="rev-who"><div class="rev-name">' + r.name + '</div>' +
+              '<div class="rev-src">' + REV_SRC[r.src] + '</div></div>' +
+            '<div class="rev-stars">' + revStars(r.stars) + '</div>' +
+          '</div>' +
+          '<div class="rev-text">“' + r.text + '”</div></div>' +
+        '<div class="rev-ai"><span class="lead">🤖 OrdersBuddy read it:</span>' +
+          '<span class="chipx ' + r.kind + '">' + r.sentiment + '</span>' +
+          '<span class="chipx topic">' + r.topic + '</span>' +
+          '<span class="chipx pri-' + r.priority.toLowerCase() + '">' + r.priority + ' priority</span></div>' +
+        '<div class="rev-ticket"><div class="tk-top"><span class="tk-id">Ticket #' + r.id + '</span>' +
+          '<span class="tk-status open">Open</span></div>' +
+          '<div class="tk-action">' + r.action + '</div>' +
+          '<div class="tk-foot"><img class="tk-mgr-av" src="' + r.mgrImg + '" alt=""><span class="tk-mgr">Assigned to <b>' + r.mgr + '</b> · Manager</span></div></div>';
+
+      var item = stage.querySelector('.rev-item'),
+          ai = stage.querySelector('.rev-ai'),
+          ticket = stage.querySelector('.rev-ticket'),
+          status = stage.querySelector('.tk-status');
+
+      if(reduce){
+        item.classList.add('show'); ai.classList.add('show'); ticket.classList.add('show');
+        status.textContent = 'Resolved'; status.className = 'tk-status resolved';
+        return;
+      }
+      var T = function(fn, ms){ timers.push(setTimeout(fn, ms)); };
+      T(function(){ item.classList.add('show'); }, 60);
+      T(function(){ item.classList.add('scanning'); }, 950);
+      T(function(){ ai.classList.add('show'); }, 1750);
+      T(function(){ ticket.classList.add('show'); }, 2650);
+      T(function(){ status.textContent = 'Resolved'; status.className = 'tk-status resolved'; }, 3700);
+      T(function(){ idx = (idx + 1) % REVIEWS.length; build(); }, 5900);
+    }
+    build();
+  }
+
   var hero = document.getElementById('hero');
   var heroMotto = hero.querySelector('.motto');
   var heroChart = hero.querySelector('[data-chart]');
@@ -756,6 +1183,9 @@
       var tws = sec.querySelectorAll('.tw');
       if(tws.length) typeSeq(Array.prototype.slice.call(tws), 0);
       sec.querySelectorAll('[data-chart]').forEach(function(c){ runChart(c); });
+      sec.querySelectorAll('[data-botchat]').forEach(function(p){ runBotChat(p); });
+      sec.querySelectorAll('[data-trends]').forEach(function(t){ runTrends(t); });
+      sec.querySelectorAll('[data-reviews]').forEach(function(r){ runReviews(r); });
     });
   }, { threshold:0.22 });
 

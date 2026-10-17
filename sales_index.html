@@ -583,6 +583,59 @@
   footer .fmark .dot{width:9px;height:9px;border-radius:50%;background:var(--accent);}
   footer .fnote{font-size:13px;color:var(--faint);}
 
+  /* ---------- barista bot "know more" page ---------- */
+  .knowmore.inline{opacity:1;margin-top:30px;}
+  #barista-more{display:none;}
+  body.on-more #barista-more{display:block;}
+  body.on-more > section{display:none;}
+  .bm-back{display:inline-flex;align-items:center;gap:6px;font-family:var(--f-mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);text-decoration:none;margin-bottom:34px;}
+  .bm-back:hover,.bm-back:focus-visible{color:var(--accent-ink);}
+  .bm-hero{padding:88px 0 96px;}
+  .bm-title{font-family:var(--f-display);font-weight:800;font-size:clamp(2.1rem,4.6vw,3.8rem);line-height:1.08;letter-spacing:-.03em;margin:0 0 22px;max-width:16ch;}
+  .bm-title em{font-style:normal;color:var(--accent);}
+  .bm-lede{font-size:clamp(1.05rem,1.5vw,1.25rem);color:var(--muted);max-width:52ch;margin:0;}
+  .bm-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:48px;max-width:820px;}
+  .bm-stat{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:22px 22px 18px;box-shadow:var(--shadow-sm);}
+  .bm-stat b{display:block;font-family:var(--f-display);font-weight:800;font-size:clamp(1.6rem,2.8vw,2.2rem);letter-spacing:-.03em;color:var(--ink);line-height:1.1;}
+  .bm-stat span{font-size:13.5px;color:var(--muted);line-height:1.45;display:block;margin-top:6px;}
+  .bm-chart{margin-top:44px;}
+  .bm-chart .plot{height:300px;}
+  .bm-chart .c6{background:var(--accent);}
+  .bm-moves{display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-top:48px;}
+  .move{background:var(--surface);border:1px solid var(--border);border-radius:22px;box-shadow:var(--shadow-sm);padding:28px 26px 24px;display:flex;flex-direction:column;}
+  .move-top{display:flex;align-items:baseline;justify-content:space-between;gap:12px;}
+  .move-num{font-family:var(--f-mono);font-size:12px;letter-spacing:.14em;color:var(--accent-ink);}
+  .move-lift{font-family:var(--f-mono);font-weight:700;font-size:13px;color:#15894f;background:#e3f6ec;border:1px solid #bfe6cf;padding:4px 10px;border-radius:999px;white-space:nowrap;}
+  .move h3{font-family:var(--f-display);font-weight:700;font-size:1.3rem;letter-spacing:-.02em;line-height:1.25;margin:12px 0 8px;}
+  .move p{font-size:15px;color:var(--muted);line-height:1.65;margin:0;}
+  .mock{background:var(--bg);border:1px solid var(--border);border-radius:14px;padding:14px;display:flex;flex-wrap:wrap;gap:7px;align-items:center;margin:18px 0;}
+  .mock .q{width:100%;font-size:13.5px;color:var(--ink);line-height:1.45;}
+  .mock .arrow{color:var(--faint);font-size:13px;}
+  .pill{font-size:12.5px;font-weight:600;padding:6px 12px;border-radius:999px;border:1px solid var(--border-strong);background:#fff;color:var(--ink);line-height:1.3;}
+  .pill.on{background:var(--ink);border-color:var(--ink);color:#fff;}
+  .pill.acc{background:var(--accent);border-color:var(--accent);color:#fff;}
+  .pill.green{background:#e3f6ec;border-color:#bfe6cf;color:#15894f;}
+  .why{margin-top:auto;padding-top:14px;border-top:1px solid var(--border);font-size:13.5px;color:var(--muted);line-height:1.55;}
+  .why b{display:block;font-family:var(--f-mono);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink);font-weight:700;margin-bottom:4px;}
+  .bm-score{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:44px;}
+  .score{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:22px 20px;}
+  .score b{display:block;font-family:var(--f-display);font-weight:800;font-size:1.9rem;letter-spacing:-.03em;color:var(--accent-ink);line-height:1.1;}
+  .score span{display:block;font-size:13.5px;color:var(--ink);margin-top:6px;line-height:1.45;}
+  .bm-cta{text-align:center;}
+  .bm-cta .head{max-width:20ch;margin-left:auto;margin-right:auto;}
+  .bm-cta .body-copy{margin:0 auto;}
+  .bm-cta-row{display:flex;justify-content:center;align-items:center;gap:14px;flex-wrap:wrap;margin-top:34px;}
+  @media(max-width:980px){
+    .bm-moves{grid-template-columns:1fr;}
+    .bm-score{grid-template-columns:repeat(2,1fr);}
+  }
+  @media(max-width:600px){
+    .bm-stats{grid-template-columns:1fr;}
+    .bm-chart .plot{height:240px;gap:6px;}
+    .bm-chart .legend{gap:6px;}
+    .bm-chart .tag{font-size:10.5px;}
+  }
+
   /* ---------- reveal ---------- */
   .reveal{opacity:0;transform:translateY(24px);transition:opacity .9s ease,transform .9s cubic-bezier(.22,.61,.36,1);}
   .reveal.in{opacity:1;transform:none;}
@@ -674,13 +727,14 @@
 </section>
 
 <!-- ============ BARISTA BOT ============ -->
-<section class="alt" data-seq>
+<section class="alt" id="barista" data-seq>
   <div class="wrap split">
     <div class="copy">
       <p class="eyebrow reveal">At the counter</p>
       <h2 class="head tw" data-text="Barista Bot"></h2>
       <p class="problem tw" data-text="Your baristas don't always respond. Sometimes they're rude, sometimes guests simply don't want to ask — and your menu goes unexplored."></p>
       <p class="body-copy tw" data-text="Barista Bot steps in to answer every question and order for each customer in the best possible way — so nothing on your menu stays a secret."></p>
+      <a class="knowmore inline" href="#barista-more">Know more</a>
     </div>
 
     <div class="phone-wrap reveal" data-botchat>
@@ -861,6 +915,160 @@
     </div>
   </div>
 </section>
+
+<!-- ============ BARISTA BOT — KNOW MORE PAGE (shown at #barista-more) ============ -->
+<div id="barista-more">
+
+  <section class="bm-hero" data-seq>
+    <div class="wrap">
+      <a class="bm-back" href="#barista">&larr; Back to overview</a>
+      <p class="eyebrow reveal">Barista Bot · the full story</p>
+      <h1 class="bm-title">The waiter who <em>never forgets</em> to upsell.</h1>
+      <p class="bm-lede">Barista Bot turns your QR menu into a warm, guided conversation. It greets every guest, helps them decide, and suggests the perfect pairing — every single time. The result is a bigger bill on every table, without a single pushy moment.</p>
+      <div class="bm-stats reveal">
+        <div class="bm-stat"><b>+22–35%</b><span>higher average bill per table</span></div>
+        <div class="bm-stat"><b>&lt;200ms</b><span>to greet a guest after they scan</span></div>
+        <div class="bm-stat"><b>&minus;35%</b><span>fewer carts left behind</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="alt" data-seq>
+    <div class="wrap">
+      <div class="copy-wide">
+        <p class="eyebrow reveal">How the bill grows</p>
+        <h2 class="head tw" data-text="Every step adds to the bill"></h2>
+        <p class="body-copy tw" data-text="Each part of the conversation is built on how people actually decide what to eat. Stacked together, they lift the average bill by up to 38%."></p>
+      </div>
+      <div class="chart bm-chart reveal" data-chart>
+        <div class="plot">
+          <div class="col"><div class="bar c3" style="--h:13%"><span class="val" data-prefix="+" data-value="5" data-suffix="%"></span></div></div>
+          <div class="col"><div class="bar c2" style="--h:31%"><span class="val" data-prefix="+" data-value="12" data-suffix="%"></span></div></div>
+          <div class="col"><div class="bar c4" style="--h:47%"><span class="val" data-prefix="+" data-value="18" data-suffix="%"></span></div></div>
+          <div class="col"><div class="bar c1" style="--h:63%"><span class="val" data-prefix="+" data-value="24" data-suffix="%"></span></div></div>
+          <div class="col"><div class="bar c5" style="--h:84%"><span class="val" data-prefix="+" data-value="32" data-suffix="%"></span></div></div>
+          <div class="col"><div class="bar c6" style="--h:100%"><span class="val" data-prefix="+" data-value="38" data-suffix="%"></span></div></div>
+        </div>
+        <div class="legend">
+          <div class="leg"><span class="tag">Instant welcome</span></div>
+          <div class="leg"><span class="tag">One-tap prompts</span></div>
+          <div class="leg"><span class="tag">Popular badges</span></div>
+          <div class="leg"><span class="tag">Smart bread pairing</span></div>
+          <div class="leg"><span class="tag">Drink &amp; sweet add-ons</span></div>
+          <div class="leg"><span class="tag">Never-ending chat</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section data-seq>
+    <div class="wrap">
+      <div class="copy-wide">
+        <p class="eyebrow reveal">What your guests experience</p>
+        <h2 class="head tw" data-text="Eight small moves, one bigger bill"></h2>
+        <p class="body-copy tw" data-text="Your best waiter does all of this on a good day. Barista Bot does it on every table, every shift, without getting tired."></p>
+      </div>
+
+      <div class="bm-moves reveal">
+        <article class="move">
+          <div class="move-top"><span class="move-num">01</span><span class="move-lift">0% drop-off</span></div>
+          <h3>A welcome that lands instantly</h3>
+          <p>The moment a guest scans the QR, a friendly barista greets them by time of day. No spinner, no plain-text wall.</p>
+          <div class="mock"><span class="q">☀️ <b>Good afternoon!</b> I'm your barista today. What are you in the mood for?</span></div>
+          <div class="why"><b>Why it works</b>First impressions anchor everything. A fast, beautiful start tells guests the experience will be easy, and the ordering nerves disappear.</div>
+        </article>
+
+        <article class="move">
+          <div class="move-top"><span class="move-num">02</span><span class="move-lift">Zero wrong-diet orders</span></div>
+          <h3>Filters that respect every diet</h3>
+          <p>Clear Veg only and Non-veg only filters, plus a simple Back button to change the party size anytime.</p>
+          <div class="mock"><span class="pill">&larr; Back</span><span class="pill">All</span><span class="pill on">Veg only</span><span class="pill">Non-veg only</span></div>
+          <div class="why"><b>Why it works</b>Guests with strict food preferences feel anxious when everything is mixed together. Giving them control builds trust, and trusting guests order more.</div>
+        </article>
+
+        <article class="move">
+          <div class="move-top"><span class="move-num">03</span><span class="move-lift">+25% engagement</span></div>
+          <h3>One tap instead of a blank box</h3>
+          <p>Guests never stare at an empty text field. Ready-made prompts get them to a decision in a single tap.</p>
+          <div class="mock"><span class="pill">🍽️ Suggest a full meal combo</span><span class="pill">🌶️ Something spicy</span><span class="pill">⭐ Today's special?</span></div>
+          <div class="why"><b>Why it works</b>The more choices people face, the longer they hesitate. A few clear options remove the blank-page freeze and speed up the order.</div>
+        </article>
+
+        <article class="move">
+          <div class="move-top"><span class="move-num">04</span><span class="move-lift">+30% full combos</span></div>
+          <h3>A full meal, one easy "yes" at a time</h3>
+          <p>Instead of a giant combo menu, Barista Bot builds the meal step by step: starters, then the main, then the bread.</p>
+          <div class="mock"><span class="q">Let's start with starters?</span><span class="pill acc">Yes</span><span class="arrow">&rarr;</span><span class="q" style="width:auto">Paneer dish?</span><span class="pill acc">Yes</span><span class="arrow">&rarr;</span><span class="pill">Butter Naan</span></div>
+          <div class="why"><b>Why it works</b>Small yeses are effortless, and each one builds momentum. Guests end up with a complete meal without ever feeling they made a big decision.</div>
+        </article>
+
+        <article class="move">
+          <div class="move-top"><span class="move-num">05</span><span class="move-lift">+40% pick rate</span></div>
+          <h3>Badges that show what's popular</h3>
+          <p>Live badges from your own sales data sit on every dish card, so guests see what everyone else is loving right now.</p>
+          <div class="mock"><span class="pill green">🔥 50+ ordered today</span><span class="pill green">👍 Top choice</span><span class="pill green">⭐ Highly rated</span><span class="pill green">🏆 Best in category</span></div>
+          <div class="why"><b>Why it works</b>When people aren't sure, they follow the crowd. Seeing that others loved a dish takes the risk out of trying it.</div>
+        </article>
+
+        <article class="move">
+          <div class="move-top"><span class="move-num">06</span><span class="move-lift">+18% drinks attached</span></div>
+          <h3>The pairing your best waiter would suggest</h3>
+          <p>Barista Bot learns what's ordered together at your place and recommends the right bread, then a drink or sweet to finish.</p>
+          <div class="mock"><span class="pill">🫓 Most ordered with Paneer Butter Masala</span><span class="q">80+ guests completed their combo with a drink. Add one?</span><span class="pill acc">Yes</span><span class="pill">No</span></div>
+          <div class="why"><b>Why it works</b>A curry feels incomplete without bread and a drink. Showing how many others added one makes guests not want to miss out.</div>
+        </article>
+
+        <article class="move">
+          <div class="move-top"><span class="move-num">07</span><span class="move-lift">+15% extra add-ons</span></div>
+          <h3>The conversation never shuts the door</h3>
+          <p>After items go into the cart, the chat stays open and gently asks if there's anything else, like beverages or sweets.</p>
+          <div class="mock"><span class="pill on">✓ Items added to cart · View cart</span><span class="q">Awesome! Looking for beverages, sweets, or anything else?</span></div>
+          <div class="why"><b>Why it works</b>An open conversation feels unfinished, and people like to finish things. That's when the dessert and the second coffee get added.</div>
+        </article>
+
+        <article class="move">
+          <div class="move-top"><span class="move-num">08</span><span class="move-lift">&minus;35% abandoned carts</span></div>
+          <h3>Pick up right where they left off</h3>
+          <p>The cart invites guests to continue the chat or browse more, with all their history kept intact.</p>
+          <div class="mock"><span class="pill acc">Continue from where you left</span><span class="pill">+ Add more items</span><span class="pill">💬 Ask our barista</span></div>
+          <div class="why"><b>Why it works</b>Nobody wants to start over. When context is never lost, guests come back to the order instead of giving up on it.</div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="alt" data-seq>
+    <div class="wrap">
+      <div class="copy-wide">
+        <p class="eyebrow reveal">The scorecard</p>
+        <h2 class="head tw" data-text="What it means for your floor"></h2>
+      </div>
+      <div class="bm-score reveal">
+        <div class="score"><b>+22–35%</b><span>Average order value</span></div>
+        <div class="score"><b>+40%</b><span>More picks on badged dishes</span></div>
+        <div class="score"><b>+30%</b><span>Guests completing a full combo</span></div>
+        <div class="score"><b>+25%</b><span>Guests engaging with suggestions</span></div>
+        <div class="score"><b>+18%</b><span>Orders with a drink attached</span></div>
+        <div class="score"><b>+15%</b><span>Add-ons after the first order</span></div>
+        <div class="score"><b>&minus;35%</b><span>Abandoned carts</span></div>
+        <div class="score"><b>0</b><span>Wrong-diet dishes served</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="bm-cta" data-seq>
+    <div class="wrap">
+      <p class="eyebrow reveal">Ready when you are</p>
+      <h2 class="head tw" data-text="Put Barista Bot on every table"></h2>
+      <p class="body-copy tw" data-text="It's included in the With AI plan. Set it up once, and every guest gets your best waiter from the very first scan."></p>
+      <div class="bm-cta-row reveal">
+        <a class="cta" href="404.html">Book a demo</a>
+        <a class="btn-ghost" href="#barista">&larr; Back to overview</a>
+      </div>
+    </div>
+  </section>
+
+</div>
 
 <footer>
   <div class="wrap">
@@ -1164,6 +1372,20 @@
     }
     build();
   }
+
+  /* ---------- barista bot "know more" page ----------
+     A second page living in this same file: #barista-more swaps the home
+     sections out for the pitch page; any other hash brings home back and
+     scrolls to its target (the hidden target can't be scrolled to natively). */
+  function route(){
+    var on = location.hash === '#barista-more';
+    document.body.classList.toggle('on-more', on);
+    if(on){ window.scrollTo({top:0, behavior:'instant'}); return; }
+    var t = location.hash && document.getElementById(location.hash.slice(1));
+    if(t) t.scrollIntoView({behavior:'instant'});
+  }
+  window.addEventListener('hashchange', route);
+  route();
 
   var hero = document.getElementById('hero');
   var heroMottos = hero.querySelectorAll('.motto');

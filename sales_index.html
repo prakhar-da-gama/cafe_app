@@ -135,12 +135,13 @@
   .motto{
     font-family:var(--f-display);
     font-weight:800;
-    font-size:clamp(1.7rem,3.1vw,2.7rem);
-    line-height:1.14;
+    font-size:clamp(1.4rem,2.6vw,2.15rem);
+    line-height:1.16;
     letter-spacing:-.02em;
     color:#141414;
     margin:0;
   }
+  .motto + .motto{margin-top:16px;}
 
   .knowmore{
     display:inline-block;
@@ -645,7 +646,8 @@
 <section class="hero" id="hero">
   <div class="wrap hero-grid">
     <div class="hero-copy">
-      <p class="motto tw" data-text="While your customers are engaged and ordering more, your managers are running your place efficiently and actually responding to your reviews — your business grows."></p>
+      <p class="motto tw" data-text="We're not just another restaurant POS — OrdersBuddy engages your guests, powers your managers to run the place efficiently, and catches every error and bad review for you, so you grow sales and quality without spending your time."></p>
+      <p class="motto motto-2 tw" data-text="OrdersBuddy is an AI agent — the best barista you know, the sharpest consultant for your business, and the finest manager for your restaurant, all in one."></p>
       <a class="knowmore" href="404.html">Know more</a>
       <div class="scroll-cue">scroll to see how</div>
     </div>
@@ -700,7 +702,7 @@
 
 <!-- ============ ORDERS BUDDY — REVIEWS ============ -->
 <section data-seq>
-  <div class="wrap split flip">
+  <div class="wrap split">
     <div class="copy">
       <p class="eyebrow reveal">In your reviews</p>
       <h2 class="head tw" data-text="OrdersBuddy reads every review"></h2>
@@ -1164,13 +1166,13 @@
   }
 
   var hero = document.getElementById('hero');
-  var heroMotto = hero.querySelector('.motto');
+  var heroMottos = hero.querySelectorAll('.motto');
   var heroChart = hero.querySelector('[data-chart]');
   window.addEventListener('load', function(){
     setTimeout(function(){
       hero.classList.add('done');   // reveal chart, know-more and cue instantly
       runChart(heroChart);          // graph animates right away
-      typeEl(heroMotto);            // motto types in parallel
+      typeSeq(Array.prototype.slice.call(heroMottos), 0); // both motto lines type in sequence
     }, 250);
   });
 

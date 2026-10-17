@@ -43,7 +43,10 @@ const IC_CSS = `
 .ic-root {
   position: relative;
   isolation: isolate;
-  min-height: 100dvh;
+  /* Locked to the viewport: the setup screen is fixed in view and never
+     scrolls — everything is sized to fit a single screen. */
+  height: 100dvh;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   animation: ic-fade 0.5s ease both;
@@ -125,7 +128,7 @@ const IC_CSS = `
   text-wrap: balance;
 }
 
-.ic-cards { margin-top: 22px; }
+.ic-cards { margin-top: 16px; }
 .ic-card {
   background: var(--surface);
   border-radius: var(--radius);
@@ -139,9 +142,9 @@ const IC_CSS = `
 }
 .ic-q {
   margin: 0 0 4px;
-  font-size: 1.05rem;
+  font-size: 0.92rem;
   font-weight: 800;
-  line-height: 1.38;
+  line-height: 1.34;
   color: var(--ink);
 }
 .ic-counters { display: flex; flex-direction: column; gap: 6px; }

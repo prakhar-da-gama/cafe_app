@@ -143,6 +143,29 @@
   }
   .motto + .motto{margin-top:18px;}
 
+  /* hero theme types in large, then settles smaller while the mottos open up beneath it */
+  .hero-theme{
+    font-family:var(--f-display);
+    font-weight:800;
+    font-size:clamp(2.3rem,4.9vw,4.1rem);
+    line-height:1.08;
+    letter-spacing:-.03em;
+    color:#141414;
+    margin:0;
+    transition:font-size .9s cubic-bezier(.22,.61,.36,1);
+  }
+  .hero.settled .hero-theme{font-size:clamp(1.45rem,2.5vw,2.05rem);}
+  .hero-rest{
+    display:grid;
+    grid-template-rows:0fr;
+    opacity:0;
+    transition:grid-template-rows .9s cubic-bezier(.22,.61,.36,1), opacity .6s ease .3s;
+  }
+  .hero.settled .hero-rest{grid-template-rows:1fr;opacity:1;}
+  .hero-rest-in{min-height:0;overflow:hidden;}
+  .hero.open .hero-rest-in{overflow:visible;}
+  .hero-rest-in > .motto:first-child{margin-top:30px;}
+
   .knowmore{
     display:inline-block;
     margin-top:36px;
@@ -160,7 +183,7 @@
     animation:flash 1.15s ease-in-out infinite;
     transition:opacity .6s ease .35s,transform .2s ease;
   }
-  .hero.done .knowmore{opacity:1;}
+  .hero.open .knowmore{opacity:1;}
   .knowmore:hover,.knowmore:focus-visible{animation-play-state:paused;transform:translateY(-2px);box-shadow:0 12px 30px rgba(255,106,44,.4);}
   @keyframes flash{
     0%,100%{box-shadow:0 0 0 0 rgba(255,106,44,.55);}
@@ -187,7 +210,7 @@
     opacity:0;
     transition:opacity .8s ease .6s;
   }
-  .hero.done .scroll-cue{opacity:1;}
+  .hero.open .scroll-cue{opacity:1;}
 
   /* ---------- chart card ---------- */
   .chart{
@@ -771,10 +794,16 @@
 <section class="hero" id="hero">
   <div class="wrap hero-grid">
     <div class="hero-copy">
-      <p class="motto tw" data-text="OrdersBuddy is the AI-first POS for your restaurant."></p>
-      <p class="motto motto-2 tw" data-text="One AI agent that works as your barista, your consultant, and your manager, helping you grow sales and quality while saving your time."></p>
-      <a class="knowmore" href="404.html">Know more</a>
-      <div class="scroll-cue">scroll to see how</div>
+      <h1 class="hero-theme tw" data-text="“Do more with fewer people! OrdersBuddy runs the restaurant alongside you.”"></h1>
+      <div class="hero-rest">
+        <div class="hero-rest-in">
+          <p class="motto tw" data-text="OrdersBuddy is the AI-first POS for your restaurant."></p>
+          <p class="motto motto-2 tw" data-text="One AI agent that works as your barista, your consultant, and your manager."></p>
+          <p class="motto motto-3 tw" data-text="Helping you grow sales and quality while saving your time."></p>
+          <a class="knowmore" href="404.html">Know more</a>
+          <div class="scroll-cue">scroll to see how</div>
+        </div>
+      </div>
     </div>
 
     <div class="hero-chart">
@@ -1520,13 +1549,23 @@
   route();
 
   var hero = document.getElementById('hero');
+  var heroTheme = hero.querySelector('.hero-theme');
   var heroMottos = hero.querySelectorAll('.motto');
   var heroChart = hero.querySelector('[data-chart]');
   window.addEventListener('load', function(){
     setTimeout(function(){
-      hero.classList.add('done');   // reveal chart, know-more and cue instantly
+      hero.classList.add('done');   // reveal chart right away
       runChart(heroChart);          // graph animates right away
-      typeSeq(Array.prototype.slice.call(heroMottos), 0); // both motto lines type in sequence
+      typeEl(heroTheme, function(){
+        // hold the theme, then shrink it and open the mottos underneath
+        setTimeout(function(){
+          hero.classList.add('settled');
+          setTimeout(function(){
+            hero.classList.add('open');  // know-more and cue fade in
+            typeSeq(Array.prototype.slice.call(heroMottos), 0); // motto lines type in sequence
+          }, reduce ? 0 : 950);
+        }, reduce ? 0 : 900);
+      });
     }, 250);
   });
 

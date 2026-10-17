@@ -106,9 +106,13 @@ const IC_CSS = `
   position: relative;
   z-index: 1;
   flex: 1;
+  /* Allow the stage to shrink inside the fixed-height root so the dock below
+     always stays in view (min-height:auto would otherwise let tall content
+     push the Proceed button off-screen). */
+  min-height: 0;
   display: flex;
   flex-direction: column;
-  padding: 10px 2px 118px;
+  padding: 10px 2px 10px;
 }
 
 /* The greeting: a simple "Namaste" that types in at the top of the screen. */

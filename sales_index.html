@@ -6,7 +6,7 @@
 <title>OrdersBuddy — run your cafe, not the chaos</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Sora:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Permanent+Marker&family=Sora:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
 <style>
   :root{
     --bg:#FAF5EC;
@@ -133,15 +133,17 @@
   }
   .brand .dot{width:10px;height:10px;border-radius:50%;background:var(--accent);display:inline-block;}
   .motto{
-    font-family:var(--f-display);
-    font-weight:800;
-    font-size:clamp(1.4rem,2.6vw,2.15rem);
-    line-height:1.16;
-    letter-spacing:-.02em;
+    font-family:'Permanent Marker',var(--f-display);
+    font-weight:400;
+    font-size:clamp(1.65rem,3.3vw,2.85rem);
+    line-height:1.24;
+    letter-spacing:0;
     color:#141414;
     margin:0;
+    /* stamped-in ink: a soft white lift + ink drop so it reads pressed into the page */
+    text-shadow:0 1px 0 rgba(255,255,255,.6),0 3px 7px rgba(20,20,20,.14);
   }
-  .motto + .motto{margin-top:16px;}
+  .motto + .motto{margin-top:22px;}
 
   .knowmore{
     display:inline-block;
@@ -646,8 +648,8 @@
 <section class="hero" id="hero">
   <div class="wrap hero-grid">
     <div class="hero-copy">
-      <p class="motto tw" data-text="We're not just another restaurant POS — OrdersBuddy engages your guests, powers your managers to run the place efficiently, and catches every error and bad review for you, so you grow sales and quality without spending your time."></p>
-      <p class="motto motto-2 tw" data-text="OrdersBuddy is an AI agent — the best barista you know, the sharpest consultant for your business, and the finest manager for your restaurant, all in one."></p>
+      <p class="motto tw" data-text="OrdersBuddy — the AI-first restaurant POS."></p>
+      <p class="motto motto-2 tw" data-text="One AI agent: your barista, consultant, and manager — growing sales and quality while saving your time."></p>
       <a class="knowmore" href="404.html">Know more</a>
       <div class="scroll-cue">scroll to see how</div>
     </div>
